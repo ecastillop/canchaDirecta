@@ -3,13 +3,80 @@
 > Documento de continuidad. Permite retomar el proyecto **sin conversacion previa**.
 > Actualizar tras cada hito significativo.
 
-## 0. Estado global
+## 0. Mirada hacia adelante (corte 2026-10-18)
 
-- **Estado:** **BACKEND + FRONTEND OPERATIVOS**. Backend 144/144 tests y 112/112 humo;
+### Estado del corte
+
+- Repositorio Git inicializado en `canchadirecta/`.
+- Commits relevantes:
+  - `70def9c` snapshot funcional previo al rediseño.
+  - `592b527` rediseño de fusión (identidad, home, catálogo, detalle, login).
+  - `c5cf2f8` favoritos, catálogo enriquecido y sidebars.
+  - `8124fee` panel de cliente con sidebar.
+  - `824ec14` topbar standalone, Actividades, Cómo funciona y sidebars definitivos.
+- Stack operativo: frontend `http://localhost:8083`, backend `http://localhost:8089`,
+  MySQL del host `127.0.0.1:3306` (el `compose.yml` usa `host.docker.internal`).
+- Superadmin local: `admin@canchadirecta.pe`; clave en `.env` (`ADMIN_PASSWORD`).
+- Pruebas: backend **146/146**, humo **112/112**, unitarios **15/15**, E2E usuario **15/15**,
+  E2E propietario/admin **28/28**, accesibilidad **16 rutas OK**.
+
+### Ya integrado del standalone
+
+- Identidad visual: bosque + lima, Outfit/DM Sans locales, home editorial, catálogo, detalle y login.
+- Topbar: Inicio, Espacios, Actividades, Cómo funciona y menú “Mi cuenta” (sin selector “Vista demo”).
+- Favoritos persistidos (`V12`, `/favoritos`), comparar como botón, reputación con número de opiniones,
+  distrito, foto principal, iconos SVG y página de favoritos.
+- Servicios incluidos en el detalle y datos demo (`V13`).
+- Paneles con sidebar de cliente, propietario y administración (espacio de trabajo, ayuda y volver al sitio).
+- Páginas públicas `/actividades` y `/como-funciona` (por ahora informativas).
+- Se conserva todo lo anterior: reservas, pagos demo, panel, administración, carrusel, calendario
+  semanal, precios y comparación.
+
+### Pendiente para la siguiente sesión (orden recomendado)
+
+1. **Ficha de espacio**: página por establecimiento con varias canchas, servicios, fotos y reputación.
+   Requiere endpoint de detalle de espacio y enlace desde el catálogo/detalle de cancha.
+2. **Actividades reales**: tablas/API de actividades e inscripciones, administración por propietario
+   y listado público con cupos (hoy `/actividades` es informativa).
+3. **Cupones**: además de promociones, cupones canjeables con código, límite de usos y vigencia.
+4. **Soporte**: centro de ayuda/tickets además de reclamos; bandeja para admin/operador.
+5. **Dashboard de cliente**: resumen con próxima reserva, favoritos y pendientes (hoy solo listas).
+6. **Dashboard de propietario**: métricas de ocupación, ingresos y próximas reservas.
+7. **Administración**: reportes, configuración de plataforma y gestión de cupones.
+8. **Notificaciones**: badge de no leídas en el topbar y campana.
+9. **Modo oscuro** con toggle explícito y persistencia (la paleta “Nocturno” es solo un acercamiento).
+10. **Seed/reset de demo**: la base tiene >2,000 canchas por humo/E2E; conviene un script de limpieza
+    o datos semilla controlados.
+
+### Reglas para continuar
+
+- **No retirar funcionalidad existente**: la nueva navegación mueve accesos al menú “Mi cuenta”,
+  pero no elimina rutas ni acciones.
+- Mantener el lenguaje visual del standalone y sus sidebars.
+- No incluir el selector “Vista demo” del standalone.
+- Cada bloque nuevo debe pasar build, unitarios, E2E y a11y antes de commit.
+- Mantener migraciones Flyway; no usar `drop-and-create` sobre la base real.
+
+### Cómo retomar
+
+```powershell
+cd canchadirecta
+docker compose -f compose.yml up -d --build backend frontend
+cd frontend
+npm run build
+npm test -- --watch=false
+$env:BASE='http://localhost:8083'; npm run test:e2e
+$env:BASE='http://localhost:8083'; $env:ADMIN_CORREO=...; $env:ADMIN_PASSWORD=...; npm run test:e2e:owner
+npm run test:a11y
+```
+
+## 0.1 Estado global
+
+
+- **Estado:** **BACKEND + FRONTEND OPERATIVOS**. Backend 146/146 tests y 112/112 humo;
   frontend Angular 22 compila, pasa 15/15 tests unitarios y 2 suites E2E reales (usuario y
-  propietario/admin) contra backend, tanto en dev como en el contenedor Nginx (`8083`). Detalle de
-  cancha rediseñado con calendario semanal. Queda pulido de UI secundario, accesibilidad manual y
-  evidencia formal. Fase 0 y Fase 2 completadas.
+  propietario/admin) contra backend, tanto en dev como en el contenedor Nginx (`8083`). Rediseño
+  de fusión aplicado. Fase 0 y Fase 2 completadas.
 - **Backend completado y verificado** (modulos `shared`, `identity`, `venues`, `bookings`,
   `payments`, `settlements`, `engagement`, `platform`): identidad completa (registro, verificacion
   de correo, login con limite de intentos, refresh, logout, recuperacion, perfil editable y
@@ -24,7 +91,7 @@
   revocacion de access tokens (L-20) y rate limiting de login (S-4). **Todos los CU del backend
   implementados**; F05 real (pasarela/desembolso) queda **fuera de alcance por decision del
   usuario** y documentado.
-- **Evidencia vigente (2026-10-17):** `mvnw test` -> **144/144 PASS** (`BUILD SUCCESS`); humo
+- **Evidencia vigente (2026-10-18):** `mvnw test` -> **146/146 PASS** (`BUILD SUCCESS`); humo
   -> **112/112 PASS** en `smoke.ps1` y `smoke.sh` contra el contenedor (8089/3309, imagen
   reconstruida). CI en `.github/workflows/backend.yml` (MySQL 8.4 efimero).
 - **Estado:** Fase 4 completada y cerrada. Exclusiones documentadas: F05 real, penalidad
@@ -394,15 +461,17 @@ Valores reales unicamente en `canchadirecta/.env` (gitignored). Nunca en Git.
 
 ## 11. PROXIMA ACCION EXACTA
 
-Backend y frontend estan operativos y verificados. Para cerrar Fase 4 queda pulido:
+La hoja de ruta vigente esta en **`## 0. Mirada hacia adelante`** al inicio de este documento.
+Prioridad inmediata:
 
-**Estado:** entrega cerrada el 2026-10-17 y Fase 1 de mejoras aplicada. Acta:
-`docs/ACTA_CIERRE.md`. Tareas opcionales posteriores (no bloquean la entrega):
+1. Ficha de espacio con varias canchas, servicios y reputacion.
+2. Actividades reales con inscripciones.
+3. Cupones, soporte y configuracion de plataforma.
+4. Dashboard de cliente/propietario con metricas.
+5. Modo oscuro y badge de notificaciones.
 
-1. Revision manual con lector de pantalla (NVDA/Narrator).
-2. Script idempotente de bootstrap del superadministrador.
-3. Cambiar la clave local del superadministrador antes de un despliegue real.
-4. Fase 2: modo oscuro, asistente de configuracion y rediseno de bloqueos.
+**Estado:** entrega base cerrada el 2026-10-17; rediseno de fusion e integraciones del standalone
+en curso. Acta: `docs/ACTA_CIERRE.md`.
 
 Cuenta superadministrador local (roles `USER`, `OWNER`, `PLATFORM_ADMIN`):
 `admin@canchadirecta.pe`; la clave esta en `.env` (`ADMIN_PASSWORD`) y se usa tambien en los
@@ -415,9 +484,9 @@ Notas de la última sesión:
   `backend:8080`. Para E2E contra el backend de Compose usar `--proxy-config` hacia 8089.
 - E2E: `npm run test:e2e` y `npm run test:e2e:owner` (requiere `ADMIN_CORREO`/`ADMIN_PASSWORD`);
   ver `frontend/e2e/README.md`.
-- El backend **no** expone `GET /establecimientos/mios` (L-22); el panel pide/crea el ID una vez.
-  Para precargar la edicion existe `GET /establecimientos/{id}` (solo propietario). Las canchas
-  propias sí se listan con `GET /canchas?idEstablecimiento=...`.
+- `GET /establecimientos/mios` **ya existe** y el panel descubre el local automáticamente.
+  Para precargar la edición también está `GET /establecimientos/{id}` (solo propietario). Las canchas
+  propias se listan con `GET /canchas?idEstablecimiento=...`.
 - **Detalle de cancha rediseñado**: galería con fallback, bloques de información, reserva sticky
   y calendario semanal dentro de la columna principal; en móvil la reserva va primero. El botón
   `Reservar` y la paginación ahora respetan `disabled` (antes la directiva `cdButton` lo borraba).
