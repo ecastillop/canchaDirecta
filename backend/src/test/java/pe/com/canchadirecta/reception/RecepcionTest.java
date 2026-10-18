@@ -111,14 +111,14 @@ class RecepcionTest {
                 .when().post("/api/v1/canchas/" + idCancha + "/bloqueos")
                 .then().statusCode(403);
 
-        // Reserva presencial con pago recibido.
+        // Reserva presencial con pago recibido: queda confirmada en mostrador (L-24).
         Instant inicio = Instant.now().plus(3, ChronoUnit.HOURS);
         Long reserva = ((Number) given().auth().oauth2(operadorConRol.token()).contentType(ContentType.JSON)
                 .body(walkin(idEstablecimiento, idCancha, cliente.id(), inicio, 60, true))
                 .when().post("/api/v1/recepcion/reservas")
                 .then().statusCode(201)
                 .body("pagoEstado", equalTo("APROBADO"))
-                .body("estado", equalTo("PENDIENTE"))
+                .body("estado", equalTo("CONFIRMADA"))
                 .extract().path("id")).longValue();
 
         LocalDate dia = LocalDate.ofInstant(inicio, ZONA);
@@ -128,23 +128,31 @@ class RecepcionTest {
                 .body("[0].id", equalTo(reserva.intValue()));
 
         given().auth().oauth2(operadorConRol.token())
-                .when().get("/api/v1/recepcion/reservas?estado=PENDIENTE")
+                .when().get("/api/v1/recepcion/reservas?estado=CONFIRMADA")
                 .then().statusCode(200).body("$", hasSize(1))
-                .body("[0].id", equalTo(reserva.intValue()));
+                .body("[0].id", equalTo(reserva.intValue()))
+                .body("[0].pagoEstado", equalTo("APROBADO"));
+        given().auth().oauth2(operadorConRol.token())
+                .when().get("/api/v1/recepcion/reservas?estado=PENDIENTE")
+                .then().statusCode(200).body("$", hasSize(0));
         given().auth().oauth2(operadorConRol.token())
                 .when().get("/api/v1/recepcion/canchas?idEstablecimiento=" + idEstablecimiento)
                 .then().statusCode(200).body("$", hasSize(1))
                 .body("[0].id", equalTo(idCancha.intValue()));
 
-        // Confirmar y hacer check-in de una reserva cercana.
+        // Ya esta confirmada por el cobro: el propietario no la vuelve a confirmar.
         given().auth().oauth2(dueno.token())
                 .when().post("/api/v1/reservas/" + reserva + "/confirmar")
-                .then().statusCode(200);
+                .then().statusCode(409);
+
+        // Check-in de una reserva cercana (sin pago en el alta: la confirma el propietario).
         Long enCurso = ((Number) given().auth().oauth2(operadorConRol.token()).contentType(ContentType.JSON)
                 .body(walkin(idEstablecimiento, idCancha, cliente.id(), Instant.now().plus(90, ChronoUnit.MINUTES),
                         60, false))
                 .when().post("/api/v1/recepcion/reservas")
-                .then().statusCode(201).extract().path("id")).longValue();
+                .then().statusCode(201)
+                .body("estado", equalTo("PENDIENTE"))
+                .extract().path("id")).longValue();
         given().auth().oauth2(dueno.token())
                 .when().post("/api/v1/reservas/" + enCurso + "/confirmar")
                 .then().statusCode(200);
@@ -169,7 +177,9 @@ class RecepcionTest {
         given().auth().oauth2(operadorConRol.token()).contentType(ContentType.JSON)
                 .body(Map.of("medioPago", "YAPE"))
                 .when().post("/api/v1/recepcion/reservas/" + pendiente + "/cobro")
-                .then().statusCode(200).body("pagoEstado", equalTo("APROBADO"));
+                .then().statusCode(200)
+                .body("pagoEstado", equalTo("APROBADO"))
+                .body("estado", equalTo("CONFIRMADA"));
         given().auth().oauth2(operadorConRol.token()).contentType(ContentType.JSON)
                 .body(Map.of("medioPago", "EFECTIVO"))
                 .when().post("/api/v1/recepcion/reservas/" + pendiente + "/cobro")

@@ -398,3 +398,26 @@ Estados de reclamo: `ABIERTO → EN_REVISION → RESUELTO → CERRADO`.
 3. El backend no define endpoints de consulta de un pago/reembolso por id ni de listado de
    reembolsos independiente; solo el último pago de una reserva.
 4. No hay endpoint para consultar una reserva individual (`GET /reservas/{id}`).
+
+## 9. Recepción (portal de operación)
+
+Endpoints consumidos por `/recepcion`. El alcance lo resuelve el backend: el `OPERADOR` solo ve
+y opera sus sedes asignadas, el propietario las suyas y el administrador todas; sin rol o con una
+sede ajena responde `403`.
+
+| Endpoint | Query / Body | Respuesta | Notas |
+|---|---|---|---|
+| `GET /api/v1/recepcion/establecimientos` | - | `200 List<{id,nombre,distrito}>` | Sedes accesibles. |
+| `GET /api/v1/recepcion/canchas` | `idEstablecimiento*` | `200 List<{id,idEstablecimiento,nombre}>` | Canchas activas de la sede. |
+| `GET /api/v1/recepcion/resumen` | `idEstablecimiento`, `fecha` | `200 {reservasDelDia, checkIns, cobrosPendientes, canchasDisponibles}` | Fecha local (def. hoy). |
+| `GET /api/v1/recepcion/agenda` | `idEstablecimiento`, `fecha` | `200 List<ReservaRecepcion>` | Reservas de ese día. |
+| `GET /api/v1/recepcion/reservas` | `idEstablecimiento`, `estado`, `limite` | `200 List<ReservaRecepcion>` | `estado` inválido => `400`. |
+| `GET /api/v1/recepcion/clientes` | `q*` (mínimo 2) | `200 List<{id,nombre,correo,telefono}>` | Búsqueda para el walk-in. |
+| `POST /api/v1/recepcion/reservas` | `{idEstablecimiento, idCancha, idCliente, fecha, horaInicio, duracionMinutos, pagoRecibido, codigoOperacion?}` | `201 ReservaRecepcion` | `idCliente` debe existir (L-24); con `pagoRecibido=true` registra el cobro en efectivo y deja la reserva `CONFIRMADA` (walk-in en mostrador, ADR-0048); sin pago queda `PENDIENTE`. |
+| `POST /api/v1/recepcion/reservas/{id}/cobro` | `{medioPago, codigoOperacion?}` | `200 ReservaRecepcion` | Pago `APROBADO` único (RN-05); si estaba `PENDIENTE`, el cobro la confirma (ADR-0048); `409` si ya tiene pago aprobado o su estado no admite cobro. |
+| `POST /api/v1/recepcion/reservas/{id}/checkin` | - | `200 ReservaRecepcion` (`FINALIZADA`) | Solo `CONFIRMADA`, desde 2 h antes del inicio y antes del fin; `409` en otro caso. |
+| `GET /api/v1/recepcion/incidencias` | `limite` | `200 List<IncidenciaRecepcion>` | Incluye las de sus sedes. |
+| `POST /api/v1/recepcion/incidencias` | `{asunto, descripcion, idReserva?}` | `201 IncidenciaRecepcion` (`ABIERTO`) | Aparece en la mesa de ayuda del administrador. |
+
+`ReservaRecepcion` = `{id, idEstablecimiento, establecimiento, idCancha, cancha, inicio, fin,
+estado, pagoEstado, total, idCliente, cliente, telefono}`.

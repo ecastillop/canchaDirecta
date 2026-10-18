@@ -101,6 +101,10 @@
   el motivo de cada tramo (`RESERVADA`/`BLOQUEADA`, sin titular ni nota del bloqueo) y la ficha rotula
   "Reservada"/"Bloqueada" con su leyenda; los chips de día sin agenda dicen "Cerrado" (ADR-0047,
   L-26 resuelta).
+- Walk-in confirmado en mostrador (2026-10-18): cobrar en caja (walk-in con pago o
+  `POST /recepcion/reservas/{id}/cobro`) confirma la reserva `PENDIENTE`, la tarjeta del portal ofrece
+  `Check-in` a toda `CONFIRMADA` y el formulario avisa del resultado (ADR-0048, L-24 resuelta en lo
+  operativo; el walk-in sin cuenta sigue fuera de alcance).
 
 ### Ya integrado del standalone
 
@@ -122,8 +126,8 @@
    configuración persistente de plataforma.
 2. ~~**Operador/Recepción** (Bloque D)~~ (hecho 2026-10-18): rol `OPERADOR`, turno, agenda de
    recepción, reserva presencial, check-in, cobros e incidencias (ADR-0038) y bloqueos de franja
-   desde la agenda del día (ADR-0042). Pendiente menor del
-   bloque: reserva telefónica sin cuenta registrada (L-24).
+   desde la agenda del día (ADR-0042). El walk-in cobrado queda confirmado (ADR-0048); la reserva
+   sin cuenta registrada sigue fuera de alcance (L-24).
 3. ~~**Notificaciones**: badge de no leídas en el topbar y campana~~ (hecho 2026-10-18, ADR-0039).
 4. ~~**Modo oscuro** con toggle explícito y persistencia~~ (hecho 2026-10-18, ADR-0040).
 5. ~~**Seed/reset de demo**~~ (hecho 2026-10-18, ADR-0045): `scripts/demo-reset.ps1` deja la base con
@@ -167,8 +171,8 @@ node e2e/contraste-modos.mjs          # contraste en los 4 portales, claro y osc
   calendario fiel a la agenda, bloqueos desde recepción y ocupación semanal del propietario
   añadidos (ADR-0039, ADR-0040, ADR-0041, ADR-0042, ADR-0043, ADR-0044), la base de demostración
   se prepara con `scripts/demo-reset.ps1` (ADR-0045), el tema se controla dentro de los cuatro
-  portales (ADR-0046) y la disponibilidad pública informa el motivo de cada franja ocupada
-  (ADR-0047, L-26 resuelta).
+  portales (ADR-0046), la disponibilidad pública informa el motivo de cada franja ocupada
+  (ADR-0047, L-26 resuelta) y el walk-in cobrado en mostrador queda confirmado (ADR-0048).
 - **Backend completado y verificado** (modulos `shared`, `identity`, `venues`, `bookings`,
   `payments`, `settlements`, `engagement`, `platform`): identidad completa (registro, verificacion
   de correo, login con limite de intentos, refresh, logout, recuperacion, perfil editable y
@@ -396,6 +400,10 @@ canchadirecta/
   humo PS y Bash comprueban el estado, E2E propietario/admin ve ambas celdas en la rejilla y en la
   ficha publica (`docs/evidencias/ui/ficha-motivos-1440.png`), backend 163/163, 24/24 unitarios,
   a11y 34 rutas OK y contraste OK.
+- Walk-in confirmado en mostrador (ADR-0048): `RecepcionTest` (walk-in con pago `CONFIRMADA`, `409` al
+  reconfirmar, cobro que confirma y check-in), 4/4 unitarios de la tarjeta de recepcion, humo PS y
+  Bash, E2E propietario/admin (walk-in cobrado desde el portal y `Check-in` visible,
+  `docs/evidencias/ui/recepcion-walkin-1440.png`), backend 163/163, 28/28 unitarios y a11y 34 rutas OK.
 - `smoke.ps1` -> **153/153 PASS** (contenedor en 8089 con la imagen reconstruida y `-DbPort 3306`;
   incluye ficha, actividades, cupones, ayuda, reportes, operadores de recepción y el modulo de
   recepcion).
@@ -424,7 +432,7 @@ canchadirecta/
 5. **Docker**: `compose.yml`, `compose.mysql.yml` y Dockerfiles de backend **y frontend**
    verificados (`frontend` en 8083 con proxy `/api`).
 6. **Docs**: base completa (requisitos, arquitectura, modelo, seguridad, pruebas, limitaciones,
-   ADR-0001..**0047**, contratos API del frontend). Faltan diagramas finales y limpiar filas
+   ADR-0001..**0048**, contratos API del frontend). Faltan diagramas finales y limpiar filas
    obsoletas de `TRAZABILIDAD.md`; evidencia E2E ya existe.
 7. **Testcontainers**: pruebas de integracion con MySQL real en CI (Docker requerido).
 
@@ -493,7 +501,9 @@ documentan en el encabezado del script) - ADR-0046 el tema se controla tambien d
 verificado en claro y oscuro por `frontend/e2e/contraste-modos.mjs`) - ADR-0047 la disponibilidad
 publica informa el motivo de cada tramo ocupado (`ocupadas[]` con `RESERVADA`/`BLOQUEADA`, sin
 titular ni nota del bloqueo; la ficha la rotula y los chips de dia sin agenda dicen "Cerrado";
-L-26 resuelta).
+L-26 resuelta) - ADR-0048 el walk-in cobrado en mostrador queda confirmado (cobrar en caja confirma
+la reserva `PENDIENTE` con traza y aviso; la tarjeta ofrece check-in a toda `CONFIRMADA`; L-24
+resuelta en lo operativo, el walk-in sin cuenta sigue fuera de alcance).
 Ver `docs/DECISIONES_ARQUITECTURA.md`.
 
 ## 8. PRUEBAS EJECUTADAS
@@ -571,6 +581,8 @@ Ver `docs/DECISIONES_ARQUITECTURA.md`.
 
 | 2026-10-18 | Motivo de la franja ocupada (`disponibilidad.ocupadas[]` con `RESERVADA`/`BLOQUEADA`; ficha con "Reservada"/"Bloqueada" y chips "Cerrado") | **PASS** (backend **163/163** con `laDisponibilidadDistingueReservaYBloqueo`; humo **153/153** PS y **134/134** Bash con el estado en `ocupadas`; E2E usuario OK; E2E propietario/admin OK con celdas reservada/bloqueada en la rejilla y en la ficha pública; a11y **34 rutas OK**; contraste OK; ADR-0047; captura `ficha-motivos-1440.png`; L-26 resuelta) |
 
+| 2026-10-18 | Walk-in confirmado al cobrar en mostrador (`confirmarEnMostrador`, tarjeta con check-in para toda `CONFIRMADA`, formulario y aviso) | **PASS** (backend **163/163** con `RecepcionTest` actualizado; 28/28 unitarios (4 nuevos de la tarjeta); humo **153/153** PS y **134/134** Bash con el walk-in confirmado; E2E propietario/admin crea el walk-in cobrado y ve `CONFIRMADA` + `Check-in`; a11y **34 rutas OK**; contraste OK; ADR-0048; captura `recepcion-walkin-1440.png`; L-24 resuelta en lo operativo) |
+
 Resto de la matriz de pruebas (?13 del prompt): **NOT RUN**.
 
 ## 9. PROBLEMAS ABIERTOS
@@ -631,7 +643,8 @@ Prioridad inmediata:
 bloques A/B/C/D del delta completados el 2026-10-18, más badge de notificaciones, modo claro/oscuro,
 calendario fiel a la agenda, bloqueos desde recepción, ocupación semanal del propietario, la bandeja
 del propietario con titular y pago, el tema dentro de los cuatro portales, la disponibilidad pública
-con motivo por franja y la base de demostración regenerable con `.\scripts\demo-reset.ps1 -Force`.
+con motivo por franja, el walk-in confirmado al cobrar en mostrador y la base de demostración
+regenerable con `.\scripts\demo-reset.ps1 -Force`.
 Acta: `docs/ACTA_CIERRE.md`.
 
 Cuenta superadministrador local (roles `USER`, `OWNER`, `PLATFORM_ADMIN`):

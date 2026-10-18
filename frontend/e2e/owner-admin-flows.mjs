@@ -573,6 +573,26 @@ try {
   await page.getByRole('button', { name: 'Registrar reserva' }).waitFor({ timeout: 20000 });
   ok('formulario de reserva presencial disponible');
 
+  // Walk-in cobrado en caja: queda confirmado y el portal ofrece check-in (L-24).
+  const formPresencial = page.locator('form', {
+    has: page.getByRole('button', { name: 'Registrar reserva' }),
+  });
+  await formPresencial.locator('label:has-text("Cancha") select').selectOption(String(idCancha));
+  await formPresencial.locator('label:has-text("Fecha") input').fill(lunes);
+  await formPresencial.locator('label:has-text("Hora de inicio") input').fill('20:00');
+  await formPresencial.getByPlaceholder('Escribe al menos 2 caracteres').fill(cliente.correo);
+  await page.locator('li', { hasText: cliente.correo }).first().locator('button').click();
+  await formPresencial.getByRole('button', { name: 'Registrar reserva' }).click();
+  await page.getByText(/Reserva presencial #\d+ registrada y confirmada/).waitFor({ timeout: 20000 });
+  ok('el operador registra un walk-in cobrado y queda confirmado');
+
+  await navRecep.getByRole('link', { name: 'Reservas', exact: true }).click();
+  const filaWalkin = page.locator('article.cd-card', { hasText: /20:00\s*-\s*21:00/ });
+  await filaWalkin.getByText('CONFIRMADA').waitFor({ timeout: 20000 });
+  await filaWalkin.getByRole('button', { name: 'Check-in' }).waitFor();
+  await page.screenshot({ path: `${EVID}/recepcion-walkin-1440.png`, fullPage: false });
+  ok('la reserva presencial pagada ofrece check-in en el portal');
+
   await navRecep.getByRole('link', { name: 'Cobros' }).click();
   await page.getByRole('heading', { name: 'Cobros', exact: true }).waitFor({ timeout: 20000 });
   ok('cobros de recepcion disponibles');

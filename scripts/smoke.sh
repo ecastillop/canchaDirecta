@@ -659,7 +659,7 @@ t_recep_walkin() {
     "$EST_ID" "$CANCHA_ID" "$USUARIO_ID" "$(recep_fecha)" "$(recep_hora)")"
   api POST /api/v1/recepcion/reservas "$cuerpo" "$RECEP_TOKEN" 201 || return 1
   printf '%s' "$CUERPO_RESP" | grep -q '"pagoEstado":"APROBADO"' || return 1
-  printf '%s' "$CUERPO_RESP" | grep -q '"estado":"PENDIENTE"' || return 1
+  printf '%s' "$CUERPO_RESP" | grep -q '"estado":"CONFIRMADA"' || return 1
   RECEP_RESERVA_ID="$(printf '%s' "$CUERPO_RESP" | json_get id)"
   [ -n "$RECEP_RESERVA_ID" ]
 }
@@ -668,7 +668,7 @@ t_recep_agenda() {
     printf '%s' "$CUERPO_RESP" | grep -q "\"id\":$RECEP_RESERVA_ID,"
 }
 t_recep_confirma() {
-  api POST "/api/v1/reservas/$RECEP_RESERVA_ID/confirmar" - "$ACCESS" 200
+  api POST "/api/v1/reservas/$RECEP_RESERVA_ID/confirmar" - "$ACCESS" 409
 }
 t_recep_checkin() {
   api POST "/api/v1/recepcion/reservas/$RECEP_RESERVA_ID/checkin" - "$RECEP_TOKEN" 200 &&
@@ -686,6 +686,7 @@ t_recep_cobro() {
   [ -n "$pid" ] || return 1
   api POST "/api/v1/recepcion/reservas/$pid/cobro" '{"medioPago":"YAPE"}' "$RECEP_TOKEN" 200 || return 1
   printf '%s' "$CUERPO_RESP" | grep -q '"pagoEstado":"APROBADO"' || return 1
+  printf '%s' "$CUERPO_RESP" | grep -q '"estado":"CONFIRMADA"' || return 1
   api POST "/api/v1/recepcion/reservas/$pid/cobro" '{"medioPago":"EFECTIVO"}' "$RECEP_TOKEN" 409
 }
 t_recep_incidencias() {
@@ -876,9 +877,9 @@ if [ "$DB_DISPONIBLE" -eq 1 ]; then
     paso 'GET  recepcion/canchas'                 t_recep_canchas
     paso 'GET  recepcion/resumen'                 t_recep_resumen
     paso 'GET  recepcion/clientes'                t_recep_clientes
-    paso 'POST recepcion/reservas (walk-in)'      t_recep_walkin
+    paso 'POST recepcion/reservas (walk-in pagado)' t_recep_walkin
     paso 'GET  recepcion/agenda'                  t_recep_agenda
-    paso 'POST reservas/{id}/confirmar'           t_recep_confirma
+    paso 'POST reservas/{id}/confirmar (ya confirmada)' t_recep_confirma
     paso 'POST recepcion/{id}/checkin'            t_recep_checkin
     paso 'POST recepcion/{id}/checkin repetido'   t_recep_checkin_repetido
     paso 'POST recepcion/{id}/cobro'              t_recep_cobro

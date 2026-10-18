@@ -30,7 +30,8 @@ $env:BASE='http://localhost:4300'; npm run test:e2e
 # "reservada" y la bandeja muestra al titular, su telefono y "Pagado" (ADR-0044). Tambien
 # cambia el tema desde la cabecera del panel y comprueba que persiste al recargar (ADR-0046),
 # bloquea la franja siguiente desde el panel y comprueba que la ficha publica distingue
-# "Reservada" de "Bloqueada" (ADR-0047).
+# "Reservada" de "Bloqueada" (ADR-0047). En recepcion registra un walk-in cobrado en caja y
+# comprueba que queda "CONFIRMADA" con "Check-in" disponible (ADR-0048).
 $env:BASE='http://localhost:4300'
 $env:ADMIN_CORREO='admin@dominio.com'
 $env:ADMIN_PASSWORD='...'

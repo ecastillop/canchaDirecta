@@ -1224,7 +1224,7 @@ if (-not $script:dbDisponible) {
         idCliente = $script:usuarioId; fecha = $fechaRecep; horaInicio = $horaRecep
         duracionMinutos = 60; pagoRecibido = $true
       }
-    if ($r.estado -ne 'PENDIENTE') { throw "estado inesperado: $($r.estado)" }
+    if ($r.estado -ne 'CONFIRMADA') { throw "estado inesperado: $($r.estado)" }
     if ($r.pagoEstado -ne 'APROBADO') { throw "pago inesperado: $($r.pagoEstado)" }
     $script:reservaRecepId = $r.id
   }
@@ -1238,9 +1238,9 @@ if (-not $script:dbDisponible) {
     if (-not $encontrada) { throw 'el walk-in no aparece en la agenda' }
   }
 
-  Paso 'POST /api/v1/reservas/{id}/confirmar (200, el dueno confirma el walk-in)' {
+  Paso 'POST /api/v1/reservas/{id}/confirmar (409, el walk-in ya esta confirmado)' {
     Invoke-Api -Method POST -Path "/api/v1/reservas/$script:reservaRecepId/confirmar" `
-      -Token $tokens.accessToken -Esperado @(200) | Out-Null
+      -Token $tokens.accessToken -Esperado @(409) | Out-Null
   }
 
   Paso 'POST /api/v1/recepcion/reservas/{id}/checkin (200, FINALIZADA)' {
@@ -1265,6 +1265,7 @@ if (-not $script:dbDisponible) {
     $pago = Invoke-Api -Method POST -Path "/api/v1/recepcion/reservas/$($pendiente.id)/cobro" `
       -Token $script:recepToken -Esperado @(200) -Body @{ medioPago = 'YAPE' }
     if ($pago.pagoEstado -ne 'APROBADO') { throw "pago inesperado: $($pago.pagoEstado)" }
+    if ($pago.estado -ne 'CONFIRMADA') { throw "el cobro en mostrador no confirmo la reserva: $($pago.estado)" }
     Invoke-Api -Method POST -Path "/api/v1/recepcion/reservas/$($pendiente.id)/cobro" `
       -Token $script:recepToken -Esperado @(409) -Body @{ medioPago = 'EFECTIVO' } | Out-Null
   }

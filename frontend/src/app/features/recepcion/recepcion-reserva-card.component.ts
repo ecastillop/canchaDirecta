@@ -32,7 +32,7 @@ import { CdButtonDirective } from '../../shared/ui/button/cd-button.directive';
         @if (puedeCobrar()) {
           <button cdButton size="sm" type="button" (click)="cobrar.emit(reserva())">Registrar cobro</button>
         }
-        @if (reserva().estado === 'CONFIRMADA' && !reserva().pagoEstado) {
+        @if (reserva().estado === 'CONFIRMADA') {
           <button cdButton variant="secondary" size="sm" type="button" (click)="checkIn.emit(reserva())">
             Check-in
           </button>

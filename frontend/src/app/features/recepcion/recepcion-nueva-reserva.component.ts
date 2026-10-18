@@ -18,7 +18,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
   template: `
     <p class="cd-small cd-muted intro">
       Registra una reserva presencial para un cliente ya registrado. Si el pago se recibe en el
-      momento, queda aprobado de inmediato.
+      momento, queda aprobado y la reserva se confirma de inmediato.
     </p>
 
     <form class="cd-card formulario" (submit)="registrar($event)" novalidate>
@@ -63,7 +63,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
 
         <label class="cd-field campo--check">
           <input type="checkbox" [checked]="pagoRecibido()" (change)="cambiarPago($event)" />
-          <span>Pago recibido en caja (efectivo)</span>
+          <span>Pago recibido en caja (confirma la reserva)</span>
         </label>
       </div>
 
@@ -268,7 +268,11 @@ export class RecepcionNuevaReservaComponent implements OnInit {
           pagoRecibido: this.pagoRecibido(),
         }),
       );
-      this.toast.success(`Reserva presencial #${creada.id} registrada.`);
+      this.toast.success(
+        creada.estado === 'CONFIRMADA'
+          ? `Reserva presencial #${creada.id} registrada y confirmada.`
+          : `Reserva presencial #${creada.id} registrada (pendiente de confirmación).`,
+      );
       this.limpiarCliente();
       this.idCancha.set(null);
     } catch (error) {

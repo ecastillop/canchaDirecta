@@ -39,12 +39,14 @@ import java.util.Locale;
  * <p>El alcance lo define {@link RecepcionRepositorio}: el operador solo actua sobre las sedes
  * que tiene asignadas y activas; el propietario sobre las suyas; el administrador sobre todas.
  * El check-in cierra la reserva (`CONFIRMADA` -> `FINALIZADA`) y el cobro registra el pago
- * aprobado en efectivo a traves del puerto de pagos.</p>
+ * aprobado en efectivo a traves del puerto de pagos. Un walk-in cobrado en mostrador se confirma
+ * de inmediato: el cliente esta presente y el personal recibio el pago (L-24).</p>
  */
 @ApplicationScoped
 public class RecepcionService implements RecepcionUseCase {
 
     private static final String MOTIVO_CHECKIN = "Check-in en recepcion";
+    private static final String MOTIVO_CONFIRMACION = "Confirmada en recepcion con el pago";
     private static final Duration VENTANA_CHECKIN = Duration.ofHours(2);
     private static final List<String> MEDIOS = List.of("EFECTIVO", "YAPE", "PLIN", "TARJETA", "POS");
 
@@ -145,6 +147,7 @@ public class RecepcionService implements RecepcionUseCase {
                 inicio, fin, null, null, null));
         if (command.pagoRecibido()) {
             registrarCobro(creada, "EFECTIVO", command.codigoOperacion());
+            confirmarEnMostrador(creada);
         }
         return recepcion.reserva(idUsuario, creada.id())
                 .orElseThrow(() -> new DomainException(ErrorCodes.NO_ENCONTRADO,
@@ -188,6 +191,7 @@ public class RecepcionService implements RecepcionUseCase {
             throw new DomainException(ErrorCodes.CONFLICTO, "La reserva ya tiene un pago aprobado.");
         }
         registrarCobro(reserva, normalizarMedio(medioPago), codigoOperacion);
+        confirmarEnMostrador(reserva);
         return recepcion.reserva(idUsuario, idReserva).orElseThrow(() -> new DomainException(
                 ErrorCodes.NO_ENCONTRADO, "La reserva no existe."));
     }
@@ -231,6 +235,21 @@ public class RecepcionService implements RecepcionUseCase {
         pagos.registrarEvento(reserva.id(), idPago, "APROBADO", "Pago recibido en recepcion");
         avisos.avisar(reserva.idUsuario(), "Pago registrado",
                 "Recepcion registro el pago de tu reserva #" + reserva.id() + " por " + monto + ".");
+    }
+
+    /**
+     * En mostrador, cobrar es confirmar: el cliente esta presente y el personal recibio el pago,
+     * asi que la reserva no queda esperando al propietario (L-24). Si ya estaba confirmada, no
+     * se toca el estado.
+     */
+    private void confirmarEnMostrador(Reserva reserva) {
+        if (reserva.estado() != Reserva.Estado.PENDIENTE) {
+            return;
+        }
+        reservaRepositorio.cambiarEstado(reserva.id(), Reserva.Estado.PENDIENTE,
+                Reserva.Estado.CONFIRMADA, MOTIVO_CONFIRMACION);
+        avisos.avisar(reserva.idUsuario(), "Reserva confirmada",
+                "Recepcion confirmo tu reserva #" + reserva.id() + " al recibir el pago.");
     }
 
     private Reserva reservaAtendible(Long idUsuario, Long idReserva) {

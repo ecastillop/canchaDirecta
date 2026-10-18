@@ -1264,3 +1264,43 @@ estado); E2E propietario/admin (rejilla del panel con ambas celdas y ficha publi
 OK, 24/24 unitarios, E2E usuario OK, a11y 34 rutas OK, contraste OK y humo 153/153 PS y 134/134 Bash
 (2026-10-18).
 
+## ADR-0048 - El walk-in cobrado en mostrador queda confirmado
+
+**Contexto:** la reserva presencial (ADR-0038) creaba la reserva a nombre de un cliente registrado y,
+si el operador recibia el pago, lo registraba como `APROBADO`, pero la reserva seguia `PENDIENTE`
+esperando al propietario. El check-in exige `CONFIRMADA`, asi que el walk-in que acababa de pagar en
+caja no podia ingresar hasta que el propietario lo aceptara; ademas la tarjeta de recepcion solo
+mostraba "Check-in" cuando la reserva **no** tenia pago, justo al contrario. Era la limitacion L-24.
+
+**Decision:**
+1. En `RecepcionService`, cualquier cobro aprobado en el mostrador confirma la reserva si estaba
+   `PENDIENTE` (`confirmarEnMostrador`): aplica al walk-in creado con `pagoRecibido=true` y al cobro de
+   una reserva existente (`POST /recepcion/reservas/{id}/cobro`). Cobrar en caja es confirmar: el
+   cliente esta presente y el personal recibio el dinero.
+2. Se registra la traza en `historial_reserva` ("Confirmada en recepcion con el pago") y se avisa al
+   cliente. Si la reserva ya estaba `CONFIRMADA`, no se toca el estado y el segundo cobro sigue dando
+   `409` (RN-05). La reserva online sin pago conserva el flujo actual: queda `PENDIENTE` hasta que el
+   propietario decida.
+3. La tarjeta del portal muestra `Check-in` para cualquier reserva `CONFIRMADA` (con o sin pago) y
+   `Registrar cobro` solo si no hay pago aprobado.
+4. El formulario de reserva presencial lo dice: "Si el pago se recibe en el momento, queda aprobado y
+   la reserva se confirma de inmediato"; el aviso de exito distingue "registrada y confirmada" de
+   "pendiente de confirmacion".
+5. Fuera de alcance: el walk-in **sin cuenta** (persona sin registro) sigue exigiendo un cliente
+   existente; se documenta como decision de producto en L-24.
+
+**Consecuencias:** el mostrador cierra el circuito completo (reservar -> cobrar -> check-in) sin
+depender del propietario, y la bandeja del propietario deja de llenarse con walk-ins ya pagados. El
+estado sigue siendo la unica fuente de verdad: no se anaden tablas ni endpoints, solo una transicion
+explicita y auditada. Un cobro en caja de una reserva que el propietario queria revisar la confirma;
+es el comportamiento esperado en mostrador y queda registrado en el historial con el motivo.
+
+**Evidencia:** `RecepcionTest` (walk-in con pago nace `CONFIRMADA`; el propietario recibe `409` al
+reconfirmarlo; el cobro de un walk-in sin pago lo deja `CONFIRMADA` + `APROBADO`; el check-in sigue
+cerrando la reserva); humo PS y Bash (walk-in pagado `CONFIRMADA` y `409` al reconfirmar, cobro que
+confirma); `recepcion-reserva-card.component.spec.ts` (4/4: cobrar/check-in segun estado y pago); E2E
+propietario/admin (el operador registra un walk-in cobrado, el portal muestra `CONFIRMADA` con
+`Check-in`, captura `docs/evidencias/ui/recepcion-walkin-1440.png`); backend 163/163, build OK, 28/28
+unitarios, E2E usuario OK, a11y 34 rutas OK, contraste OK y humo 153/153 PS y 134/134 Bash
+(2026-10-18).
+
