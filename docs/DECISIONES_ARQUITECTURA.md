@@ -1187,7 +1187,8 @@ confirmacion evitan accidentes sobre otra base del mismo servidor. Correr humo/E
 sembrar filas de prueba, asi que el reset se ejecuta al final, antes de exponer la demo.
 
 **Evidencia:** dos ejecuciones consecutivas del script dejaron `usuarios=4 establecimientos=4
-canchas=16 horarios=112 fotos=32 reservas=2 actividades=1`; sobre esa base pasaron backend 162/162,
+canchas=16 horarios=112 fotos=32 reservas=2 bloqueos=1 reclamos=1 actividades=1` (el bloqueo y el
+reclamo se sumaron con ADR-0047/ADR-0048); sobre esa base pasaron backend 163/163,
 E2E usuario OK (catalogo con 16 canchas y dos paginas), E2E propietario/admin OK, a11y 34 rutas OK y
 humo 153/153 PS y 134/134 Bash. Capturas `docs/evidencias/ui/demo-catalogo-1440.png` y
 `demo-ficha-1440.png` (2026-10-18).

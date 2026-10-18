@@ -8,17 +8,24 @@
 ### Estado del corte
 
 - Repositorio Git inicializado en `canchadirecta/`.
-- Commits relevantes:
-  - `70def9c` snapshot funcional previo al rediseño.
-  - `592b527` rediseño de fusión (identidad, home, catálogo, detalle, login).
-  - `c5cf2f8` favoritos, catálogo enriquecido y sidebars.
-  - `8124fee` panel de cliente con sidebar.
-  - `824ec14` topbar standalone, Actividades, Cómo funciona y sidebars definitivos.
+- **Hoja de ruta de producto cerrada (2026-10-18)**: los siete frentes planificados están hechos;
+  solo queda pulido manual de a11y con lector de pantalla (L-23) y los diagramas finales.
+- Commits relevantes (más reciente primero):
+  - `03a6eb4` el walk-in cobrado en mostrador queda confirmado (ADR-0048, L-24).
+  - `bcafd62` la disponibilidad pública informa si la franja está reservada o bloqueada (ADR-0047).
+  - `2d63eb5` el tema claro/oscuro se controla dentro de los portales (ADR-0046).
+  - `e91ba8b` reset reproducible de la base de demostración (ADR-0045).
+  - `7c7b1bb` la bandeja del propietario muestra al titular y su pago (ADR-0044).
+  - `c03ef6a` ocupación semanal del propietario (ADR-0043); `1c130be` bloqueos desde recepción
+    (ADR-0042); `b2d967b` calendario derivado del horario (ADR-0041).
+  - `70def9c` snapshot funcional previo al rediseño; `592b527` rediseño de fusión; `c5cf2f8`
+    favoritos y catálogo enriquecido; `8124fee` panel de cliente; `824ec14` topbar standalone.
 - Stack operativo: frontend `http://localhost:8083`, backend `http://localhost:8089`,
   MySQL del host `127.0.0.1:3306` (el `compose.yml` usa `host.docker.internal`).
 - Superadmin local: `admin@canchadirecta.pe`; clave en `.env` (`ADMIN_PASSWORD`).
-- Pruebas: backend **162/162**, humo **153/153** (PowerShell) y **134/134** (Bash), unitarios **22/22**,
-  E2E usuario **OK**, E2E propietario/admin **OK**, accesibilidad **34 rutas OK**.
+- Pruebas: backend **163/163**, humo **153/153** (PowerShell) y **134/134** (Bash), unitarios
+  **28/28**, E2E usuario **OK**, E2E propietario/admin **OK**, accesibilidad **34 rutas OK** y
+  contraste **OK** en los 4 portales y ambos modos.
 - Ficha de espacio implementada (2026-10-18): `GET /api/v1/establecimientos/{id}/ficha`,
   ruta `/establecimientos/:id` y enlace desde el detalle de cancha.
 - Actividades reales implementadas (2026-10-18): migración `V14`, API de actividades e
@@ -136,6 +143,9 @@
    la cabecera de `panel`, `admin`, `recepcion` y `cuenta`, con contraste verificado en ambos modos.
 7. ~~**Cara pública de la agenda**~~ (hecho 2026-10-18, ADR-0047): la disponibilidad informa
    `RESERVADA`/`BLOQUEADA` por tramo y la ficha la rotula, con "Cerrado" en los chips de día sin agenda.
+8. **Pulido final (no bloqueante)**: revisión manual de teclado y lector de pantalla (L-23; el
+   contraste ya está automatizado en `frontend/e2e/contraste-modos.mjs`) y los diagramas de
+   arquitectura para el acta.
 
 ### Reglas para continuar
 
@@ -164,17 +174,19 @@ node e2e/contraste-modos.mjs          # contraste en los 4 portales, claro y osc
 ## 0.1 Estado global
 
 
-- **Estado:** **BACKEND + FRONTEND OPERATIVOS**. Backend 162/162 tests y 153/153 humo;
-  frontend Angular 22 compila, pasa 22/22 tests unitarios y 2 suites E2E reales (usuario y
+- **Estado:** **BACKEND + FRONTEND OPERATIVOS**. Backend 163/163 tests y 153/153 humo;
+  frontend Angular 22 compila, pasa 28/28 tests unitarios y 2 suites E2E reales (usuario y
   propietario/admin) contra backend, tanto en dev como en el contenedor Nginx (`8083`). Rediseño
   de fusión aplicado. Fase 0 y Fase 2 completadas. Modo claro/oscuro, badge de notificaciones,
   calendario fiel a la agenda, bloqueos desde recepción y ocupación semanal del propietario
   añadidos (ADR-0039, ADR-0040, ADR-0041, ADR-0042, ADR-0043, ADR-0044), la base de demostración
   se prepara con `scripts/demo-reset.ps1` (ADR-0045), el tema se controla dentro de los cuatro
   portales (ADR-0046), la disponibilidad pública informa el motivo de cada franja ocupada
-  (ADR-0047, L-26 resuelta) y el walk-in cobrado en mostrador queda confirmado (ADR-0048).
+  (ADR-0047, L-26 resuelta) y el walk-in cobrado en mostrador queda confirmado (ADR-0048,
+  L-24 resuelta en lo operativo).
 - **Backend completado y verificado** (modulos `shared`, `identity`, `venues`, `bookings`,
-  `payments`, `settlements`, `engagement`, `platform`): identidad completa (registro, verificacion
+  `payments`, `settlements`, `engagement`, `activities`, `reception`, `platform`): identidad completa
+  (registro, verificacion
   de correo, login con limite de intentos, refresh, logout, recuperacion, perfil editable y
   solicitud de propietario), establecimientos y canchas, catalogo (filtros, ficha con
   fotos/reputacion, comparacion), disponibilidad, reservas con locking + idempotencia +
@@ -187,9 +199,10 @@ node e2e/contraste-modos.mjs          # contraste en los 4 portales, claro y osc
   revocacion de access tokens (L-20) y rate limiting de login (S-4). **Todos los CU del backend
   implementados**; F05 real (pasarela/desembolso) queda **fuera de alcance por decision del
   usuario** y documentado.
-- **Evidencia vigente (2026-10-18):** `mvnw test` -> **162/162 PASS** (`BUILD SUCCESS`); humo
+- **Evidencia vigente (2026-10-18):** `mvnw test` -> **163/163 PASS** (`BUILD SUCCESS`); humo
   -> **153/153 PASS** en `smoke.ps1` y **134/134** en `smoke.sh` contra el contenedor
-  (8089/3306, imagen reconstruida). CI en `.github/workflows/backend.yml` (MySQL 8.4 efimero).
+  (8089/3306, imagen reconstruida); 28/28 unitarios y `e2e/contraste-modos.mjs` OK. CI en
+  `.github/workflows/backend.yml` (MySQL 8.4 efimero).
 - **Estado:** Fase 4 completada y cerrada. Exclusiones documentadas: F05 real, penalidad
   parcial/no-show (L-12) y excepciones de agenda por fecha (L-13).
 - **Frontend (2026-10-17):** Angular 22.2.3 standalone + CDK. **Rediseño de fusión aplicado**
@@ -387,10 +400,10 @@ canchadirecta/
   (`docs/evidencias/ui/panel-agenda-1440.png` y `panel-reservas-1440.png`), backend 162/162, build OK,
   22/22 unitarios, E2E usuario OK y a11y 34 rutas OK.
 - Reset de demo (ADR-0045): `scripts/demo-reset.ps1` corrio dos veces seguidas (idempotente) y dejo
-  `usuarios=4 establecimientos=4 canchas=16 horarios=112 fotos=32 reservas=2 actividades=1`; sobre esa
-  base pasaron backend 162/162, E2E usuario (pagina 2 del catalogo con 16 canchas), E2E
-  propietario/admin, a11y 34 rutas y humo 153/153 PS y 134/134 Bash. Capturas del escenario limpio
-  (`docs/evidencias/ui/demo-catalogo-1440.png` y `demo-ficha-1440.png`).
+  `usuarios=4 establecimientos=4 canchas=16 horarios=112 fotos=32 reservas=2 bloqueos=1 reclamos=1
+  actividades=1`; sobre esa base pasaron backend 163/163, E2E usuario (pagina 2 del catalogo con 16
+  canchas), E2E propietario/admin, a11y 34 rutas y humo 153/153 PS y 134/134 Bash. Capturas del
+  escenario limpio (`docs/evidencias/ui/demo-catalogo-1440.png` y `demo-ficha-1440.png`).
 - Tema dentro de los portales (ADR-0046): 2/2 unitarios del componente, E2E usuario (cuenta a oscuro
   y de vuelta) y E2E propietario/admin (panel a oscuro, persiste al recargar y vuelve a claro),
   `contraste-modos.mjs` OK en 4 portales x 2 modos, a11y 34 rutas OK y humo 153/153 PS y 134/134 Bash;
@@ -427,7 +440,8 @@ canchadirecta/
    **hechos y verificados**. Mantener revisión al cambiar configuración.
 4. **Frontend Angular 22** (Fase 4): operativo y verificado con E2E en dev y Docker. Detalle
    rediseñado, calendario semanal, edicion/baja de establecimiento y reenvio de verificacion
-   listos. Pendiente de pulido: revision manual de teclado/contraste. Ver
+   listos. El contraste de los cuatro portales en claro y oscuro está automatizado
+   (`frontend/e2e/contraste-modos.mjs`); queda la revisión manual con lector de pantalla. Ver
    `docs/LIMITACIONES_CONOCIDAS.md` (L-23).
 5. **Docker**: `compose.yml`, `compose.mysql.yml` y Dockerfiles de backend **y frontend**
    verificados (`frontend` en 8083 con proxy `/api`).
@@ -575,7 +589,7 @@ Ver `docs/DECISIONES_ARQUITECTURA.md`.
 | 2026-10-18 | Bloqueos de cancha desde recepción (`VenuesRepositorio.esGestorDeCancha`, sección "Bloqueos de la fecha" en la agenda del portal) | **PASS** (backend **160/160** (`RecepcionTest` 2/2 con el alta y la baja del operador y los `403` de cancha ajena, horarios y usuario sin asignación), humo **153/153** PS y **134/134** Bash, build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK con alta y baja desde la UI, a11y **34 rutas OK**; ADR-0042; captura `recepcion-bloqueo-1440.png`) |
 | 2026-10-18 | Bandeja del propietario con titular y último pago (`/reservas/recibidas` con `cliente`/`telefono`/`pagoEstado`, DTO propio separado de `/reservas/mias`; bandeja con enlace `tel:` y distintivo de pago) | **PASS** (backend **162/162** con `laBandejaDelPropietarioMuestraAlTitularYSuUltimoPago`, humo **153/153** PS y **134/134** Bash, build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK con reserva y pago por API, rejilla "reservada", titular y "Pagado" en la bandeja, a11y **34 rutas OK**; ADR-0044; capturas `panel-agenda-1440.png` y `panel-reservas-1440.png`) |
 
-| 2026-10-18 | Reset de demo (`scripts/demo-reset.ps1`: respaldo, base recreada + Flyway y siembra por API de admin/propietario/operador/cliente, 4 sedes, 16 canchas, reservas y actividad) | **PASS** (dos ejecuciones seguidas; `usuarios=4 establecimientos=4 canchas=16 horarios=112 fotos=32 reservas=2 actividades=1`; sobre esa base: backend **162/162**, E2E usuario OK (catálogo con 16 canchas y 2 páginas), E2E propietario/admin OK, a11y **34 rutas OK**, humo **153/153** PS y **134/134** Bash; ADR-0045; capturas `demo-catalogo-1440.png` y `demo-ficha-1440.png`) |
+| 2026-10-18 | Reset de demo (`scripts/demo-reset.ps1`: respaldo, base recreada + Flyway y siembra por API de admin/propietario/operador/cliente, 4 sedes, 16 canchas, dos reservas pagadas, bloqueo, reclamo y actividad) | **PASS** (dos ejecuciones seguidas; `usuarios=4 establecimientos=4 canchas=16 horarios=112 fotos=32 reservas=2 bloqueos=1 reclamos=1 actividades=1`; sobre esa base: backend **163/163**, E2E usuario OK (catálogo con 16 canchas y 2 páginas), E2E propietario/admin OK, a11y **34 rutas OK**, humo **153/153** PS y **134/134** Bash; ADR-0045; capturas `demo-catalogo-1440.png` y `demo-ficha-1440.png`) |
 
 | 2026-10-18 | Tema dentro de los portales (`CdThemeToggleComponent` en panel/admin/recepción/cuenta, iconos `sun`/`moon`, `--cd-color-on-danger`/`on-accent` y ajustes de contraste) | **PASS** (24/24 unitarios, 2 nuevos; E2E usuario OK con cambio de tema en la cuenta; E2E propietario/admin OK con persistencia al recargar; `contraste-modos.mjs` OK en **4 portales × 2 modos**; a11y **34 rutas OK**; humo **153/153** PS y **134/134** Bash; ADR-0046; capturas `panel-oscuro-1440.png` y `cuenta-oscuro-1440.png`) |
 
@@ -637,7 +651,8 @@ Valores reales unicamente en `canchadirecta/.env` (gitignored). Nunca en Git.
 La hoja de ruta vigente esta en **`## 0. Mirada hacia adelante`** al inicio de este documento.
 Prioridad inmediata:
 
-1. Pulido de a11y manual (teclado/contraste, L-23) y diagramas finales.
+1. Revisión manual con lector de pantalla (L-23; el contraste ya está automatizado con
+   `frontend/e2e/contraste-modos.mjs`) y los diagramas de arquitectura para el acta.
 
 **Estado:** entrega base cerrada el 2026-10-17; rediseno de fusion, integraciones del standalone y
 bloques A/B/C/D del delta completados el 2026-10-18, más badge de notificaciones, modo claro/oscuro,
@@ -658,6 +673,13 @@ Notas de la última sesión:
   `backend:8080`. Para E2E contra el backend de Compose usar `--proxy-config` hacia 8089.
 - E2E: `npm run test:e2e` y `npm run test:e2e:owner` (requiere `ADMIN_CORREO`/`ADMIN_PASSWORD`);
   ver `frontend/e2e/README.md`.
+- **Demo y cuentas**: `.\scripts\demo-reset.ps1 -Force` deja la base con 4 sedes, 16 canchas,
+  operador asignado, dos reservas pagadas, un bloqueo de mantenimiento y un reclamo de soporte;
+  `propietario@`, `operador@` y `cliente@canchadirecta.pe` usan la clave `DemoCancha2026` y el
+  administrador la de `.env`. Capturas del escenario limpio: `demo-catalogo-1440.png` y
+  `demo-ficha-1440.png`.
+- **Contraste**: `npm run test:a11y` cubre estructura y teclado; `node e2e/contraste-modos.mjs`
+  exige 4.5:1 en los cuatro portales en claro y oscuro (necesita los datos demo y `ADMIN_*`).
 - Humo: usar el MySQL del host (`scripts/smoke.ps1 -BaseUrl http://localhost:8089 -DbPort 3306`, o
   dejar que lea `DB_PORT` de `.env`). El contenedor `canchadirecta-mysql-1` (3309) es **otra** base:
   con 3309 los pasos que leen/escriben la BD fallan (`403` en `/admin/*`, reserva sin finalizar).
