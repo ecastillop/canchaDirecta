@@ -59,7 +59,8 @@ public class PromocionPropietarioResource {
                           @Valid CrearPromocionPropietarioRequest request) {
         var promocion = promociones.crear(idEstablecimiento, idUsuario(), request.codigo(),
                 request.descripcion(), request.tipoDescuento(), request.valor(),
-                request.fechaInicio(), request.fechaFin());
+                request.fechaInicio(), request.fechaFin(), request.limiteUsos(),
+                request.limitePorUsuario());
         return Response.created(UriBuilder.fromPath("/api/v1/establecimientos/{id}/promociones/{idPromocion}")
                         .build(idEstablecimiento, promocion.id()))
                 .entity(AdminPromocionResponse.de(promocion))

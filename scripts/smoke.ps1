@@ -177,6 +177,24 @@ Paso 'GET /api/v1/users/me con token (200)' {
   if ($me.correo -ne $correo) { throw "correo inesperado: $($me.correo)" }
 }
 
+Paso 'GET /api/v1/ayuda (200, categorias y preguntas)' {
+  $ayuda = @(Invoke-Api -Method GET -Path '/api/v1/ayuda')
+  # En Windows PowerShell 5.1 un arreglo devuelto por una funcion puede llegar anidado.
+  if ($ayuda.Count -eq 1 -and $ayuda[0] -is [array]) { $ayuda = @($ayuda[0]) }
+  if ($ayuda.Count -lt 5) { throw "categorias inesperadas: $($ayuda.Count)" }
+  if (@($ayuda[0].articulos).Count -lt 1) { throw 'la primera categoria no trae articulos' }
+}
+
+Paso 'GET /api/v1/ayuda?texto=reembolso (200, filtra)' {
+  $ayuda = @(Invoke-Api -Method GET -Path '/api/v1/ayuda?texto=reembolso')
+  if ($ayuda.Count -eq 1 -and $ayuda[0] -is [array]) { $ayuda = @($ayuda[0]) }
+  if ($ayuda.Count -lt 1) { throw 'la busqueda no devolvio categorias' }
+  $preguntas = @($ayuda | ForEach-Object { $_.articulos } | ForEach-Object { $_.pregunta })
+  if (-not ($preguntas | Where-Object { $_ -match 'reembolso' })) {
+    throw 'la busqueda no devolvio la pregunta de reembolso'
+  }
+}
+
 $rotado = $null
 Paso 'POST /api/v1/auth/refresh (rota el refresh)' {
   $script:rotado = Invoke-Api -Method POST -Path '/api/v1/auth/refresh' -Body @{
@@ -270,6 +288,15 @@ Paso 'PUT /api/v1/canchas/{id}/deportes (200)' {
   if (@($d.deportes).Count -ne 1) { throw "deportes inesperados: $(@($d.deportes).Count)" }
 }
 
+Paso 'PUT /api/v1/canchas/{id}/caracteristicas (200)' {
+  $ch = Invoke-Api -Method GET -Path '/api/v1/caracteristicas'
+  if (@($ch).Count -lt 1) { throw 'no hay caracteristicas' }
+  $script:caracteristicaId = $ch[0].id
+  $c = Invoke-Api -Method PUT -Path "/api/v1/canchas/$script:canchaId/caracteristicas" `
+    -Token $tokens.accessToken -Esperado @(200) -Body @{ ids = @($script:caracteristicaId) }
+  if (@($c.caracteristicas).Count -ne 1) { throw "caracteristicas inesperadas: $(@($c.caracteristicas).Count)" }
+}
+
 Paso 'POST /api/v1/canchas/{id}/fotos (201)' {
   $f = Invoke-Api -Method POST -Path "/api/v1/canchas/$script:canchaId/fotos" `
     -Token $tokens.accessToken -Esperado @(201) `
@@ -283,6 +310,89 @@ Paso 'GET /api/v1/canchas/{id} (200, con atributos y fotos)' {
   if (@($c.deportes).Count -lt 1) { throw 'la ficha no trae deportes' }
   if (@($c.fotos).Count -lt 1) { throw 'la ficha no trae fotos' }
   if ($c.distrito.departamento -ne 'Lima') { throw "departamento inesperado: $($c.distrito.departamento)" }
+}
+
+Paso 'GET /api/v1/establecimientos/{id}/ficha (200, espacio con canchas y servicios)' {
+  $e = Invoke-Api -Method GET -Path "/api/v1/establecimientos/$script:establecimientoId/ficha"
+  if ($e.id -ne $script:establecimientoId) { throw "establecimiento inesperado: $($e.id)" }
+  $ids = @($e.canchas | ForEach-Object { $_.id })
+  if ($ids -notcontains $script:canchaId) { throw "la cancha $script:canchaId no aparece en la ficha" }
+  if (@($e.servicios).Count -lt 1) { throw 'la ficha no trae servicios' }
+  if (@($e.fotos).Count -lt 1) { throw 'la ficha no trae fotos' }
+  if ($null -eq $e.precioDesde) { throw 'la ficha no trae precio desde' }
+}
+
+# --- Actividades e inscripciones (F09) ---------------------------------------
+Paso 'POST /api/v1/establecimientos/{id}/actividades (201)' {
+  $inicio = [DateTime]::UtcNow.AddDays(2)
+  $script:actividadId = (Invoke-Api -Method POST -Path "/api/v1/establecimientos/$script:establecimientoId/actividades" `
+      -Token $tokens.accessToken -Esperado @(201) -Body @{
+        nombre      = "Torneo Smoke $([DateTime]::UtcNow.Ticks)"
+        descripcion = 'Actividad de prueba de humo'
+        inicio      = $inicio.ToString('yyyy-MM-ddTHH:mm:ssZ')
+        fin         = $inicio.AddHours(2).ToString('yyyy-MM-ddTHH:mm:ssZ')
+        cupos       = 2
+        precio      = 15.00
+      }).id
+  if (-not $script:actividadId) { throw 'sin id de actividad' }
+}
+
+Paso 'GET /api/v1/actividades incluye la actividad (200)' {
+  $lista = @(Invoke-Api -Method GET -Path '/api/v1/actividades?limite=100')
+  if (-not ($lista | Where-Object { $_.id -eq $script:actividadId })) {
+    throw "la actividad $script:actividadId no aparece en el catalogo"
+  }
+}
+
+Paso 'GET /api/v1/establecimientos/{id}/actividades (200, propietario)' {
+  $lista = @(Invoke-Api -Method GET -Path "/api/v1/establecimientos/$script:establecimientoId/actividades" `
+      -Token $tokens.accessToken)
+  if (-not ($lista | Where-Object { $_.id -eq $script:actividadId })) {
+    throw 'la actividad no aparece en la gestion del propietario'
+  }
+}
+
+Paso 'POST /api/v1/actividades/{id}/inscripciones (201)' {
+  $i = Invoke-Api -Method POST -Path "/api/v1/actividades/$script:actividadId/inscripciones" `
+    -Token $tokens.accessToken -Esperado @(201)
+  if ($i.estado -ne 'CONFIRMADA') { throw "estado inesperado: $($i.estado)" }
+}
+
+Paso 'POST /api/v1/actividades/{id}/inscripciones duplicada (409)' {
+  Invoke-Api -Method POST -Path "/api/v1/actividades/$script:actividadId/inscripciones" `
+    -Token $tokens.accessToken -Esperado @(409) | Out-Null
+}
+
+Paso 'GET /api/v1/inscripciones/mias (200)' {
+  $mias = @(Invoke-Api -Method GET -Path '/api/v1/inscripciones/mias' -Token $tokens.accessToken)
+  if (-not ($mias | Where-Object { $_.idActividad -eq $script:actividadId -and $_.estado -eq 'CONFIRMADA' })) {
+    throw 'la inscripcion no aparece en mis inscripciones'
+  }
+}
+
+Paso 'GET /api/v1/actividades/{id}/inscripciones (200, propietario)' {
+  $inscritos = @(Invoke-Api -Method GET -Path "/api/v1/actividades/$script:actividadId/inscripciones" `
+      -Token $tokens.accessToken)
+  if (@($inscritos).Count -ne 1) { throw "inscritos inesperados: $(@($inscritos).Count)" }
+}
+
+Paso 'DELETE /api/v1/actividades/{id}/inscripciones (204)' {
+  Invoke-Api -Method DELETE -Path "/api/v1/actividades/$script:actividadId/inscripciones" `
+    -Token $tokens.accessToken -Esperado @(204) | Out-Null
+}
+
+Paso 'DELETE /api/v1/actividades/{id} (204, cancela)' {
+  Invoke-Api -Method DELETE -Path "/api/v1/actividades/$script:actividadId" `
+    -Token $tokens.accessToken -Esperado @(204) | Out-Null
+}
+
+Paso 'GET /api/v1/establecimientos/{id}/metricas (200, panel propietario)' {
+  $m = Invoke-Api -Method GET -Path "/api/v1/establecimientos/$script:establecimientoId/metricas?dias=7" `
+    -Token $tokens.accessToken
+  if ($m.dias -ne 7) { throw "dias inesperados: $($m.dias)" }
+  if (@($m.serie).Count -ne 7) { throw "serie inesperada: $(@($m.serie).Count)" }
+  if ($m.resumen.canchasActivas -lt 1) { throw 'sin canchas activas en las metricas' }
+  if ($null -eq $m.resumen.ingresos) { throw 'sin ingresos en el resumen' }
 }
 
 Paso 'GET /api/v1/canchas con filtros (200)' {
@@ -349,8 +459,11 @@ Paso 'POST /api/v1/establecimientos/{id}/promociones (201)' {
       valor = 10
       fechaInicio = $fechaIso
       fechaFin = $fechaLima.AddDays(30).ToString('yyyy-MM-dd')
+      limiteUsos = 1
+      limitePorUsuario = 1
     }
   if ($p.estado -ne 'ACTIVA') { throw "estado inesperado: $($p.estado)" }
+  if ($p.limiteUsos -ne 1) { throw "limiteUsos inesperado: $($p.limiteUsos)" }
 }
 
 Paso 'POST /api/v1/reservas con codigoPromocion (201, descuento 8.00)' {
@@ -360,6 +473,15 @@ Paso 'POST /api/v1/reservas con codigoPromocion (201, descuento 8.00)' {
              codigoPromocion = $script:codigoPromocion }
   if ($r.montoCancha -ne 80.00) { throw "monto inesperado: $($r.montoCancha)" }
   if ($r.montoDescuento -ne 8.00) { throw "descuento inesperado: $($r.montoDescuento)" }
+}
+
+Paso 'POST /api/v1/reservas con cupon agotado (409)' {
+  $inicioCupon = $fechaLima.AddHours(11).AddHours(5).ToString("yyyy-MM-ddTHH:mm:ss'Z'")
+  $finCupon = $fechaLima.AddHours(12).AddHours(5).ToString("yyyy-MM-ddTHH:mm:ss'Z'")
+  Invoke-Api -Method POST -Path '/api/v1/reservas' -Token $tokens.accessToken `
+    -Esperado @(409) `
+    -Body @{ canchaId = $script:canchaId; inicio = $inicioCupon; fin = $finCupon
+             codigoPromocion = $script:codigoPromocion } | Out-Null
 }
 
 Paso 'GET disponibilidad excluye la franja reservada (200)' {
@@ -823,6 +945,68 @@ if (-not $script:dbDisponible) {
     -Body @{ correo = $correo; password = $password }
   $script:adminToken = $admin.accessToken
 
+  Paso 'GET /api/v1/admin/reportes (200, PLATFORM_ADMIN)' {
+    $rep = Invoke-Api -Method GET -Path '/api/v1/admin/reportes?dias=7' -Token $script:adminToken
+    if ($rep.dias -ne 7) { throw "dias inesperados: $($rep.dias)" }
+    if (@($rep.serie).Count -ne 7) { throw "serie inesperada: $(@($rep.serie).Count)" }
+    if ($rep.resumen.usuarios -lt 1) { throw 'sin usuarios en el reporte' }
+  }
+
+  Paso 'GET /api/v1/admin/configuracion (200)' {
+    $script:cfgOriginal = Invoke-Api -Method GET -Path '/api/v1/admin/configuracion' `
+      -Token $script:adminToken
+    if ($script:cfgOriginal.diasAnticipacionMax -lt 1) { throw 'anticipacion invalida' }
+    if ([string]::IsNullOrWhiteSpace($script:cfgOriginal.correoSoporte)) { throw 'sin correo de soporte' }
+  }
+
+  Paso 'PUT /api/v1/admin/configuracion (200, actualiza)' {
+    $cfg = Invoke-Api -Method PUT -Path '/api/v1/admin/configuracion' `
+      -Token $script:adminToken -Esperado @(200) `
+      -Body @{ comisionPorcentaje = 12.50; horasCancelacionGratis = 48; horasMinimasCancelacion = 3;
+               diasAnticipacionMax = 120; correoSoporte = 'ayuda@canchadirecta.pe' }
+    if ($cfg.diasAnticipacionMax -ne 120) { throw "anticipacion inesperada: $($cfg.diasAnticipacionMax)" }
+    if ([decimal]$cfg.comisionPorcentaje -ne 12.5) { throw "comision inesperada: $($cfg.comisionPorcentaje)" }
+  }
+
+  Paso 'GET /api/v1/admin/configuracion (200, refleja el cambio)' {
+    $cfg = Invoke-Api -Method GET -Path '/api/v1/admin/configuracion' -Token $script:adminToken
+    if ($cfg.horasCancelacionGratis -ne 48) { throw "horas inesperadas: $($cfg.horasCancelacionGratis)" }
+    if ($cfg.correoSoporte -ne 'ayuda@canchadirecta.pe') { throw "correo inesperado: $($cfg.correoSoporte)" }
+  }
+
+  Paso 'PUT /api/v1/admin/configuracion (400, comision invalida)' {
+    Invoke-Api -Method PUT -Path '/api/v1/admin/configuracion' `
+      -Token $script:adminToken -Esperado @(400) `
+      -Body @{ comisionPorcentaje = 101; horasCancelacionGratis = 24; horasMinimasCancelacion = 2;
+               diasAnticipacionMax = 365; correoSoporte = 'soporte@canchadirecta.pe' } | Out-Null
+  }
+
+  Paso 'PUT /api/v1/admin/configuracion (200, restaura)' {
+    $cfg = Invoke-Api -Method PUT -Path '/api/v1/admin/configuracion' `
+      -Token $script:adminToken -Esperado @(200) `
+      -Body @{ comisionPorcentaje = $script:cfgOriginal.comisionPorcentaje;
+               horasCancelacionGratis = $script:cfgOriginal.horasCancelacionGratis;
+               horasMinimasCancelacion = $script:cfgOriginal.horasMinimasCancelacion;
+               diasAnticipacionMax = $script:cfgOriginal.diasAnticipacionMax;
+               correoSoporte = $script:cfgOriginal.correoSoporte }
+    if ($cfg.diasAnticipacionMax -ne $script:cfgOriginal.diasAnticipacionMax) {
+      throw 'no se restauro la anticipacion'
+    }
+  }
+
+  Paso 'GET /api/v1/admin/actividades (200, incluye actividades)' {
+    $acts = @(Invoke-Api -Method GET -Path '/api/v1/admin/actividades?limite=200' -Token $script:adminToken)
+    if (@($acts).Count -lt 1) { throw 'sin actividades para administracion' }
+  }
+
+  Paso 'POST /api/v1/admin/establecimientos/{id}/estado (200, activa/desactiva)' {
+    Invoke-Api -Method POST -Path "/api/v1/admin/establecimientos/$script:establecimientoId/estado" `
+      -Token $script:adminToken -Esperado @(200) -Body @{ estado = 'INACTIVO' } | Out-Null
+    $act = Invoke-Api -Method POST -Path "/api/v1/admin/establecimientos/$script:establecimientoId/estado" `
+      -Token $script:adminToken -Esperado @(200) -Body @{ estado = 'ACTIVO' }
+    if ($act.estado -ne 'ACTIVO') { throw "estado inesperado: $($act.estado)" }
+  }
+
   Paso 'GET /api/v1/admin/reclamos (200, PLATFORM_ADMIN)' {
     $lista = Invoke-Api -Method GET -Path '/api/v1/admin/reclamos?estado=ABIERTO&limite=200' `
       -Token $script:adminToken
@@ -959,6 +1143,150 @@ if (-not $script:dbDisponible) {
     $tokens.accessToken = $usuario.accessToken
     $tokens.refreshToken = $usuario.refreshToken
     if (-not $tokens.accessToken) { throw 'sin token de usuario tras el cambio de roles' }
+  }
+
+  # --- Recepcion (Bloque D, ADR-0038) ------------------------------------------
+  # El personal opera solo las sedes que la administracion le asigna; el rol viaja en el JWT.
+  $correoRecep = "recepcion.$([DateTime]::UtcNow.Ticks)@canchadirecta.pe"
+
+  Paso 'POST /api/v1/auth/register operador de recepcion (201)' {
+    Invoke-Api -Method POST -Path '/api/v1/auth/register' -Esperado @(201) -Body @{
+      nombres = 'Operador'; apellidos = 'Recepcion'; correo = $correoRecep; telefono = '955444333'
+      password = $password; confirmacionPassword = $password
+    } | Out-Null
+    $script:idRecep = [int](Invoke-Sql "SELECT id_usuario FROM usuario WHERE correo='$correoRecep'" |
+      Select-Object -First 1)
+    if (-not $script:idRecep) { throw 'sin id de operador de recepcion' }
+  }
+
+  Paso 'GET /api/v1/recepcion/establecimientos sin rol OPERADOR (403)' {
+    $tokenRecep = (Invoke-Api -Method POST -Path '/api/v1/auth/login' -Esperado @(200) `
+      -Body @{ correo = $correoRecep; password = $password }).accessToken
+    Invoke-Api -Method GET -Path '/api/v1/recepcion/establecimientos' `
+      -Token $tokenRecep -Esperado @(403) | Out-Null
+  }
+
+  Paso 'POST /api/v1/admin/establecimientos/{id}/operadores (201)' {
+    $ops = Invoke-Api -Method POST -Path "/api/v1/admin/establecimientos/$script:establecimientoId/operadores" `
+      -Token $script:adminToken -Esperado @(201) `
+      -Body @{ idUsuario = $script:idRecep; cargo = 'Recepcion' }
+    if (@($ops).Count -ne 1) { throw "operadores inesperados: $(@($ops).Count)" }
+    if ($ops[0].correo -ne $correoRecep) { throw "correo inesperado: $($ops[0].correo)" }
+  }
+
+  Paso 'POST /api/v1/auth/login operador (200, con rol OPERADOR)' {
+    $script:recepToken = (Invoke-Api -Method POST -Path '/api/v1/auth/login' -Esperado @(200) `
+      -Body @{ correo = $correoRecep; password = $password }).accessToken
+    if (-not $script:recepToken) { throw 'sin token de recepcion' }
+  }
+
+  Paso 'GET /api/v1/recepcion/establecimientos (200, la sede asignada)' {
+    $sedes = @(Invoke-Api -Method GET -Path '/api/v1/recepcion/establecimientos' -Token $script:recepToken)
+    $encontrada = $false
+    foreach ($s in $sedes) { if ($s.id -eq $script:establecimientoId) { $encontrada = $true } }
+    if (-not $encontrada) { throw 'la sede asignada no aparece en recepcion' }
+  }
+
+  Paso 'GET /api/v1/recepcion/canchas (200)' {
+    $canchas = @(Invoke-Api -Method GET `
+      -Path "/api/v1/recepcion/canchas?idEstablecimiento=$script:establecimientoId" -Token $script:recepToken)
+    if (@($canchas).Count -lt 1) { throw 'sin canchas de recepcion' }
+  }
+
+  Paso 'GET /api/v1/recepcion/resumen (200)' {
+    $r = Invoke-Api -Method GET -Path '/api/v1/recepcion/resumen' -Token $script:recepToken
+    if ($r.canchasDisponibles -lt 1) { throw "canchas inesperadas: $($r.canchasDisponibles)" }
+  }
+
+  Paso 'GET /api/v1/recepcion/clientes (200, busca al cliente registrado)' {
+    $clientes = @(Invoke-Api -Method GET -Path '/api/v1/recepcion/clientes?q=Smoke' -Token $script:recepToken)
+    $encontrado = $false
+    foreach ($c in $clientes) { if ($c.id -eq $script:usuarioId) { $encontrado = $true } }
+    if (-not $encontrado) { throw 'el cliente de humo no aparece en la busqueda' }
+  }
+
+  # Franja propia del dia de hoy (hora de Lima, UTC-5): libre de las reservas del humo.
+  $ahoraLima = (Get-Date).ToUniversalTime().AddHours(-5)
+  $inicioRecep = $ahoraLima.AddMinutes(40)
+  $fechaRecep = $inicioRecep.ToString('yyyy-MM-dd')
+  $horaRecep = $inicioRecep.ToString('HH:mm')
+
+  Paso 'POST /api/v1/recepcion/reservas (201, walk-in con pago aprobado)' {
+    $r = Invoke-Api -Method POST -Path '/api/v1/recepcion/reservas' -Token $script:recepToken `
+      -Esperado @(201) -Body @{
+        idEstablecimiento = $script:establecimientoId; idCancha = $script:canchaId
+        idCliente = $script:usuarioId; fecha = $fechaRecep; horaInicio = $horaRecep
+        duracionMinutos = 60; pagoRecibido = $true
+      }
+    if ($r.estado -ne 'PENDIENTE') { throw "estado inesperado: $($r.estado)" }
+    if ($r.pagoEstado -ne 'APROBADO') { throw "pago inesperado: $($r.pagoEstado)" }
+    $script:reservaRecepId = $r.id
+  }
+
+  Paso 'GET /api/v1/recepcion/agenda (200, incluye el walk-in)' {
+    $agenda = @(Invoke-Api -Method GET `
+      -Path "/api/v1/recepcion/agenda?fecha=$fechaRecep&idEstablecimiento=$script:establecimientoId" `
+      -Token $script:recepToken)
+    $encontrada = $false
+    foreach ($a in $agenda) { if ($a.id -eq $script:reservaRecepId) { $encontrada = $true } }
+    if (-not $encontrada) { throw 'el walk-in no aparece en la agenda' }
+  }
+
+  Paso 'POST /api/v1/reservas/{id}/confirmar (200, el dueno confirma el walk-in)' {
+    Invoke-Api -Method POST -Path "/api/v1/reservas/$script:reservaRecepId/confirmar" `
+      -Token $tokens.accessToken -Esperado @(200) | Out-Null
+  }
+
+  Paso 'POST /api/v1/recepcion/reservas/{id}/checkin (200, FINALIZADA)' {
+    $r = Invoke-Api -Method POST -Path "/api/v1/recepcion/reservas/$script:reservaRecepId/checkin" `
+      -Token $script:recepToken -Esperado @(200)
+    if ($r.estado -ne 'FINALIZADA') { throw "estado inesperado: $($r.estado)" }
+  }
+
+  Paso 'POST /api/v1/recepcion/reservas/{id}/checkin de nuevo (409)' {
+    Invoke-Api -Method POST -Path "/api/v1/recepcion/reservas/$script:reservaRecepId/checkin" `
+      -Token $script:recepToken -Esperado @(409) | Out-Null
+  }
+
+  Paso 'POST /api/v1/recepcion/reservas/{id}/cobro (200, YAPE)' {
+    $inicioCobro = $ahoraLima.AddHours(3)
+    $pendiente = Invoke-Api -Method POST -Path '/api/v1/recepcion/reservas' -Token $script:recepToken `
+      -Esperado @(201) -Body @{
+        idEstablecimiento = $script:establecimientoId; idCancha = $script:canchaId
+        idCliente = $script:usuarioId; fecha = $inicioCobro.ToString('yyyy-MM-dd')
+        horaInicio = $inicioCobro.ToString('HH:mm'); duracionMinutos = 60; pagoRecibido = $false
+      }
+    $pago = Invoke-Api -Method POST -Path "/api/v1/recepcion/reservas/$($pendiente.id)/cobro" `
+      -Token $script:recepToken -Esperado @(200) -Body @{ medioPago = 'YAPE' }
+    if ($pago.pagoEstado -ne 'APROBADO') { throw "pago inesperado: $($pago.pagoEstado)" }
+    Invoke-Api -Method POST -Path "/api/v1/recepcion/reservas/$($pendiente.id)/cobro" `
+      -Token $script:recepToken -Esperado @(409) -Body @{ medioPago = 'EFECTIVO' } | Out-Null
+  }
+
+  Paso 'POST /api/v1/recepcion/incidencias (201) y GET (200)' {
+    $i = Invoke-Api -Method POST -Path '/api/v1/recepcion/incidencias' -Token $script:recepToken `
+      -Esperado @(201) -Body @{ asunto = 'Cancha mojada'; descripcion = 'Se solicito mantenimiento.';
+        idReserva = $script:reservaRecepId }
+    if ($i.estado -ne 'ABIERTO') { throw "estado inesperado: $($i.estado)" }
+    $incidencias = @(Invoke-Api -Method GET -Path '/api/v1/recepcion/incidencias' -Token $script:recepToken)
+    if (@($incidencias).Count -lt 1) { throw 'sin incidencias registradas' }
+  }
+
+  Paso 'GET /api/v1/recepcion/establecimientos sin token (401)' {
+    Invoke-Api -Method GET -Path '/api/v1/recepcion/establecimientos' -Esperado @(401) | Out-Null
+  }
+
+  Paso 'DELETE /api/v1/admin/establecimientos/{id}/operadores/{id} (200, sin operadores)' {
+    $ops = Invoke-Api -Method DELETE `
+      -Path "/api/v1/admin/establecimientos/$script:establecimientoId/operadores/$script:idRecep" `
+      -Token $script:adminToken -Esperado @(200)
+    if (@($ops).Count -ne 0) { throw "operadores inesperados: $(@($ops).Count)" }
+  }
+
+  Paso 'GET /api/v1/recepcion/agenda tras quitar la asignacion (403)' {
+    Invoke-Api -Method GET `
+      -Path "/api/v1/recepcion/agenda?idEstablecimiento=$script:establecimientoId" `
+      -Token $script:recepToken -Esperado @(403) | Out-Null
   }
 
   Paso 'POST /api/v1/admin/promociones (201)' {

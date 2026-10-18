@@ -56,7 +56,8 @@ public class AdminPromocionResource {
     public Response crear(@Valid CrearPromocionRequest request) {
         var promocion = admin.crearPromocion(idAdministrador(), request.codigo(),
                 request.descripcion(), request.tipoDescuento(), request.valor(),
-                request.fechaInicio(), request.fechaFin(), request.canchas());
+                request.fechaInicio(), request.fechaFin(), request.limiteUsos(),
+                request.limitePorUsuario(), request.canchas());
         return Response.created(UriBuilder.fromPath("/api/v1/admin/promociones/{id}")
                         .build(promocion.id()))
                 .entity(AdminPromocionResponse.de(promocion))

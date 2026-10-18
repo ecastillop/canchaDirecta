@@ -1,6 +1,8 @@
 import { A11yModule } from '@angular/cdk/a11y';
 import { ChangeDetectionStrategy, Component, HostListener, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter, map, startWith } from 'rxjs';
 import { AuthStore } from '../../core/auth/auth.store';
 import { LoadingService } from '../../core/http/loading.service';
 import { PALETTES, PaletteId, ThemeService } from '../../core/theme/theme.service';
@@ -17,7 +19,8 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
       <div class="progress" role="progressbar" aria-label="Cargando"></div>
     }
 
-    <header class="topbar">
+    @if (!portal()) {
+      <header class="topbar">
       <div class="topbar__inner">
         <button
           type="button"
@@ -42,6 +45,7 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
           <a routerLink="/canchas" routerLinkActive="activo">Espacios</a>
           <a routerLink="/actividades" routerLinkActive="activo">Actividades</a>
           <a routerLink="/como-funciona" routerLinkActive="activo">Cómo funciona</a>
+          <a routerLink="/ayuda" routerLinkActive="activo">Ayuda</a>
         </nav>
 
         <div class="cuenta">
@@ -66,10 +70,14 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
                 <a routerLink="/mis-reservas">Mis reservas</a>
                 <a routerLink="/favoritos">Favoritos</a>
                 <a routerLink="/notificaciones">Notificaciones</a>
+                <a routerLink="/ayuda">Centro de ayuda</a>
                 <a routerLink="/reclamos">Reclamos</a>
                 <a routerLink="/perfil">Mi perfil</a>
                 @if (auth.isOwner() || auth.isAdmin()) {
                   <a routerLink="/panel">Panel del propietario</a>
+                }
+                @if (auth.isOperador()) {
+                  <a routerLink="/recepcion">Recepción</a>
                 }
                 @if (auth.isAdmin()) {
                   <a routerLink="/admin">Administración</a>
@@ -98,6 +106,7 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
           <a routerLink="/canchas">Espacios</a>
           <a routerLink="/actividades">Actividades</a>
           <a routerLink="/como-funciona">Cómo funciona</a>
+          <a routerLink="/ayuda">Centro de ayuda</a>
           @if (auth.isAuthenticated()) {
             <a routerLink="/mis-reservas">Mis reservas</a>
             <a routerLink="/favoritos">Favoritos</a>
@@ -107,6 +116,9 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
           }
           @if (auth.isOwner() || auth.isAdmin()) {
             <a routerLink="/panel">Panel del propietario</a>
+          }
+          @if (auth.isOperador()) {
+            <a routerLink="/recepcion">Recepción</a>
           }
           @if (auth.isAdmin()) {
             <a routerLink="/admin">Administración</a>
@@ -128,12 +140,14 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
         </div>
       </aside>
     }
+    }
 
     <main id="contenido" tabindex="-1">
       <router-outlet />
     </main>
 
-    <footer class="pie">
+    @if (!portal()) {
+      <footer class="pie">
       <div class="cd-container pie__grid">
         <div class="pie__marca">
           <a routerLink="/" class="marca marca--pie" aria-label="CanchaDirecta, ir al inicio">
@@ -170,9 +184,10 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
         </div>
         <div class="pie__col">
           <strong>Ayuda</strong>
+          <a routerLink="/ayuda">Centro de ayuda</a>
+          <a routerLink="/reclamos">Reclamos</a>
           <span>soporte&#64;canchadirecta.demo</span>
           <span>Lima, Perú</span>
-          <span>Pagos simulados</span>
         </div>
       </div>
       <div class="cd-container pie__bottom">
@@ -186,7 +201,8 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
           </select>
         </label>
       </div>
-    </footer>
+      </footer>
+    }
 
     <cd-toast-host />
   `,
@@ -674,6 +690,20 @@ export class ShellComponent {
   protected readonly year = new Date().getFullYear();
   protected readonly drawerOpen = signal(false);
   protected readonly inicial = computed(() => this.auth.fullName().charAt(0).toUpperCase() || '?');
+  private readonly url = toSignal(
+    this.router.events.pipe(
+      filter((evento): evento is NavigationEnd => evento instanceof NavigationEnd),
+      map(() => this.router.url),
+      startWith(this.router.url),
+    ),
+    { initialValue: this.router.url },
+  );
+  /** Las areas privadas usan su propio portal (sidebar + topbar) sin cabecera publica. */
+  protected readonly portal = computed(() =>
+    /^\/(panel|mi-resumen|mis-reservas|mis-inscripciones|favoritos|notificaciones|reclamos|perfil|admin|recepcion)(\/|$)/.test(
+      this.url(),
+    ),
+  );
 
   @HostListener('document:keydown.escape')
   protected cerrarDrawer(): void {

@@ -3,9 +3,9 @@ package pe.com.canchadirecta.payments.application.service;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pe.com.canchadirecta.payments.application.port.out.PagoRepositorio;
 import pe.com.canchadirecta.payments.domain.model.Pago;
+import pe.com.canchadirecta.shared.application.port.out.ConfiguracionPlataforma;
 import pe.com.canchadirecta.shared.application.port.out.PoliticaReembolso;
 
 import java.time.Instant;
@@ -32,15 +32,12 @@ import java.util.Optional;
 public class PoliticaReembolsoService implements PoliticaReembolso {
 
     private final PagoRepositorio pagos;
-    private final long horasCancelacionGratis;
+    private final ConfiguracionPlataforma configuracion;
 
     @Inject
-    public PoliticaReembolsoService(
-            PagoRepositorio pagos,
-            @ConfigProperty(name = "cd.pagos.horas-cancelacion-gratis", defaultValue = "24")
-            long horasCancelacionGratis) {
+    public PoliticaReembolsoService(PagoRepositorio pagos, ConfiguracionPlataforma configuracion) {
         this.pagos = pagos;
-        this.horasCancelacionGratis = horasCancelacionGratis;
+        this.configuracion = configuracion;
     }
 
     @Override
@@ -51,6 +48,7 @@ public class PoliticaReembolsoService implements PoliticaReembolso {
             return;
         }
         Pago pago = aprobado.get();
+        long horasCancelacionGratis = configuracion.horasCancelacionGratis();
         if (!porPropietario && momento.isAfter(inicioReserva.minus(horasCancelacionGratis, ChronoUnit.HOURS))) {
             // Cancelacion tardia: la politica no genera reembolso (L-12).
             return;

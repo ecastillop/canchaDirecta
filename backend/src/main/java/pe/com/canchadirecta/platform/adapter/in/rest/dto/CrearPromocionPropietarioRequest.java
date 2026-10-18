@@ -1,6 +1,7 @@
 package pe.com.canchadirecta.platform.adapter.in.rest.dto;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -28,6 +29,10 @@ public record CrearPromocionPropietarioRequest(
         @NotNull(message = "La fecha de inicio es obligatoria.")
         LocalDate fechaInicio,
         @NotNull(message = "La fecha de fin es obligatoria.")
-        LocalDate fechaFin
+        LocalDate fechaFin,
+        @Min(value = 1, message = "El limite total de usos debe ser mayor que cero.")
+        Integer limiteUsos,
+        @Min(value = 1, message = "El limite por usuario debe ser mayor que cero.")
+        Integer limitePorUsuario
 ) {
 }

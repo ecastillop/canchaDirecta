@@ -17,8 +17,49 @@
 - Stack operativo: frontend `http://localhost:8083`, backend `http://localhost:8089`,
   MySQL del host `127.0.0.1:3306` (el `compose.yml` usa `host.docker.internal`).
 - Superadmin local: `admin@canchadirecta.pe`; clave en `.env` (`ADMIN_PASSWORD`).
-- Pruebas: backend **146/146**, humo **112/112**, unitarios **15/15**, E2E usuario **15/15**,
-  E2E propietario/admin **28/28**, accesibilidad **16 rutas OK**.
+- Pruebas: backend **160/160**, humo **153/153** (PowerShell) y **134/134** (Bash), unitarios **22/22**,
+  E2E usuario **OK**, E2E propietario/admin **OK**, accesibilidad **34 rutas OK**.
+- Ficha de espacio implementada (2026-10-18): `GET /api/v1/establecimientos/{id}/ficha`,
+  ruta `/establecimientos/:id` y enlace desde el detalle de cancha.
+- Actividades reales implementadas (2026-10-18): migración `V14`, API de actividades e
+  inscripciones con cupos, panel del propietario `/panel/actividades` y
+  `/mis-inscripciones` para el cliente.
+- Cupones con límites implementados (2026-10-18): migración `V15`, límite total y por
+  cliente en promociones, canje atómico al reservar, liberación al cancelar/rechazar/expirar
+  y contador de canjes en el panel del propietario.
+- Centro de ayuda implementado (2026-10-18): migración `V16`, API pública `GET /api/v1/ayuda`
+  con búsqueda, página `/ayuda` con acordeones y enlaces desde topbar, cuenta y footer.
+- Dashboard del propietario implementado (2026-10-18): `GET /api/v1/establecimientos/{id}/metricas`,
+  página `/panel/metricas` con reservas recibidas, ingresos, ocupación, serie diaria, top de canchas
+  y próximas reservas.
+- Dashboard del cliente implementado (2026-10-18): `/mi-resumen` con próxima reserva, reservas
+  activas, favoritos, notificaciones sin leer, pendientes e inscripciones próximas.
+- Reportes de administración implementados (2026-10-18): `GET /api/v1/admin/reportes` y pestaña
+  "Reportes" con usuarios, establecimientos, reservas, ingresos, series diarias, estados y top.
+- Delta completo frente al standalone documentado en `docs/DELTA_STANDALONE.md`
+  (2026-10-18): panel admin, propietario, cliente y orden de implementación.
+- Bloque A del delta completado (2026-10-18): `/admin` convertido a portal con sidebar y topbar
+  propias, rutas hijas (`propietarios`, `reclamos`, `usuarios`, `promociones`, `cocheras`,
+  `supervision`, `reportes`, `auditoria`) y dashboard "Visión global" con KPIs, pendientes,
+  accesos rápidos y últimas operaciones.
+- Bloque B completado (2026-10-18): activar/desactivar sedes, página de Transacciones con
+  comisión/neto, límites de canje en promociones admin, módulo de Actividades admin con
+  cancelación, confirmación/rechazo de reservas desde administración y mesa de ayuda con
+  creación de tickets.
+- Alineación visual con el standalone (2026-10-18): portal a pantalla completa (sin topbar/footer
+  públicos en panel y cuenta); sidebar de 252 px idéntica al prototipo (logo de barras, workspace
+  label, iconos SVG, activo lima, tarjeta "Entorno de prueba" y cerrar sesión); topbar interno de
+  78 px con breadcrumb, avisos y avatar; stat cards, accesos rápidos y dashboard intro.
+- Bloque C completado (2026-10-18): migración `V17` con `configuracion_plataforma` (comisión,
+  horas de reembolso y cancelación, anticipación máxima y correo de soporte);
+  `GET/PUT /api/v1/admin/configuracion` con validación y auditoría; puerto
+  `ConfiguracionPlataforma` leído en tiempo de ejecución por reservas, pagos y liquidaciones; página
+  `/admin/configuracion` (ADR-0037).
+- Bloque D completado (2026-10-18): rol `OPERADOR` y tabla `operador_establecimiento` (`V18`);
+  paquete `reception` con `GET /api/v1/recepcion/{establecimientos,canchas,resumen,agenda,reservas,clientes,incidencias}`,
+  reserva presencial, check-in, cobro e incidencias; `GET/POST/DELETE /api/v1/admin/establecimientos/{id}/operadores`;
+  administración de operadores en `/admin/operadores` y portal `/recepcion` (Turno actual, Agenda del
+  día, Reservas, Reserva presencial, Cobros e Incidencias) con `roleGuard` (ADR-0038).
 
 ### Ya integrado del standalone
 
@@ -28,25 +69,23 @@
   distrito, foto principal, iconos SVG y página de favoritos.
 - Servicios incluidos en el detalle y datos demo (`V13`).
 - Paneles con sidebar de cliente, propietario y administración (espacio de trabajo, ayuda y volver al sitio).
-- Páginas públicas `/actividades` y `/como-funciona` (por ahora informativas).
+- `/actividades` ya opera con datos reales (listado, cupos e inscripción); `/como-funciona` sigue siendo informativa.
+- Portal administrativo completo con Visión global, rutas hijas, módulos del Bloque B y
+  configuración persistente de plataforma (Bloque C).
 - Se conserva todo lo anterior: reservas, pagos demo, panel, administración, carrusel, calendario
   semanal, precios y comparación.
 
 ### Pendiente para la siguiente sesión (orden recomendado)
 
-1. **Ficha de espacio**: página por establecimiento con varias canchas, servicios, fotos y reputación.
-   Requiere endpoint de detalle de espacio y enlace desde el catálogo/detalle de cancha.
-2. **Actividades reales**: tablas/API de actividades e inscripciones, administración por propietario
-   y listado público con cupos (hoy `/actividades` es informativa).
-3. **Cupones**: además de promociones, cupones canjeables con código, límite de usos y vigencia.
-4. **Soporte**: centro de ayuda/tickets además de reclamos; bandeja para admin/operador.
-5. **Dashboard de cliente**: resumen con próxima reserva, favoritos y pendientes (hoy solo listas).
-6. **Dashboard de propietario**: métricas de ocupación, ingresos y próximas reservas.
-7. **Administración**: reportes, configuración de plataforma y gestión de cupones.
-8. **Notificaciones**: badge de no leídas en el topbar y campana.
-9. **Modo oscuro** con toggle explícito y persistencia (la paleta “Nocturno” es solo un acercamiento).
-10. **Seed/reset de demo**: la base tiene >2,000 canchas por humo/E2E; conviene un script de limpieza
-    o datos semilla controlados.
+1. ~~Grupo de bloques A/B/C~~ (hecho 2026-10-18): portal admin, módulos reutilizando APIs y
+   configuración persistente de plataforma.
+2. ~~**Operador/Recepción** (Bloque D)~~ (hecho 2026-10-18): rol `OPERADOR`, turno, agenda de
+   recepción, reserva presencial, check-in, cobros e incidencias (ADR-0038). Pendiente menor del
+   bloque: gestión de bloqueos desde recepción y reserva telefónica sin cuenta registrada.
+3. **Notificaciones**: badge de no leídas en el topbar y campana.
+4. **Modo oscuro** con toggle explícito y persistencia (la paleta “Nocturno” es solo un acercamiento).
+5. **Seed/reset de demo**: la base tiene >2,000 canchas por humo/E2E; conviene un script de limpieza
+   o datos semilla controlados (incluido un operador asignado a una sede).
 
 ### Reglas para continuar
 
@@ -129,7 +168,7 @@ npm run test:a11y
   fuera del límite del catálogo. La ventana de anticipación sube de 7 a **365 días**
   (`cd.reservas.dias-anticipacion-max`). Imagen backend reconstruida, suite **144/144** y humo
   **112/112**.
-- **Ultima fecha de trabajo:** 2026-10-17
+- **Ultima fecha de trabajo:** 2026-10-18
 - **Rama/commit local:** sin repositorio Git inicializado (carpeta de trabajo).
 - **No afirmar** que el producto esta terminado: los criterios de §14 del prompt
   maestro **no** se cumplen todavia.
@@ -344,7 +383,10 @@ logica de establecimientos y canchas (ownership, `409` con reservas vigentes, fi
 lo inactivo) y comparacion de canchas (`/canchas/comparar`, 2..4 fichas) - ADR-0033 identidad
 completa (verificacion de correo, perfil, solicitud de propietario, rate limiting de login y
 revocacion de access tokens por version) - ADR-0034 idempotencia de reservas y reprogramacion con
-duracion fija.
+duracion fija - ADR-0035 arquitectura del frontend y sistema de diseno - ADR-0036 calendario
+semanal y ventana de 365 dias - ADR-0037 configuracion persistente de plataforma
+(`configuracion_plataforma`, puerto `ConfiguracionPlataforma`, `GET/PUT /admin/configuracion`,
+validacion y auditoria).
 Ver `docs/DECISIONES_ARQUITECTURA.md`.
 
 ## 8. PRUEBAS EJECUTADAS
@@ -409,6 +451,8 @@ Ver `docs/DECISIONES_ARQUITECTURA.md`.
 | 2026-10-18 | Rediseño de fusión: tokens, fuentes locales, shell, home, catálogo, detalle y login | **PASS** (build OK, 15/15 unitarios, E2E usuario 14/14, E2E propietario/admin 28/28, a11y 13 rutas OK, sin overflow a 390px) |
 | 2026-10-18 | Favoritos + catálogo enriquecido + paneles con sidebar | **PASS** (backend 146/146, humo 112/112, build OK, E2E usuario 15/15, E2E propietario/admin 28/28, a11y 14 rutas OK) |
 | 2026-10-18 | Topbar standalone, Actividades/Cómo funciona, servicios demo y sidebars de panel | **PASS** (backend 146/146, humo 112/112, build OK, E2E usuario 15/15, E2E propietario/admin 28/28, a11y 16 rutas OK) |
+| 2026-10-18 | Bloque C: configuración persistente de plataforma (`V17`, API, puerto compartido y UI) | **PASS** (backend **158/158**, humo **135/135** PS y **116/116** Bash, build OK, 22/22 unitarios, E2E usuario 20/20, propietario/admin 37/37, a11y 27 rutas OK; ADR-0037) |
+| 2026-10-18 | Bloque D: rol `OPERADOR` y portal de recepción (`V18`, paquete `reception`, `/recepcion`, `/admin/operadores`) | **PASS** (backend **160/160** (`RecepcionTest` 2/2), humo **153/153** PS y **134/134** Bash, build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK, a11y **34 rutas OK**; ADR-0038; capturas `recepcion-*.png` y `admin-operadores-1440.png`) |
 
 Resto de la matriz de pruebas (?13 del prompt): **NOT RUN**.
 
@@ -464,14 +508,12 @@ Valores reales unicamente en `canchadirecta/.env` (gitignored). Nunca en Git.
 La hoja de ruta vigente esta en **`## 0. Mirada hacia adelante`** al inicio de este documento.
 Prioridad inmediata:
 
-1. Ficha de espacio con varias canchas, servicios y reputacion.
-2. Actividades reales con inscripciones.
-3. Cupones, soporte y configuracion de plataforma.
-4. Dashboard de cliente/propietario con metricas.
-5. Modo oscuro y badge de notificaciones.
+1. Bloque D del delta: rol operador/recepción, turno, agenda de recepción, reserva presencial y cobros.
+2. Badge de notificaciones y modo oscuro.
+3. Seed/reset de demo controlado.
 
-**Estado:** entrega base cerrada el 2026-10-17; rediseno de fusion e integraciones del standalone
-en curso. Acta: `docs/ACTA_CIERRE.md`.
+**Estado:** entrega base cerrada el 2026-10-17; rediseno de fusion, integraciones del standalone y
+bloques A/B/C del delta completados el 2026-10-18. Acta: `docs/ACTA_CIERRE.md`.
 
 Cuenta superadministrador local (roles `USER`, `OWNER`, `PLATFORM_ADMIN`):
 `admin@canchadirecta.pe`; la clave esta en `.env` (`ADMIN_PASSWORD`) y se usa tambien en los
@@ -490,8 +532,9 @@ Notas de la última sesión:
 - **Detalle de cancha rediseñado**: galería con fallback, bloques de información, reserva sticky
   y calendario semanal dentro de la columna principal; en móvil la reserva va primero. El botón
   `Reservar` y la paginación ahora respetan `disabled` (antes la directiva `cdButton` lo borraba).
-- **Ventana de reserva**: 365 días en backend (`cd.reservas.dias-anticipacion-max`) y
-  `APP_CONFIG.diasAnticipacionMax` en frontend; mantener ambos valores sincronizados.
+- **Ventana de reserva**: la configuracion persistente (`configuracion_plataforma`, editable en
+  `/admin/configuracion`) define los dias de anticipacion; `APP_CONFIG.diasAnticipacionMax` del
+  frontend conserva 365 como limite inicial del calendario (ADR-0037).
 
 ### Diseno aprobado (2026-10-17)
 

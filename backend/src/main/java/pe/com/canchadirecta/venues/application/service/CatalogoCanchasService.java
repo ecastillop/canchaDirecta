@@ -10,6 +10,7 @@ import pe.com.canchadirecta.venues.application.port.out.CatalogoRepositorio;
 import pe.com.canchadirecta.venues.application.port.out.VenuesRepositorio;
 import pe.com.canchadirecta.venues.domain.model.Cancha;
 import pe.com.canchadirecta.venues.domain.model.CatalogoCancha;
+import pe.com.canchadirecta.venues.domain.model.FichaEspacio;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -69,6 +70,16 @@ public class CatalogoCanchasService implements CatalogoCanchasUseCase {
     public CatalogoCancha.Detalle detalle(Long idCancha) {
         return catalogo.detalle(idCancha)
                 .orElseThrow(() -> new DomainException(ErrorCodes.NO_ENCONTRADO, "La cancha no existe."));
+    }
+
+    @Override
+    public FichaEspacio.Espacio fichaEspacio(Long idEstablecimiento) {
+        if (idEstablecimiento == null) {
+            throw new DomainException(ErrorCodes.DATOS_INVALIDOS, "El establecimiento es obligatorio.");
+        }
+        return catalogo.fichaEspacio(idEstablecimiento)
+                .orElseThrow(() -> new DomainException(ErrorCodes.NO_ENCONTRADO,
+                        "El establecimiento no existe."));
     }
 
     @Override

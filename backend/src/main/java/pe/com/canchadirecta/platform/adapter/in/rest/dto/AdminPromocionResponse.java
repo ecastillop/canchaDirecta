@@ -18,6 +18,9 @@ public record AdminPromocionResponse(
         LocalDate fechaInicio,
         LocalDate fechaFin,
         String estado,
+        Integer limiteUsos,
+        Integer limitePorUsuario,
+        long usos,
         List<Long> canchas
 ) {
 
@@ -25,6 +28,7 @@ public record AdminPromocionResponse(
         return new AdminPromocionResponse(promocion.id(), promocion.codigo(),
                 promocion.descripcion(), promocion.tipoDescuento(), promocion.valor(),
                 promocion.fechaInicio(), promocion.fechaFin(), promocion.estado(),
+                promocion.limiteUsos(), promocion.limitePorUsuario(), promocion.usos(),
                 promocion.canchas());
     }
 }

@@ -546,6 +546,155 @@ t_admin_cochera_estado() {
   api POST "/api/v1/admin/cocheras/$COCHERA_ADMIN_ID/estado" '{"estado":"INACTIVA"}' "$ADMIN_TOKEN" 200 &&
     printf '%s' "$CUERPO_RESP" | grep -q '"estado":"INACTIVA"'
 }
+t_admin_configuracion() {
+  api GET /api/v1/admin/configuracion - "$ADMIN_TOKEN" 200 || return 1
+  CFG_COMISION="$(printf '%s' "$CUERPO_RESP" | json_get comisionPorcentaje)"
+  CFG_HORAS_GRATIS="$(printf '%s' "$CUERPO_RESP" | json_get horasCancelacionGratis)"
+  CFG_HORAS_MINIMAS="$(printf '%s' "$CUERPO_RESP" | json_get horasMinimasCancelacion)"
+  CFG_DIAS="$(printf '%s' "$CUERPO_RESP" | json_get diasAnticipacionMax)"
+  CFG_CORREO="$(printf '%s' "$CUERPO_RESP" | json_get correoSoporte)"
+  [ -n "$CFG_COMISION" ] && [ -n "$CFG_DIAS" ] && [ -n "$CFG_CORREO" ]
+}
+t_admin_configuracion_actualizar() {
+  api PUT /api/v1/admin/configuracion \
+    '{"comisionPorcentaje":12.50,"horasCancelacionGratis":48,"horasMinimasCancelacion":3,"diasAnticipacionMax":120,"correoSoporte":"ayuda@canchadirecta.pe"}' \
+    "$ADMIN_TOKEN" 200 &&
+    printf '%s' "$CUERPO_RESP" | grep -q '"diasAnticipacionMax":120' &&
+    printf '%s' "$CUERPO_RESP" | grep -q '"correoSoporte":"ayuda@canchadirecta.pe"'
+}
+t_admin_configuracion_invalida() {
+  api PUT /api/v1/admin/configuracion \
+    '{"comisionPorcentaje":101,"horasCancelacionGratis":24,"horasMinimasCancelacion":2,"diasAnticipacionMax":365,"correoSoporte":"soporte@canchadirecta.pe"}' \
+    "$ADMIN_TOKEN" 400
+}
+t_admin_configuracion_restaurar() {
+  api PUT /api/v1/admin/configuracion \
+    "{\"comisionPorcentaje\":$CFG_COMISION,\"horasCancelacionGratis\":$CFG_HORAS_GRATIS,\"horasMinimasCancelacion\":$CFG_HORAS_MINIMAS,\"diasAnticipacionMax\":$CFG_DIAS,\"correoSoporte\":\"$CFG_CORREO\"}" \
+    "$ADMIN_TOKEN" 200
+}
+
+# --- Recepcion (Bloque D, ADR-0038) -----------------------------------------
+# El personal opera solo las sedes que la administracion le asigna; el rol viaja en el JWT.
+# Hora de Lima = UTC-5 (sin horario de verano): la franja del walk-in es "ahora + 40 min".
+recep_fecha() {
+  if date -u -d '-5 hours +40 minutes' '+%Y-%m-%d' >/dev/null 2>&1; then
+    date -u -d '-5 hours +40 minutes' '+%Y-%m-%d'
+  else
+    date -u -v-5H -v+40M '+%Y-%m-%d'
+  fi
+}
+recep_hora() {
+  if date -u -d '-5 hours +40 minutes' '+%H:%M' >/dev/null 2>&1; then
+    date -u -d '-5 hours +40 minutes' '+%H:%M'
+  else
+    date -u -v-5H -v+40M '+%H:%M'
+  fi
+}
+cobro_fecha() {
+  if date -u -d '-5 hours +3 hours' '+%Y-%m-%d' >/dev/null 2>&1; then
+    date -u -d '-5 hours +3 hours' '+%Y-%m-%d'
+  else
+    date -u -v-5H -v+3H '+%Y-%m-%d'
+  fi
+}
+cobro_hora() {
+  if date -u -d '-5 hours +3 hours' '+%H:%M' >/dev/null 2>&1; then
+    date -u -d '-5 hours +3 hours' '+%H:%M'
+  else
+    date -u -v-5H -v+3H '+%H:%M'
+  fi
+}
+t_recep_registro() {
+  RECEP_CORREO="recepcion.$(date +%s%N)@canchadirecta.pe"
+  RECEP_LOGIN="{\"correo\":\"$RECEP_CORREO\",\"password\":\"$PASSWORD\"}"
+  api POST /api/v1/auth/register "$(printf '{"nombres":"Operador","apellidos":"Recepcion","correo":"%s","telefono":"955444333","password":"%s","confirmacionPassword":"%s"}' "$RECEP_CORREO" "$PASSWORD" "$PASSWORD")" - 201 || return 1
+  RECEP_ID="$(sql_exec "SELECT id_usuario FROM usuario WHERE correo='$RECEP_CORREO'" | tr -d '\r' | head -n1)"
+  [ -n "$RECEP_ID" ]
+}
+t_recep_sin_rol() {
+  api POST /api/v1/auth/login "$RECEP_LOGIN" - 200 || return 1
+  RECEP_TOKEN="$(printf '%s' "$CUERPO_RESP" | json_get accessToken)"
+  [ -n "$RECEP_TOKEN" ] || return 1
+  api GET /api/v1/recepcion/establecimientos - "$RECEP_TOKEN" 403
+}
+t_recep_asignar() {
+  api POST "/api/v1/admin/establecimientos/$EST_ID/operadores" \
+    "{\"idUsuario\":$RECEP_ID,\"cargo\":\"Recepcion\"}" "$ADMIN_TOKEN" 201 &&
+    printf '%s' "$CUERPO_RESP" | grep -q "\"correo\":\"$RECEP_CORREO\""
+}
+t_recep_login() {
+  api POST /api/v1/auth/login "$RECEP_LOGIN" - 200 || return 1
+  RECEP_TOKEN="$(printf '%s' "$CUERPO_RESP" | json_get accessToken)"
+  [ -n "$RECEP_TOKEN" ]
+}
+t_recep_establecimientos() {
+  api GET /api/v1/recepcion/establecimientos - "$RECEP_TOKEN" 200 &&
+    printf '%s' "$CUERPO_RESP" | grep -q "\"id\":$EST_ID"
+}
+t_recep_canchas() {
+  api GET "/api/v1/recepcion/canchas?idEstablecimiento=$EST_ID" - "$RECEP_TOKEN" 200 &&
+    printf '%s' "$CUERPO_RESP" | grep -q "\"id\":$CANCHA_ID"
+}
+t_recep_resumen() {
+  api GET /api/v1/recepcion/resumen - "$RECEP_TOKEN" 200 &&
+    printf '%s' "$CUERPO_RESP" | grep -q '"canchasDisponibles"'
+}
+t_recep_clientes() {
+  api GET '/api/v1/recepcion/clientes?q=Smoke' - "$RECEP_TOKEN" 200 &&
+    printf '%s' "$CUERPO_RESP" | grep -q "\"id\":$USUARIO_ID"
+}
+t_recep_walkin() {
+  local cuerpo
+  cuerpo="$(printf '{"idEstablecimiento":%s,"idCancha":%s,"idCliente":%s,"fecha":"%s","horaInicio":"%s","duracionMinutos":60,"pagoRecibido":true}' \
+    "$EST_ID" "$CANCHA_ID" "$USUARIO_ID" "$(recep_fecha)" "$(recep_hora)")"
+  api POST /api/v1/recepcion/reservas "$cuerpo" "$RECEP_TOKEN" 201 || return 1
+  printf '%s' "$CUERPO_RESP" | grep -q '"pagoEstado":"APROBADO"' || return 1
+  printf '%s' "$CUERPO_RESP" | grep -q '"estado":"PENDIENTE"' || return 1
+  RECEP_RESERVA_ID="$(printf '%s' "$CUERPO_RESP" | json_get id)"
+  [ -n "$RECEP_RESERVA_ID" ]
+}
+t_recep_agenda() {
+  api GET "/api/v1/recepcion/agenda?fecha=$(recep_fecha)&idEstablecimiento=$EST_ID" - "$RECEP_TOKEN" 200 &&
+    printf '%s' "$CUERPO_RESP" | grep -q "\"id\":$RECEP_RESERVA_ID,"
+}
+t_recep_confirma() {
+  api POST "/api/v1/reservas/$RECEP_RESERVA_ID/confirmar" - "$ACCESS" 200
+}
+t_recep_checkin() {
+  api POST "/api/v1/recepcion/reservas/$RECEP_RESERVA_ID/checkin" - "$RECEP_TOKEN" 200 &&
+    printf '%s' "$CUERPO_RESP" | grep -q '"estado":"FINALIZADA"'
+}
+t_recep_checkin_repetido() {
+  api POST "/api/v1/recepcion/reservas/$RECEP_RESERVA_ID/checkin" - "$RECEP_TOKEN" 409
+}
+t_recep_cobro() {
+  local cuerpo pid
+  cuerpo="$(printf '{"idEstablecimiento":%s,"idCancha":%s,"idCliente":%s,"fecha":"%s","horaInicio":"%s","duracionMinutos":60,"pagoRecibido":false}' \
+    "$EST_ID" "$CANCHA_ID" "$USUARIO_ID" "$(cobro_fecha)" "$(cobro_hora)")"
+  api POST /api/v1/recepcion/reservas "$cuerpo" "$RECEP_TOKEN" 201 || return 1
+  pid="$(printf '%s' "$CUERPO_RESP" | json_get id)"
+  [ -n "$pid" ] || return 1
+  api POST "/api/v1/recepcion/reservas/$pid/cobro" '{"medioPago":"YAPE"}' "$RECEP_TOKEN" 200 || return 1
+  printf '%s' "$CUERPO_RESP" | grep -q '"pagoEstado":"APROBADO"' || return 1
+  api POST "/api/v1/recepcion/reservas/$pid/cobro" '{"medioPago":"EFECTIVO"}' "$RECEP_TOKEN" 409
+}
+t_recep_incidencias() {
+  api POST /api/v1/recepcion/incidencias \
+    "{\"asunto\":\"Cancha mojada\",\"descripcion\":\"Se solicito mantenimiento.\",\"idReserva\":$RECEP_RESERVA_ID}" \
+    "$RECEP_TOKEN" 201 || return 1
+  printf '%s' "$CUERPO_RESP" | grep -q '"estado":"ABIERTO"' || return 1
+  api GET /api/v1/recepcion/incidencias - "$RECEP_TOKEN" 200
+}
+t_recep_sin_token() {
+  api GET /api/v1/recepcion/establecimientos - - 401
+}
+t_recep_remover() {
+  api DELETE "/api/v1/admin/establecimientos/$EST_ID/operadores/$RECEP_ID" - "$ADMIN_TOKEN" 200 || return 1
+  printf '%s' "$CUERPO_RESP" | grep -q '^\[\]$'
+}
+t_recep_sin_asignacion() {
+  api GET "/api/v1/recepcion/agenda?idEstablecimiento=$EST_ID" - "$RECEP_TOKEN" 403
+}
 
 # --- Promociones del propietario aplicadas a la reserva (CU04.6) ------------
 t_promo_propietario() {
@@ -589,6 +738,7 @@ ACCESS=""; REFRESH=""; ROTADO=""; EST_ID=""; CANCHA_ID=""; RESERVA_ID=""
 HORARIO_ID=""; BLOQUEO_ID=""; RESERVA2_ID=""; COCHERA_ID=""; RESERVA_COCHERA_ID=""; PAY_RESERVA_ID=""
 LIQ_RESERVA_ID=""; LIQUIDACION_ID=""; RESERVA_REV_ID=""; RESERVA_CAL_ID=""
 RECLAMO_ID=""; NOTIF_ID=""; NO_LEIDAS=0; ADMIN_TOKEN=""; PROPIETARIO_ID=""; USUARIO_ID=""; PROMO_ID=""; COCHERA_ADMIN_ID=""; PROMO_CODIGO=""; DEPORTE_ID=""
+RECEP_CORREO=""; RECEP_ID=""; RECEP_TOKEN=""; RECEP_LOGIN=""; RECEP_RESERVA_ID=""
 
 # El cuerpo de la reserva se construye en cada llamada porque necesita el id de la cancha.
 cuerpo_reserva() { printf '{"canchaId":%s,"inicio":"%s","fin":"%s"}' "$CANCHA_ID" "$INICIO" "$FIN"; }
@@ -707,11 +857,34 @@ if [ "$DB_DISPONIBLE" -eq 1 ]; then
     paso 'GET  admin/auditoria'                  t_admin_auditoria
     paso 'GET  admin/usuarios'                   t_admin_usuarios
     paso 'POST admin/usuarios/{id}/roles'        t_admin_roles
+    # Recepcion (Bloque D, ADR-0038): vincular personal y operar su turno.
+    paso 'POST auth/register operador recepcion'  t_recep_registro
+    paso 'GET  recepcion sin rol (403)'           t_recep_sin_rol
+    paso 'POST admin/establecimientos operadores' t_recep_asignar
+    paso 'POST auth/login operador (OPERADOR)'    t_recep_login
+    paso 'GET  recepcion/establecimientos'        t_recep_establecimientos
+    paso 'GET  recepcion/canchas'                 t_recep_canchas
+    paso 'GET  recepcion/resumen'                 t_recep_resumen
+    paso 'GET  recepcion/clientes'                t_recep_clientes
+    paso 'POST recepcion/reservas (walk-in)'      t_recep_walkin
+    paso 'GET  recepcion/agenda'                  t_recep_agenda
+    paso 'POST reservas/{id}/confirmar'           t_recep_confirma
+    paso 'POST recepcion/{id}/checkin'            t_recep_checkin
+    paso 'POST recepcion/{id}/checkin repetido'   t_recep_checkin_repetido
+    paso 'POST recepcion/{id}/cobro'              t_recep_cobro
+    paso 'POST recepcion/incidencias'             t_recep_incidencias
+    paso 'GET  recepcion sin token (401)'         t_recep_sin_token
+    paso 'DELETE admin operadores/{id}'           t_recep_remover
+    paso 'GET  recepcion tras quitar asignacion'  t_recep_sin_asignacion
     paso 'POST admin/promociones'                t_admin_promo_crear
     paso 'GET  admin/promociones'                t_admin_promo_listar
     paso 'POST admin/promociones/{id}/estado'    t_admin_promo_estado
     paso 'GET  admin/cocheras'                   t_admin_cocheras
     paso 'POST admin/cocheras/{id}/estado'       t_admin_cochera_estado
+    paso 'GET  admin/configuracion'              t_admin_configuracion
+    paso 'PUT  admin/configuracion'              t_admin_configuracion_actualizar
+    paso 'PUT  admin/configuracion invalida'     t_admin_configuracion_invalida
+    paso 'PUT  admin/configuracion restaura'     t_admin_configuracion_restaurar
     # CU04.1/CU04.2/CU02.2 antes de desactivar la cuenta de humo
     paso 'POST establecimiento gestion (CU04)'      t_gestion_est
     paso 'POST cancha gestion (CU04)'               t_gestion_cancha

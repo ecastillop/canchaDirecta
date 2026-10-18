@@ -7,6 +7,6 @@ export const APP_CONFIG = {
   moneda: 'PEN',
   /** Banner permanente de pago de demostración. */
   demoPago: true,
-  /** Debe coincidir con `cd.reservas.dias-anticipacion-max` del backend. */
+  /** Limite inicial del calendario; el backend aplica la configuracion persistente (ADR-0037). */
   diasAnticipacionMax: 365,
 } as const;

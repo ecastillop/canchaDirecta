@@ -26,6 +26,15 @@ const FOTO_FALLBACK =
   imports: [ReactiveFormsModule, RouterLink, CurrencyPipe, CdButtonDirective, CdInputDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <div class="dashboard-intro">
+      <div>
+        <p class="eyebrow">Propietario · CanchaDirecta</p>
+        <h2 class="intro-title">Tu operación, bajo control.</h2>
+        <p>Un vistazo a tus espacios, canchas y configuración del establecimiento.</p>
+      </div>
+      <a routerLink="/panel/metricas" class="cd-btn cd-btn--primary cd-btn--sm">Ver métricas →</a>
+    </div>
+
     @if (!store.establecimientoId()) {
       <section class="cd-card">
         <h2 class="seccion">Registrar mi establecimiento</h2>
@@ -350,6 +359,32 @@ const FOTO_FALLBACK =
     }
   `,
   styles: `
+    .dashboard-intro {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .dashboard-intro .eyebrow {
+      margin: 0 0 8px;
+      color: #2d8773;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.19em;
+      text-transform: uppercase;
+    }
+    .dashboard-intro .intro-title {
+      margin: 0 0 8px;
+      font-size: clamp(27px, 2.8vw, 39px);
+      letter-spacing: -0.045em;
+    }
+    .dashboard-intro p {
+      margin: 0;
+      color: #829085;
+      font-size: 12px;
+    }
     .seccion {
       font-size: var(--cd-text-base);
       margin-bottom: var(--cd-space-2);

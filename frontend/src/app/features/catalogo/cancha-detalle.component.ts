@@ -237,7 +237,11 @@ function etiquetaDeSemana(inicio: string): string {
               <dl class="hechos">
                 <div>
                   <dt>Establecimiento</dt>
-                  <dd>{{ c.establecimiento }}</dd>
+                  <dd>
+                    <a class="enlace-espacio" [routerLink]="['/establecimientos', c.idEstablecimiento]">
+                      {{ c.establecimiento }} <span aria-hidden="true">→</span>
+                    </a>
+                  </dd>
                 </div>
                 <div>
                   <dt>Distrito</dt>
@@ -1100,6 +1104,13 @@ function etiquetaDeSemana(inicio: string): string {
       margin: 2px 0 0;
       font-size: var(--cd-text-sm);
       font-weight: 700;
+    }
+    .enlace-espacio {
+      color: var(--cd-color-primary);
+      text-decoration: none;
+    }
+    .enlace-espacio:hover {
+      text-decoration: underline;
     }
     .caracteristicas {
       grid-template-columns: repeat(2, minmax(0, 1fr));

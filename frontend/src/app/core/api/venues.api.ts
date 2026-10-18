@@ -9,6 +9,7 @@ import {
   CocheraDisponible,
   Disponibilidad,
   Distrito,
+  FichaEspacio,
   FiltrosCancha,
   HorarioCancha,
   Item,
@@ -81,6 +82,10 @@ export class VenuesApi {
 
   detalle(id: number): Observable<CanchaDetalle> {
     return this.http.get<CanchaDetalle>(apiUrl(`/canchas/${id}`));
+  }
+
+  fichaEspacio(id: number): Observable<FichaEspacio> {
+    return this.http.get<FichaEspacio>(apiUrl(`/establecimientos/${id}/ficha`));
   }
 
   comparar(ids: number[]): Observable<CanchaDetalle[]> {

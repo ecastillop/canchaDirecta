@@ -47,6 +47,15 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
                     }
                     · {{ promocion.fechaInicio | date: 'd MMM' }} - {{ promocion.fechaFin | date: 'd MMM yyyy' }}
                   </p>
+                  <p class="cd-xs cd-muted">
+                    {{ promocion.usos }} canjes
+                    @if (promocion.limiteUsos) {
+                      de {{ promocion.limiteUsos }}
+                    }
+                    @if (promocion.limitePorUsuario) {
+                      · máximo {{ promocion.limitePorUsuario }} por cliente
+                    }
+                  </p>
                 </div>
                 <button cdButton variant="secondary" size="sm" type="button" (click)="cambiarEstado(promocion)">
                   {{ promocion.estado === 'ACTIVA' ? 'Desactivar' : 'Activar' }}
@@ -99,6 +108,14 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
             <label class="cd-field">
               <span class="cd-field__label">Hasta</span>
               <input cdInput type="date" formControlName="fechaFin" />
+            </label>
+            <label class="cd-field">
+              <span class="cd-field__label">Límite total de canjes (0 = sin límite)</span>
+              <input cdInput type="number" min="0" formControlName="limiteUsos" />
+            </label>
+            <label class="cd-field">
+              <span class="cd-field__label">Límite por cliente (0 = sin límite)</span>
+              <input cdInput type="number" min="0" formControlName="limitePorUsuario" />
             </label>
           </div>
           <button cdButton type="submit" [loading]="guardando()">Crear promoción</button>
@@ -153,7 +170,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
         grid-template-columns: 1fr 2fr;
       }
       .tres {
-        grid-template-columns: 1fr 1fr 1fr 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       }
     }
   `,
@@ -182,6 +199,8 @@ export class PanelPromocionesComponent implements OnInit {
     valor: [10, [Validators.required, Validators.min(0.01)]],
     fechaInicio: ['', [Validators.required]],
     fechaFin: ['', [Validators.required]],
+    limiteUsos: [0, [Validators.min(0)]],
+    limitePorUsuario: [0, [Validators.min(0)]],
   });
 
   ngOnInit(): void {
@@ -205,6 +224,8 @@ export class PanelPromocionesComponent implements OnInit {
         valor: value.valor,
         fechaInicio: value.fechaInicio,
         fechaFin: value.fechaFin,
+        limiteUsos: value.limiteUsos > 0 ? value.limiteUsos : null,
+        limitePorUsuario: value.limitePorUsuario > 0 ? value.limitePorUsuario : null,
       })
       .subscribe({
         next: () => {
@@ -217,6 +238,8 @@ export class PanelPromocionesComponent implements OnInit {
             valor: 10,
             fechaInicio: '',
             fechaFin: '',
+            limiteUsos: 0,
+            limitePorUsuario: 0,
           });
           void this.cargar();
         },

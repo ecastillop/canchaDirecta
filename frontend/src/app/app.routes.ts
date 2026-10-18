@@ -48,6 +48,11 @@ export const routes: Routes = [
           import('./features/public/actividades.component').then((m) => m.ActividadesComponent),
       },
       {
+        path: 'ayuda',
+        title: 'Centro de ayuda · CanchaDirecta',
+        loadComponent: () => import('./features/public/ayuda.component').then((m) => m.AyudaComponent),
+      },
+      {
         path: 'como-funciona',
         title: 'Cómo funciona · CanchaDirecta',
         loadComponent: () =>
@@ -70,6 +75,12 @@ export const routes: Routes = [
           import('./features/catalogo/cancha-detalle.component').then((m) => m.CanchaDetalleComponent),
       },
       {
+        path: 'establecimientos/:id',
+        title: 'Ficha del espacio — CanchaDirecta',
+        loadComponent: () =>
+          import('./features/catalogo/espacio-detalle.component').then((m) => m.EspacioDetalleComponent),
+      },
+      {
         path: 'reservar/:canchaId',
         title: 'Confirmar reserva · CanchaDirecta',
         canActivate: [authGuard],
@@ -81,6 +92,12 @@ export const routes: Routes = [
         canActivate: [authGuard],
         children: [
           {
+            path: 'mi-resumen',
+            title: 'Mi resumen · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/cuenta/mi-resumen.component').then((m) => m.MiResumenComponent),
+          },
+          {
             path: 'mis-reservas',
             title: 'Mis reservas · CanchaDirecta',
             loadComponent: () =>
@@ -91,6 +108,12 @@ export const routes: Routes = [
             title: 'Detalle de reserva · CanchaDirecta',
             loadComponent: () =>
               import('./features/reservas/reserva-detalle.component').then((m) => m.ReservaDetalleComponent),
+          },
+          {
+            path: 'mis-inscripciones',
+            title: 'Mis inscripciones · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/cuenta/mis-inscripciones.component').then((m) => m.MisInscripcionesComponent),
           },
           {
             path: 'perfil',
@@ -133,6 +156,12 @@ export const routes: Routes = [
               import('./features/panel/panel-resumen.component').then((m) => m.PanelResumenComponent),
           },
           {
+            path: 'metricas',
+            title: 'Métricas del establecimiento · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/panel/panel-metricas.component').then((m) => m.PanelMetricasComponent),
+          },
+          {
             path: 'reservas',
             title: 'Reservas recibidas · CanchaDirecta',
             loadComponent: () =>
@@ -151,6 +180,12 @@ export const routes: Routes = [
               import('./features/panel/panel-promociones.component').then((m) => m.PanelPromocionesComponent),
           },
           {
+            path: 'actividades',
+            title: 'Actividades del establecimiento · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/panel/panel-actividades.component').then((m) => m.PanelActividadesComponent),
+          },
+          {
             path: 'liquidaciones',
             title: 'Liquidaciones · CanchaDirecta',
             loadComponent: () =>
@@ -159,10 +194,138 @@ export const routes: Routes = [
         ],
       },
       {
+        path: 'recepcion',
+        canActivate: [roleGuard(['OPERADOR', 'OWNER', 'PLATFORM_ADMIN'])],
+        loadComponent: () =>
+          import('./features/recepcion/recepcion-layout.component').then((m) => m.RecepcionLayoutComponent),
+        children: [
+          {
+            path: '',
+            title: 'Turno actual · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/recepcion/recepcion-resumen.component').then((m) => m.RecepcionResumenComponent),
+          },
+          {
+            path: 'agenda',
+            title: 'Agenda del día · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/recepcion/recepcion-agenda.component').then((m) => m.RecepcionAgendaComponent),
+          },
+          {
+            path: 'reservas',
+            title: 'Reservas · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/recepcion/recepcion-reservas.component').then((m) => m.RecepcionReservasComponent),
+          },
+          {
+            path: 'nueva',
+            title: 'Reserva presencial · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/recepcion/recepcion-nueva-reserva.component').then(
+                (m) => m.RecepcionNuevaReservaComponent,
+              ),
+          },
+          {
+            path: 'cobros',
+            title: 'Cobros · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/recepcion/recepcion-cobros.component').then((m) => m.RecepcionCobrosComponent),
+          },
+          {
+            path: 'incidencias',
+            title: 'Incidencias · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/recepcion/recepcion-incidencias.component').then(
+                (m) => m.RecepcionIncidenciasComponent,
+              ),
+          },
+        ],
+      },
+      {
         path: 'admin',
-        title: 'Administracion · CanchaDirecta',
         canActivate: [roleGuard(['PLATFORM_ADMIN'])],
-        loadComponent: () => import('./features/admin/admin.component').then((m) => m.AdminComponent),
+        loadComponent: () =>
+          import('./features/admin/admin-layout.component').then((m) => m.AdminLayoutComponent),
+        children: [
+          {
+            path: '',
+            title: 'Visión global · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/admin/admin-dashboard.component').then((m) => m.AdminDashboardComponent),
+          },
+          {
+            path: 'propietarios',
+            title: 'Propietarios · CanchaDirecta',
+            data: { seccion: 'propietarios' },
+            loadComponent: () => import('./features/admin/admin.component').then((m) => m.AdminComponent),
+          },
+          {
+            path: 'reclamos',
+            title: 'Reclamos · CanchaDirecta',
+            data: { seccion: 'reclamos' },
+            loadComponent: () => import('./features/admin/admin.component').then((m) => m.AdminComponent),
+          },
+          {
+            path: 'usuarios',
+            title: 'Usuarios · CanchaDirecta',
+            data: { seccion: 'usuarios' },
+            loadComponent: () => import('./features/admin/admin.component').then((m) => m.AdminComponent),
+          },
+          {
+            path: 'promociones',
+            title: 'Promociones · CanchaDirecta',
+            data: { seccion: 'promociones' },
+            loadComponent: () => import('./features/admin/admin.component').then((m) => m.AdminComponent),
+          },
+          {
+            path: 'cocheras',
+            title: 'Cocheras · CanchaDirecta',
+            data: { seccion: 'cocheras' },
+            loadComponent: () => import('./features/admin/admin.component').then((m) => m.AdminComponent),
+          },
+          {
+            path: 'supervision',
+            title: 'Supervisión · CanchaDirecta',
+            data: { seccion: 'supervision' },
+            loadComponent: () => import('./features/admin/admin.component').then((m) => m.AdminComponent),
+          },
+          {
+            path: 'operadores',
+            title: 'Operadores de recepción · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/admin/admin-operadores.component').then((m) => m.AdminOperadoresComponent),
+          },
+          {
+            path: 'transacciones',
+            title: 'Transacciones · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/admin/admin-transacciones.component').then((m) => m.AdminTransaccionesComponent),
+          },
+          {
+            path: 'actividades',
+            title: 'Actividades · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/admin/admin-actividades.component').then((m) => m.AdminActividadesComponent),
+          },
+          {
+            path: 'reportes',
+            title: 'Reportes · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/admin/admin-reportes.component').then((m) => m.AdminReportesComponent),
+          },
+          {
+            path: 'auditoria',
+            title: 'Auditoría · CanchaDirecta',
+            data: { seccion: 'auditoria' },
+            loadComponent: () => import('./features/admin/admin.component').then((m) => m.AdminComponent),
+          },
+          {
+            path: 'configuracion',
+            title: 'Configuración · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/admin/admin-configuracion.component').then((m) => m.AdminConfiguracionComponent),
+          },
+        ],
       },
       {
         path: 'sin-acceso',

@@ -57,6 +57,60 @@ async function buscarFranja() {
   return null;
 }
 
+async function crearActividadDemo() {
+  const marca = Date.now();
+  const organizer = {
+    correo: `e2e.organizador.${marca}@canchadirecta.pe`,
+    password: 'ClaveSegura123',
+  };
+  const registro = await fetch(`${API}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      nombres: 'Organizador',
+      apellidos: `E2E ${marca}`,
+      correo: organizer.correo,
+      telefono: '988777666',
+      password: organizer.password,
+      confirmacionPassword: organizer.password,
+    }),
+  });
+  if (!registro.ok) throw new Error(`registro organizador ${registro.status}`);
+  const login = await (await fetch(`${API}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(organizer),
+  })).json();
+  const distritos = await (await fetch(`${API}/ubicaciones/distritos?limite=1`)).json();
+  const establecimiento = await (await fetch(`${API}/establecimientos`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${login.accessToken}` },
+    body: JSON.stringify({
+      documentoIdentidad: String(700000000000000000n + BigInt(marca % 1000000)),
+      idDistrito: distritos[0].id,
+      nombre: `Complejo E2E ${marca}`,
+      direccion: 'Av. Actividades 100',
+      referencia: 'Ingreso principal',
+    }),
+  })).json();
+  const inicio = new Date(Date.now() + 86400000);
+  inicio.setHours(18, 0, 0, 0);
+  const fin = new Date(inicio.getTime() + 2 * 3600000);
+  const actividad = await (await fetch(`${API}/establecimientos/${establecimiento.id}/actividades`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${login.accessToken}` },
+    body: JSON.stringify({
+      nombre: `Torneo E2E ${marca}`,
+      descripcion: 'Actividad creada para la prueba de extremo a extremo.',
+      inicio: inicio.toISOString(),
+      fin: fin.toISOString(),
+      cupos: 10,
+      precio: 20,
+    }),
+  })).json();
+  return actividad;
+}
+
 const franja = await buscarFranja();
 if (!franja) {
   console.error('No hay franjas disponibles en los proximos 7 dias; no se puede probar la reserva.');
@@ -86,6 +140,15 @@ try {
   await page.getByRole('heading', { name: /El espacio ideal/ }).waitFor();
   ok('home renderiza');
 
+  // 1b. Centro de ayuda publico con busqueda
+  await page.goto(`${BASE}/ayuda`, { waitUntil: 'networkidle' });
+  await page.getByRole('heading', { name: /¿En qué podemos ayudarte/ }).waitFor({ timeout: 20000 });
+  await page.getByRole('searchbox', { name: 'Buscar en el centro de ayuda' }).fill('reembolso');
+  await page.getByText('¿Cuándo recibo un reembolso?').click();
+  await page.getByText(/reembolso simulado por el monto correspondiente/).waitFor();
+  ok('centro de ayuda con busqueda y respuestas desplegables');
+  await page.screenshot({ path: `${EVID}/centro-ayuda-1440.png`, fullPage: true });
+
   // 2. Registro por UI: parte de una ruta protegida y debe volver a ella
   await page.goto(`${BASE}/mis-reservas`, { waitUntil: 'networkidle' });
   await page.getByRole('heading', { name: 'Iniciar sesión' }).waitFor({ timeout: 20000 });
@@ -99,12 +162,11 @@ try {
   await page.locator('label:has-text("Confirmar contraseña") input').first().fill(user.password);
   await page.getByRole('button', { name: 'Crear cuenta' }).click();
   await page.waitForURL(`${BASE}/mis-reservas`, { timeout: 20000 });
-  await page.locator('summary.cuenta-btn').waitFor({ timeout: 20000 });
+  await page.locator('.cuenta-side').waitFor({ timeout: 20000 });
   ok('registro por UI con auto-login y retorno a la ruta original');
 
   // 3. Login por UI
-  await page.locator('summary.cuenta-btn').click();
-  await page.locator('.cuenta-menu__panel').getByRole('button', { name: 'Cerrar sesión' }).click();
+  await page.locator('.cuenta-side__salir').click();
   await page.waitForURL(`${BASE}/`, { timeout: 20000 });
   await page.goto(`${BASE}/auth/login`, { waitUntil: 'networkidle' });
   await page.getByRole('heading', { name: 'Iniciar sesión' }).waitFor();
@@ -117,6 +179,22 @@ try {
   await page.waitForURL(`${BASE}/`, { timeout: 20000 });
   await page.locator('summary.cuenta-btn').waitFor({ timeout: 20000 });
   ok('login por UI y topbar con usuario');
+
+  // 3b. Actividades: listado publico, inscripcion y mis inscripciones
+  const actividadDemo = await crearActividadDemo();
+  await page.goto(`${BASE}/actividades`, { waitUntil: 'networkidle' });
+  await page.getByText('Próximas actividades').waitFor();
+  const tarjetaActividad = page.locator('article.actividad').filter({ hasText: actividadDemo.nombre }).first();
+  await tarjetaActividad.waitFor({ timeout: 20000 });
+  await tarjetaActividad.getByRole('button', { name: 'Inscribirme' }).click();
+  await tarjetaActividad.getByText('Inscrito').waitFor({ timeout: 20000 });
+  ok('inscripcion a actividad desde el listado publico');
+
+  await page.goto(`${BASE}/mis-inscripciones`, { waitUntil: 'networkidle' });
+  await page.getByRole('heading', { name: 'Mis inscripciones' }).waitFor();
+  await page.getByText(actividadDemo.nombre).first().waitFor({ timeout: 20000 });
+  ok('la actividad aparece en mis inscripciones');
+  await page.screenshot({ path: `${EVID}/mis-inscripciones-1440.png`, fullPage: true });
 
   // 4. Catalogo y detalle
   await page.goto(`${BASE}/canchas`, { waitUntil: 'networkidle' });
@@ -146,6 +224,18 @@ try {
 
   await page.goto(`${BASE}/canchas/${franja.cancha.id}`, { waitUntil: 'networkidle' });
   await page.getByRole('heading', { name: franja.cancha.nombre }).waitFor({ timeout: 20000 });
+
+  // Ficha del espacio: enlace desde el detalle de la cancha
+  await page.locator('.enlace-espacio').click();
+  await page.waitForURL(`**/establecimientos/${franja.cancha.idEstablecimiento}`, { timeout: 20000 });
+  await page.getByRole('heading', { name: franja.cancha.establecimiento }).waitFor({ timeout: 20000 });
+  await page.getByRole('heading', { name: 'Canchas del espacio' }).waitFor();
+  const canchasEspacio = await page.locator('article.cancha').count();
+  if (canchasEspacio > 0) ok(`ficha del espacio lista ${canchasEspacio} canchas`);
+  else fallo('ficha del espacio sin canchas');
+  await page.screenshot({ path: `${EVID}/espacio-1440.png`, fullPage: true });
+  await page.goBack({ waitUntil: 'networkidle' });
+
   await page.getByText('Reserva tu horario').waitFor();
   await page.getByRole('heading', { name: 'Disponibilidad semanal' }).waitFor({ timeout: 20000 });
   const celdas = await page.locator('.celda--libre').count();
@@ -157,7 +247,7 @@ try {
     if (await reservar.isDisabled()) throw new Error('Reservar sigue deshabilitado tras elegir una franja');
   }
   const etiquetaSemana = await page.locator('.semana__titulo').innerText();
-  await page.getByRole('button', { name: 'Semana siguiente' }).click();
+  await page.getByRole('button', { name: 'Semana siguiente', exact: true }).click();
   await page.waitForFunction(
     (inicial) => document.querySelector('.semana__titulo')?.textContent?.trim() !== inicial,
     etiquetaSemana,
@@ -189,6 +279,14 @@ try {
   await page.getByText(franja.cancha.nombre).first().waitFor({ timeout: 20000 });
   ok('mis reservas muestra la reserva creada');
   await page.screenshot({ path: `${EVID}/mis-reservas-1440.png`, fullPage: false });
+
+  // 6b. Dashboard del cliente
+  await page.goto(`${BASE}/mi-resumen`, { waitUntil: 'networkidle' });
+  await page.getByRole('heading', { name: /Hola,/ }).waitFor();
+  await page.getByRole('heading', { name: 'Tu próxima reserva' }).waitFor();
+  await page.getByText(franja.cancha.nombre).first().waitFor({ timeout: 20000 });
+  ok('dashboard del cliente con próxima reserva y pendientes');
+  await page.screenshot({ path: `${EVID}/mi-resumen-1440.png`, fullPage: true });
 
   // 7. Perfil
   await page.goto(`${BASE}/perfil`, { waitUntil: 'networkidle' });

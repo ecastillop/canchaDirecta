@@ -27,6 +27,7 @@ import pe.com.canchadirecta.venues.adapter.in.rest.dto.CrearCanchaRequest;
 import pe.com.canchadirecta.venues.adapter.in.rest.dto.CrearCocheraRequest;
 import pe.com.canchadirecta.venues.adapter.in.rest.dto.CrearEstablecimientoRequest;
 import pe.com.canchadirecta.venues.adapter.in.rest.dto.CrearFotoRequest;
+import pe.com.canchadirecta.venues.adapter.in.rest.dto.FichaEspacioResponse;
 import pe.com.canchadirecta.venues.application.dto.ActualizarEstablecimientoCommand;
 import pe.com.canchadirecta.venues.application.dto.RegistrarCanchaCommand;
 import pe.com.canchadirecta.venues.application.dto.RegistrarCocheraCommand;
@@ -115,6 +116,14 @@ public class VenuesResource {
     @Operation(summary = "Datos de un establecimiento propio (vista de gestion)")
     public Establecimiento obtenerEstablecimiento(@PathParam("id") Long id) {
         return gestion.obtenerEstablecimiento(idUsuarioAutenticado(), id);
+    }
+
+    @GET
+    @Path("/establecimientos/{id}/ficha")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Ficha publica del espacio con sus canchas, servicios, fotos y reputacion")
+    public FichaEspacioResponse fichaEspacio(@PathParam("id") Long id) {
+        return FichaEspacioResponse.de(catalogo.fichaEspacio(id));
     }
 
     @PUT

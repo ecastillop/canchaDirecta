@@ -3,13 +3,13 @@ package pe.com.canchadirecta.settlements.application.service;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pe.com.canchadirecta.settlements.application.dto.LiquidacionConDetalle;
 import pe.com.canchadirecta.settlements.application.dto.ReservaLiquidable;
 import pe.com.canchadirecta.settlements.application.port.in.GestionarLiquidacionesUseCase;
 import pe.com.canchadirecta.settlements.application.port.out.LiquidacionRepositorio;
 import pe.com.canchadirecta.settlements.domain.model.DetalleLiquidacion;
 import pe.com.canchadirecta.settlements.domain.model.Liquidacion;
+import pe.com.canchadirecta.shared.application.port.out.ConfiguracionPlataforma;
 import pe.com.canchadirecta.shared.domain.DomainException;
 import pe.com.canchadirecta.shared.domain.ErrorCodes;
 
@@ -36,18 +36,12 @@ import java.util.List;
 public class LiquidacionService implements GestionarLiquidacionesUseCase {
 
     private final LiquidacionRepositorio liquidaciones;
-    private final BigDecimal porcentajeComision;
+    private final ConfiguracionPlataforma configuracion;
 
     @Inject
-    public LiquidacionService(
-            LiquidacionRepositorio liquidaciones,
-            @ConfigProperty(name = "cd.liquidaciones.porcentaje-comision", defaultValue = "10")
-            BigDecimal porcentajeComision) {
-        if (porcentajeComision.signum() < 0 || porcentajeComision.compareTo(new BigDecimal("100")) > 0) {
-            throw new IllegalStateException("cd.liquidaciones.porcentaje-comision debe estar entre 0 y 100.");
-        }
+    public LiquidacionService(LiquidacionRepositorio liquidaciones, ConfiguracionPlataforma configuracion) {
         this.liquidaciones = liquidaciones;
-        this.porcentajeComision = porcentajeComision.setScale(2, RoundingMode.HALF_UP);
+        this.configuracion = configuracion;
     }
 
     @Override
@@ -72,11 +66,16 @@ public class LiquidacionService implements GestionarLiquidacionesUseCase {
         }
 
         List<DetalleLiquidacion> detalles = new ArrayList<>(reservas.size());
+        BigDecimal porcentajeComision = configuracion.comisionPorcentaje().setScale(2, RoundingMode.HALF_UP);
+        if (porcentajeComision.signum() < 0 || porcentajeComision.compareTo(new BigDecimal("100")) > 0) {
+            throw new DomainException(ErrorCodes.DATOS_INVALIDOS,
+                    "La comision configurada debe estar entre 0 y 100.");
+        }
         BigDecimal bruto = BigDecimal.ZERO;
         BigDecimal comision = BigDecimal.ZERO;
         BigDecimal neto = BigDecimal.ZERO;
         for (ReservaLiquidable reserva : reservas) {
-            DetalleLiquidacion detalle = calcular(reserva);
+            DetalleLiquidacion detalle = calcular(reserva, porcentajeComision);
             detalles.add(detalle);
             bruto = bruto.add(detalle.montoReserva());
             comision = comision.add(detalle.montoComision());
@@ -112,7 +111,7 @@ public class LiquidacionService implements GestionarLiquidacionesUseCase {
     }
 
     /** Comision por linea redondeada a 2 decimales; el neto es el bruto menos la comision. */
-    private DetalleLiquidacion calcular(ReservaLiquidable reserva) {
+    private DetalleLiquidacion calcular(ReservaLiquidable reserva, BigDecimal porcentajeComision) {
         BigDecimal monto = reserva.monto().setScale(2, RoundingMode.HALF_UP);
         BigDecimal comision = monto.multiply(porcentajeComision)
                 .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);

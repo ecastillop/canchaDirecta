@@ -213,15 +213,16 @@ public class ReservaPersistenciaAdapter implements ReservaRepositorio {
 
     @Override
     @Transactional
-    public Long registrar(Long idUsuario, Long idCancha, FranjaHoraria franja, BigDecimal monto,
-                          BigDecimal montoDescuento, String claveIdempotencia) {
+    public Long registrar(Long idUsuario, Long idCancha, Long idPromocion, FranjaHoraria franja,
+                          BigDecimal monto, BigDecimal montoDescuento, String claveIdempotencia) {
         em.createNativeQuery("INSERT INTO reserva "
-                        + "(id_usuario, id_cancha, inicio, fin, monto_cancha, monto_descuento, "
-                        + "estado, clave_idempotencia) "
-                        + "VALUES (:idUsuario, :idCancha, :inicio, :fin, :monto, :descuento, "
-                        + "'PENDIENTE', :clave)")
+                        + "(id_usuario, id_cancha, id_promocion, inicio, fin, monto_cancha, "
+                        + "monto_descuento, estado, clave_idempotencia) "
+                        + "VALUES (:idUsuario, :idCancha, :idPromocion, :inicio, :fin, :monto, "
+                        + ":descuento, 'PENDIENTE', :clave)")
                 .setParameter("idUsuario", idUsuario.intValue())
                 .setParameter("idCancha", idCancha.intValue())
+                .setParameter("idPromocion", idPromocion)
                 .setParameter("inicio", SqlUtc.aLiteral(franja.inicio()))
                 .setParameter("fin", SqlUtc.aLiteral(franja.fin()))
                 .setParameter("monto", monto)

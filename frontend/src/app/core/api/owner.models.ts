@@ -34,6 +34,9 @@ export interface Promocion {
   fechaInicio: string;
   fechaFin: string;
   estado: 'ACTIVA' | 'INACTIVA';
+  limiteUsos: number | null;
+  limitePorUsuario: number | null;
+  usos: number;
   canchas: Array<{ id: number; nombre: string }>;
 }
 

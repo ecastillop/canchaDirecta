@@ -106,6 +106,76 @@ class PromocionReservaTest {
     }
 
     @Test
+    void respetaLosLimitesDeCanjeYLiberaUsosAlCancelar() {
+        String dueno = nuevoUsuario("dueno.limite");
+        Long idEstablecimiento = crearEstablecimiento(dueno);
+        Long idCancha = crearCancha(dueno, idEstablecimiento);
+        String codigo = "LIM1" + sufijo();
+        Map<String, Object> cuerpo = cuerpoPromocion(codigo, "MONTO", new BigDecimal("5.00"));
+        cuerpo.put("limiteUsos", 1);
+        cuerpo.put("limitePorUsuario", 1);
+        Long idPromocion = ((Number) given().auth().oauth2(dueno).contentType(ContentType.JSON)
+                .body(cuerpo)
+                .when().post("/api/v1/establecimientos/" + idEstablecimiento + "/promociones")
+                .then().statusCode(201)
+                .body("limiteUsos", equalTo(1))
+                .body("limitePorUsuario", equalTo(1))
+                .body("usos", equalTo(0))
+                .extract().path("id")).longValue();
+
+        String titularA = nuevoUsuario("titular.limite.a");
+        String titularB = nuevoUsuario("titular.limite.b");
+        Long reservaA = reservar(titularA, idCancha, codigo, 10);
+
+        given().auth().oauth2(dueno)
+                .when().get("/api/v1/establecimientos/" + idEstablecimiento + "/promociones")
+                .then().statusCode(200)
+                .body("find { it.id == " + idPromocion + " }.usos", equalTo(1));
+
+        given().auth().oauth2(titularB).contentType(ContentType.JSON)
+                .body(cuerpoReserva(idCancha, 12, codigo))
+                .when().post("/api/v1/reservas")
+                .then().statusCode(409);
+
+        given().auth().oauth2(titularA).contentType(ContentType.JSON)
+                .body(cuerpoReserva(idCancha, 14, codigo))
+                .when().post("/api/v1/reservas")
+                .then().statusCode(409);
+
+        // Al cancelar la reserva, el unico uso vuelve a quedar disponible.
+        given().auth().oauth2(titularA)
+                .when().post("/api/v1/reservas/" + reservaA + "/cancelar")
+                .then().statusCode(200);
+
+        given().auth().oauth2(titularB).contentType(ContentType.JSON)
+                .body(cuerpoReserva(idCancha, 12, codigo))
+                .when().post("/api/v1/reservas")
+                .then().statusCode(201);
+    }
+
+    @Test
+    void aplicaElLimitePorUsuarioSinLimiteGlobal() {
+        String dueno = nuevoUsuario("dueno.usuario");
+        Long idEstablecimiento = crearEstablecimiento(dueno);
+        Long idCancha = crearCancha(dueno, idEstablecimiento);
+        String codigo = "USER1" + sufijo();
+        Map<String, Object> cuerpo = cuerpoPromocion(codigo, "MONTO", new BigDecimal("5.00"));
+        cuerpo.put("limitePorUsuario", 1);
+        given().auth().oauth2(dueno).contentType(ContentType.JSON).body(cuerpo)
+                .when().post("/api/v1/establecimientos/" + idEstablecimiento + "/promociones")
+                .then().statusCode(201);
+
+        String titularA = nuevoUsuario("titular.usuario.a");
+        String titularB = nuevoUsuario("titular.usuario.b");
+        reservar(titularA, idCancha, codigo, 16);
+        given().auth().oauth2(titularA).contentType(ContentType.JSON)
+                .body(cuerpoReserva(idCancha, 17, codigo))
+                .when().post("/api/v1/reservas")
+                .then().statusCode(409);
+        reservar(titularB, idCancha, codigo, 18);
+    }
+
+    @Test
     void rechazaCodigosInexistentesInactivosOAjenos() {
         String dueno = nuevoUsuario("dueno.mal");
         Long idEstablecimiento = crearEstablecimiento(dueno);

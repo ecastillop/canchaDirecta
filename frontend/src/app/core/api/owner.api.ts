@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { apiUrl } from '../http/api-url';
+import { MetricasEstablecimiento } from './metricas.models';
 import {
   BloqueoCancha,
   Cochera,
@@ -156,6 +157,8 @@ export class OwnerApi {
       valor: number;
       fechaInicio: string;
       fechaFin: string;
+      limiteUsos?: number | null;
+      limitePorUsuario?: number | null;
     },
   ): Observable<Promocion> {
     return this.http.post<Promocion>(apiUrl(`/establecimientos/${idEstablecimiento}/promociones`), payload);
@@ -169,6 +172,14 @@ export class OwnerApi {
     return this.http.post<Promocion>(
       apiUrl(`/establecimientos/${idEstablecimiento}/promociones/${idPromocion}/estado`),
       { estado },
+    );
+  }
+
+  // Metricas del panel
+  metricas(idEstablecimiento: number, dias = 30): Observable<MetricasEstablecimiento> {
+    return this.http.get<MetricasEstablecimiento>(
+      apiUrl(`/establecimientos/${idEstablecimiento}/metricas`),
+      { params: { dias } },
     );
   }
 

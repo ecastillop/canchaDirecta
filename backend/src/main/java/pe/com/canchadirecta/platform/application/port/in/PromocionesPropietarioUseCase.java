@@ -15,7 +15,8 @@ public interface PromocionesPropietarioUseCase {
     List<PromocionAdmin> listar(Long idEstablecimiento, Long idUsuario, int limite);
 
     PromocionAdmin crear(Long idEstablecimiento, Long idUsuario, String codigo, String descripcion,
-                         String tipo, BigDecimal valor, LocalDate fechaInicio, LocalDate fechaFin);
+                         String tipo, BigDecimal valor, LocalDate fechaInicio, LocalDate fechaFin,
+                         Integer limiteUsos, Integer limitePorUsuario);
 
     PromocionAdmin cambiarEstado(Long idEstablecimiento, Long idPromocion, Long idUsuario, String estado);
 }

@@ -4,9 +4,11 @@ import pe.com.canchadirecta.platform.domain.model.Auditoria;
 import pe.com.canchadirecta.platform.domain.model.CocheraAdmin;
 import pe.com.canchadirecta.platform.domain.model.PromocionAdmin;
 import pe.com.canchadirecta.platform.domain.model.PropietarioAdmin;
+import pe.com.canchadirecta.platform.domain.model.ReporteAdmin;
 import pe.com.canchadirecta.platform.domain.model.SupervisionAdmin;
 import pe.com.canchadirecta.platform.domain.model.UsuarioAdmin;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -34,11 +36,18 @@ public interface AdminPlataformaRepositorio {
 
     List<SupervisionAdmin.Establecimiento> establecimientos(String estado, int limite);
 
+    Optional<SupervisionAdmin.Establecimiento> establecimiento(Long idEstablecimiento);
+
+    boolean cambiarEstadoEstablecimiento(Long idEstablecimiento, String esperado, String nuevo);
+
     List<SupervisionAdmin.Reserva> reservas(String estado, int limite);
 
     List<SupervisionAdmin.Pago> pagos(String estado, int limite);
 
     List<Auditoria> auditoria(int limite);
+
+    /** Reporte agregado de plataforma para la ventana indicada. */
+    ReporteAdmin reporte(int dias, Instant desde, Instant hasta);
 
     /** Usuarios con sus roles; filtros opcionales por correo (contiene), estado y rol. */
     List<UsuarioAdmin> usuarios(String correo, String estado, String rol, int limite);

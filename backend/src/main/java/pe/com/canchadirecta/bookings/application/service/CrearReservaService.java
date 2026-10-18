@@ -4,7 +4,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.PersistenceException;
 import jakarta.transaction.Transactional;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pe.com.canchadirecta.bookings.application.dto.CanchaInfo;
 import pe.com.canchadirecta.bookings.application.dto.CocheraInfo;
 import pe.com.canchadirecta.bookings.application.dto.CrearReservaCommand;
@@ -12,6 +11,7 @@ import pe.com.canchadirecta.bookings.application.port.in.ReservasUseCase;
 import pe.com.canchadirecta.bookings.application.port.out.ReservaRepositorio;
 import pe.com.canchadirecta.bookings.domain.model.FranjaHoraria;
 import pe.com.canchadirecta.bookings.domain.model.Reserva;
+import pe.com.canchadirecta.shared.application.port.out.ConfiguracionPlataforma;
 import pe.com.canchadirecta.shared.application.port.out.PromocionesCancha;
 import pe.com.canchadirecta.shared.application.port.out.Reloj;
 import pe.com.canchadirecta.shared.domain.DomainException;
@@ -52,16 +52,15 @@ public class CrearReservaService implements ReservasUseCase {
     private final ReservaRepositorio reservas;
     private final PromocionesCancha promociones;
     private final Reloj reloj;
-    private final long diasAnticipacionMax;
+    private final ConfiguracionPlataforma configuracion;
 
     @Inject
     public CrearReservaService(ReservaRepositorio reservas, PromocionesCancha promociones, Reloj reloj,
-                               @ConfigProperty(name = "cd.reservas.dias-anticipacion-max", defaultValue = "7")
-                               long diasAnticipacionMax) {
+                               ConfiguracionPlataforma configuracion) {
         this.reservas = reservas;
         this.promociones = promociones;
         this.reloj = reloj;
-        this.diasAnticipacionMax = diasAnticipacionMax;
+        this.configuracion = configuracion;
     }
 
     @Override
@@ -81,6 +80,7 @@ public class CrearReservaService implements ReservasUseCase {
         FranjaHoraria franja = new FranjaHoraria(command.inicio(), command.fin());
 
         Instant ahora = reloj.ahora();
+        long diasAnticipacionMax = configuracion.diasAnticipacionMax();
         if (franja.inicio().isBefore(ahora)) {
             throw new DomainException(ErrorCodes.DATOS_INVALIDOS, "No se puede reservar en el pasado.");
         }
@@ -111,13 +111,14 @@ public class CrearReservaService implements ReservasUseCase {
         }
 
         Reserva.CocheraReservada cocheraReservada = comprobarCupoYCobrar(cochera, franja);
-        BigDecimal descuento = calcularDescuento(command.codigoPromocion(), command.idCancha(),
-                cancha.precioBase(), franja.inicio());
+        Descuento descuento = calcularDescuento(command.codigoPromocion(), command.idCancha(),
+                cancha.precioBase(), franja.inicio(), command.idUsuario());
+        Long idPromocion = descuento.promocion() == null ? null : descuento.promocion().id();
 
         Long id;
         try {
-            id = reservas.registrar(command.idUsuario(), command.idCancha(), franja,
-                    cancha.precioBase(), descuento, clave);
+            id = reservas.registrar(command.idUsuario(), command.idCancha(), idPromocion, franja,
+                    cancha.precioBase(), descuento.monto(), clave);
         } catch (PersistenceException ex) {
             // Carrera de dos peticiones con la misma clave: gana la que inserto primero.
             if (clave != null) {
@@ -128,12 +129,17 @@ public class CrearReservaService implements ReservasUseCase {
             }
             throw ex;
         }
+        if (descuento.promocion() != null
+                && !promociones.consumir(descuento.promocion().id(), command.idUsuario())) {
+            throw new DomainException(ErrorCodes.CONFLICTO,
+                    "El cupon alcanzo su limite de usos. Intenta con otro codigo.");
+        }
         if (cocheraReservada != null) {
             reservas.registrarReservaCochera(id, cocheraReservada.idCochera(), franja.inicio(), franja.fin(),
                     cocheraReservada.monto());
         }
         return new Reserva(id, command.idUsuario(), command.idCancha(), franja,
-                cancha.precioBase(), descuento, Reserva.Estado.PENDIENTE, ahora, cocheraReservada);
+                cancha.precioBase(), descuento.monto(), Reserva.Estado.PENDIENTE, ahora, cocheraReservada);
     }
 
     /**
@@ -141,23 +147,26 @@ public class CrearReservaService implements ReservasUseCase {
      * **fecha de la reserva** (no la de hoy). Una promocion ausente, inactiva, fuera de fechas o no
      * asociada a la cancha es `409` (el usuario puede corregir el codigo o reservar sin el).
      */
-    private BigDecimal calcularDescuento(String codigo, Long idCancha, BigDecimal precio,
-                                         Instant inicioFranja) {
+    private Descuento calcularDescuento(String codigo, Long idCancha, BigDecimal precio,
+                                        Instant inicioFranja, Long idUsuario) {
         if (codigo == null || codigo.isBlank()) {
-            return BigDecimal.ZERO;
+            return new Descuento(null, BigDecimal.ZERO);
         }
         String limpio = codigo.trim().toUpperCase(Locale.ROOT);
         PromocionesCancha.Promocion promocion = promociones
-                .vigente(limpio, idCancha, LocalDate.ofInstant(inicioFranja, ZONA_NEGOCIO))
+                .vigente(limpio, idCancha, LocalDate.ofInstant(inicioFranja, ZONA_NEGOCIO), idUsuario)
                 .orElseThrow(() -> new DomainException(ErrorCodes.CONFLICTO,
-                        "La promocion no existe, no esta vigente o no aplica a esta cancha."));
+                        "El cupon no existe, no esta vigente, no aplica a esta cancha o agoto sus usos."));
         BigDecimal descuento = "PORCENTAJE".equals(promocion.tipoDescuento())
                 ? precio.multiply(promocion.valor()).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
                 : promocion.valor();
         if (descuento.compareTo(precio) > 0) {
             descuento = precio;
         }
-        return descuento.max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP);
+        return new Descuento(promocion, descuento.max(BigDecimal.ZERO).setScale(2, RoundingMode.HALF_UP));
+    }
+
+    private record Descuento(PromocionesCancha.Promocion promocion, BigDecimal monto) {
     }
 
     /**
@@ -219,6 +228,7 @@ public class CrearReservaService implements ReservasUseCase {
                     "La reprogramacion debe conservar la duracion de la reserva.");
         }
         Instant ahora = reloj.ahora();
+        long diasAnticipacionMax = configuracion.diasAnticipacionMax();
         if (nueva.inicio().isBefore(ahora)) {
             throw new DomainException(ErrorCodes.DATOS_INVALIDOS, "No se puede reprogramar al pasado.");
         }

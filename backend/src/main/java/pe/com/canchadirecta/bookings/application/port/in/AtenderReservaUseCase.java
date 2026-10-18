@@ -22,6 +22,12 @@ public interface AtenderReservaUseCase {
     /** Pasa una reserva pendiente a `RECHAZADA` y libera la franja. */
     Reserva rechazar(Long idReserva, Long idUsuario, String motivo);
 
+    /** Confirmacion desde administracion, sin exigir propiedad de la cancha. */
+    Reserva confirmarComoAdmin(Long idReserva);
+
+    /** Rechazo desde administracion, sin exigir propiedad y con la misma politica de liberacion. */
+    Reserva rechazarComoAdmin(Long idReserva, String motivo);
+
     /**
      * Revoca una reserva ya `CONFIRMADA` que aun no ha comenzado (L-14): pasa a
      * `RECHAZADA` y libera la franja, con reembolso total porque la responsabilidad es

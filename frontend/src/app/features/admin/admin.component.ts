@@ -1,8 +1,7 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, input, signal, computed } from '@angular/core';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Dialog } from '@angular/cdk/dialog';
-import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
   AdminApi,
@@ -37,7 +36,6 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
     ReactiveFormsModule,
     CurrencyPipe,
     DatePipe,
-    RouterLink,
     CdButtonDirective,
     CdInputDirective,
     CdSkeletonComponent,
@@ -47,33 +45,7 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="cd-container cd-page">
-      <header class="cd-page__header">
-        <h1 class="cd-page__title">Administración de plataforma</h1>
-        <p class="cd-muted">Valida propietarios, modera reclamos y supervisa la operación.</p>
-      </header>
-
-      <nav class="tabs" aria-label="Secciones de administración">
-        <div class="tabs__brand">
-          <span class="tabs__logo" aria-hidden="true">A</span>
-          <div>
-            <strong>Administración</strong>
-            <small>Espacio de trabajo</small>
-          </div>
-        </div>
-        @for (item of tabs; track item.id) {
-          <button
-            type="button"
-            [class.activo]="tab() === item.id"
-            [attr.aria-pressed]="tab() === item.id"
-            (click)="cambiarTab(item.id)"
-          >
-            {{ item.etiqueta }}
-          </button>
-        }
-        <a routerLink="/" class="tabs__back">← Volver al sitio</a>
-      </nav>
-
+    <div>
       @if (cargando()) {
         <div class="cd-stack">
           @for (i of [1, 2, 3]; track i) {
@@ -154,6 +126,32 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
           }
         }
         @if (tab() === 'reclamos') {
+          <section class="cd-card formulario-ticket">
+            <h2 class="seccion">Nuevo ticket de soporte</h2>
+            <p class="cd-xs cd-muted">Registra una consulta a nombre de un usuario de la plataforma.</p>
+            <form class="cd-stack" [formGroup]="ticketForm" (ngSubmit)="crearTicket()" novalidate>
+              <div class="tres">
+                <label class="cd-field">
+                  <span class="cd-field__label">ID de usuario</span>
+                  <input cdInput type="number" min="1" formControlName="idUsuario" />
+                </label>
+                <label class="cd-field">
+                  <span class="cd-field__label">ID de reserva (opcional)</span>
+                  <input cdInput type="number" min="0" formControlName="idReserva" />
+                </label>
+                <label class="cd-field">
+                  <span class="cd-field__label">Asunto</span>
+                  <input cdInput formControlName="asunto" maxlength="150" />
+                </label>
+              </div>
+              <label class="cd-field">
+                <span class="cd-field__label">Descripción</span>
+                <textarea cdInput formControlName="descripcion" rows="2" maxlength="800"></textarea>
+              </label>
+              <button cdButton type="submit" [loading]="guardandoTicket()">Crear ticket</button>
+            </form>
+          </section>
+
           <div class="dos-columnas">
             <div class="cd-stack">
               @for (reclamo of reclamosPagina(); track reclamo.id) {
@@ -305,6 +303,15 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
                         · {{ promocion.fechaInicio | date: 'd MMM' }} - {{ promocion.fechaFin | date: 'd MMM yyyy' }}
                         · {{ promocion.canchas.length }} cancha(s)
                       </p>
+                      <p class="cd-xs cd-muted">
+                        {{ promocion.usos }} canjes
+                        @if (promocion.limiteUsos) {
+                          de {{ promocion.limiteUsos }}
+                        }
+                        @if (promocion.limitePorUsuario) {
+                          · máximo {{ promocion.limitePorUsuario }} por cliente
+                        }
+                      </p>
                     </div>
                     <button cdButton variant="secondary" size="sm" type="button" (click)="cambiarEstadoPromocion(promocion)">
                       {{ promocion.estado === 'ACTIVA' ? 'Desactivar' : 'Activar' }}
@@ -354,6 +361,14 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
                 <label class="cd-field">
                   <span class="cd-field__label">Hasta</span>
                   <input cdInput type="date" formControlName="fechaFin" />
+                </label>
+                <label class="cd-field">
+                  <span class="cd-field__label">Límite de canjes (0 = sin límite)</span>
+                  <input cdInput type="number" min="0" formControlName="limiteUsos" />
+                </label>
+                <label class="cd-field">
+                  <span class="cd-field__label">Límite por cliente (0 = sin límite)</span>
+                  <input cdInput type="number" min="0" formControlName="limitePorUsuario" />
                 </label>
               </div>
               <button cdButton type="submit" [loading]="guardandoPromocion()">Crear promoción</button>
@@ -434,6 +449,7 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
                     <th scope="col">Propietario</th>
                     <th scope="col">Canchas</th>
                     <th scope="col">Estado</th>
+                    <th scope="col">Acción</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -445,6 +461,17 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
                       <td>{{ est.propietario }}</td>
                       <td>{{ est.canchas }}</td>
                       <td>{{ est.estado }}</td>
+                      <td>
+                        <button
+                          cdButton
+                          variant="secondary"
+                          size="sm"
+                          type="button"
+                          (click)="cambiarEstadoSede(est)"
+                        >
+                          {{ est.estado === 'ACTIVO' ? 'Desactivar' : 'Activar' }}
+                        </button>
+                      </td>
                     </tr>
                   }
                 </tbody>
@@ -470,6 +497,7 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
                     <th scope="col">Inicio</th>
                     <th scope="col">Monto</th>
                     <th scope="col">Estado</th>
+                    <th scope="col">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -481,6 +509,26 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
                       <td>{{ reserva.inicio | date: 'd MMM yyyy, HH:mm' }}</td>
                       <td>{{ reserva.montoCancha | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</td>
                       <td>{{ reserva.estado }}</td>
+                      <td>
+                        @if (reserva.estado === 'PENDIENTE') {
+                          <div class="cd-row">
+                            <button cdButton size="sm" type="button" (click)="confirmarReservaAdmin(reserva)">
+                              Confirmar
+                            </button>
+                            <button
+                              cdButton
+                              variant="danger"
+                              size="sm"
+                              type="button"
+                              (click)="rechazarReservaAdmin(reserva)"
+                            >
+                              Rechazar
+                            </button>
+                          </div>
+                        } @else {
+                          <span class="cd-xs cd-muted">—</span>
+                        }
+                      </td>
                     </tr>
                   }
                 </tbody>
@@ -902,20 +950,13 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
     }
   `,
 })
-export class AdminComponent implements OnInit {
+export class AdminComponent {
   private readonly api = inject(AdminApi);
   private readonly confirm = inject(ConfirmService);
   private readonly toast = inject(ToastService);
 
-  protected readonly tabs: Array<{ id: Tab; etiqueta: string }> = [
-    { id: 'propietarios', etiqueta: 'Propietarios' },
-    { id: 'reclamos', etiqueta: 'Reclamos' },
-    { id: 'usuarios', etiqueta: 'Usuarios' },
-    { id: 'promociones', etiqueta: 'Promociones' },
-    { id: 'cocheras', etiqueta: 'Cocheras' },
-    { id: 'supervision', etiqueta: 'Supervisión' },
-    { id: 'auditoria', etiqueta: 'Auditoría' },
-  ];
+  readonly seccion = input<Tab>('propietarios');
+
   protected readonly supervisionTabs: SupervisionTab[] = ['establecimientos', 'reservas', 'pagos'];
 
   protected readonly tab = signal<Tab>('propietarios');
@@ -967,6 +1008,7 @@ export class AdminComponent implements OnInit {
     this.paginar(this.cocherasAdmin(), this.paginaCocheras()),
   );
   protected readonly guardandoPromocion = signal(false);
+  protected readonly guardandoTicket = signal(false);
   protected readonly auditoria = signal<Auditoria[]>([]);
   protected readonly paginaAuditoria = signal(1);
   protected readonly auditoriaPagina = computed(() => this.paginar(this.auditoria(), this.paginaAuditoria()));
@@ -975,6 +1017,13 @@ export class AdminComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly dialog = inject(Dialog);
 
+  protected readonly ticketForm = this.fb.nonNullable.group({
+    idUsuario: [0, [Validators.required, Validators.min(1)]],
+    idReserva: [0],
+    asunto: ['', [Validators.required, Validators.maxLength(150)]],
+    descripcion: ['', [Validators.required, Validators.maxLength(800)]],
+  });
+
   protected readonly promocionForm = this.fb.nonNullable.group({
     codigo: ['', [Validators.required, Validators.maxLength(30)]],
     descripcion: ['', [Validators.required, Validators.maxLength(200)]],
@@ -982,22 +1031,23 @@ export class AdminComponent implements OnInit {
     valor: [10, [Validators.required, Validators.min(0.01)]],
     fechaInicio: ['', [Validators.required]],
     fechaFin: ['', [Validators.required]],
+    limiteUsos: [0, [Validators.min(0)]],
+    limitePorUsuario: [0, [Validators.min(0)]],
   });
 
-  ngOnInit(): void {
-    void this.cargarTab();
-  }
-
-  protected cambiarTab(tab: Tab): void {
-    this.tab.set(tab);
-    this.paginaPropietarios.set(1);
-    this.paginaReclamos.set(1);
-    this.paginaUsuarios.set(1);
-    this.paginaPromociones.set(1);
-    this.paginaCocheras.set(1);
-    this.paginaSupervision.set(1);
-    this.paginaAuditoria.set(1);
-    void this.cargarTab();
+  constructor() {
+    effect(() => {
+      const seccion = this.seccion();
+      this.tab.set(seccion);
+      this.paginaPropietarios.set(1);
+      this.paginaReclamos.set(1);
+      this.paginaUsuarios.set(1);
+      this.paginaPromociones.set(1);
+      this.paginaCocheras.set(1);
+      this.paginaSupervision.set(1);
+      this.paginaAuditoria.set(1);
+      void this.cargarTab();
+    });
   }
 
   protected cambiarSupervision(sub: SupervisionTab): void {
@@ -1113,6 +1163,58 @@ export class AdminComponent implements OnInit {
     });
   }
 
+  protected crearTicket(): void {
+    if (this.ticketForm.invalid) {
+      this.ticketForm.markAllAsTouched();
+      return;
+    }
+    const value = this.ticketForm.getRawValue();
+    this.guardandoTicket.set(true);
+    this.api
+      .crearReclamoAdmin({
+        idUsuario: value.idUsuario,
+        idReserva: value.idReserva > 0 ? value.idReserva : null,
+        asunto: value.asunto.trim(),
+        descripcion: value.descripcion.trim(),
+      })
+      .subscribe({
+        next: (reclamo) => {
+          this.guardandoTicket.set(false);
+          this.reclamos.update((lista) => [reclamo, ...lista]);
+          this.ticketForm.reset({ idUsuario: 0, idReserva: 0, asunto: '', descripcion: '' });
+          this.toast.success('Ticket creado.');
+        },
+        error: (error) => {
+          this.guardandoTicket.set(false);
+          this.toast.error(toApiError(error).message);
+        },
+      });
+  }
+
+  protected confirmarReservaAdmin(reserva: AdminReserva): void {
+    this.api.confirmarReserva(reserva.id).subscribe({
+      next: () => {
+        this.reservasAdmin.update((lista) =>
+          lista.map((item) => (item.id === reserva.id ? { ...item, estado: 'CONFIRMADA' } : item)),
+        );
+        this.toast.success('Reserva confirmada.');
+      },
+      error: (error) => this.toast.error(toApiError(error).message),
+    });
+  }
+
+  protected rechazarReservaAdmin(reserva: AdminReserva): void {
+    this.api.rechazarReserva(reserva.id, 'Rechazada por administracion').subscribe({
+      next: () => {
+        this.reservasAdmin.update((lista) =>
+          lista.map((item) => (item.id === reserva.id ? { ...item, estado: 'RECHAZADA' } : item)),
+        );
+        this.toast.success('Reserva rechazada.');
+      },
+      error: (error) => this.toast.error(toApiError(error).message),
+    });
+  }
+
   protected buscarUsuarios(): void {
     this.paginaUsuarios.set(1);
     void this.cargarUsuarios();
@@ -1133,6 +1235,8 @@ export class AdminComponent implements OnInit {
         valor: value.valor,
         fechaInicio: value.fechaInicio,
         fechaFin: value.fechaFin,
+        limiteUsos: value.limiteUsos > 0 ? value.limiteUsos : null,
+        limitePorUsuario: value.limitePorUsuario > 0 ? value.limitePorUsuario : null,
       })
       .subscribe({
         next: (promocion) => {
@@ -1145,6 +1249,8 @@ export class AdminComponent implements OnInit {
             valor: 10,
             fechaInicio: '',
             fechaFin: '',
+            limiteUsos: 0,
+            limitePorUsuario: 0,
           });
           this.toast.success('Promocion creada.');
         },
@@ -1253,6 +1359,19 @@ export class AdminComponent implements OnInit {
     } catch (error) {
       this.toast.error(`Propietario validado, pero no se pudo asignar OWNER: ${toApiError(error).message}`);
     }
+  }
+
+  protected cambiarEstadoSede(establecimiento: AdminEstablecimiento): void {
+    const nuevo = establecimiento.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
+    this.api.estadoEstablecimiento(establecimiento.id, nuevo).subscribe({
+      next: (actualizado) => {
+        this.establecimientos.update((lista) =>
+          lista.map((item) => (item.id === actualizado.id ? actualizado : item)),
+        );
+        this.toast.success(`Establecimiento ${nuevo.toLowerCase()}.`);
+      },
+      error: (error) => this.toast.error(toApiError(error).message),
+    });
   }
 
   private async cargarSupervision(): Promise<void> {

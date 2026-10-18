@@ -4,6 +4,7 @@ import pe.com.canchadirecta.platform.domain.model.Auditoria;
 import pe.com.canchadirecta.platform.domain.model.CocheraAdmin;
 import pe.com.canchadirecta.platform.domain.model.PromocionAdmin;
 import pe.com.canchadirecta.platform.domain.model.PropietarioAdmin;
+import pe.com.canchadirecta.platform.domain.model.ReporteAdmin;
 import pe.com.canchadirecta.platform.domain.model.SupervisionAdmin;
 import pe.com.canchadirecta.platform.domain.model.UsuarioAdmin;
 
@@ -25,6 +26,10 @@ public interface AdminPlataformaUseCase {
 
     /** Establecimientos con propietario, distrito y numero de canchas. */
     List<SupervisionAdmin.Establecimiento> establecimientos(String estado, int limite);
+
+    /** Activa o desactiva un establecimiento desde administracion. */
+    SupervisionAdmin.Establecimiento cambiarEstadoEstablecimiento(Long idEstablecimiento, Long idAdmin,
+                                                                  String estado);
 
     /** Reservas de todos los usuarios. */
     List<SupervisionAdmin.Reserva> reservas(String estado, int limite);
@@ -53,10 +58,13 @@ public interface AdminPlataformaUseCase {
     /** Crea una promocion y la asocia a las canchas indicadas (opcional). */
     PromocionAdmin crearPromocion(Long idAdmin, String codigo, String descripcion, String tipo,
                                   BigDecimal valor, LocalDate fechaInicio, LocalDate fechaFin,
-                                  List<Long> canchas);
+                                  Integer limiteUsos, Integer limitePorUsuario, List<Long> canchas);
 
     /** Activa o desactiva una promocion. */
     PromocionAdmin cambiarEstadoPromocion(Long idPromocion, Long idAdmin, String estado);
+
+    /** Reporte agregado de plataforma para los ultimos N dias. */
+    ReporteAdmin reporte(int dias);
 
     /** Cocheras de todos los establecimientos. */
     List<CocheraAdmin> cocheras(String estado, int limite);

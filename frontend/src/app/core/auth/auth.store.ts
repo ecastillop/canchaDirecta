@@ -31,6 +31,7 @@ export class AuthStore {
   readonly roles = computed(() => this._user()?.roles ?? []);
   readonly isOwner = computed(() => this.roles().includes('OWNER'));
   readonly isAdmin = computed(() => this.roles().includes('PLATFORM_ADMIN'));
+  readonly isOperador = computed(() => this.roles().includes('OPERADOR'));
   readonly fullName = computed(() => {
     const user = this._user();
     return user ? `${user.nombres} ${user.apellidos}`.trim() : '';

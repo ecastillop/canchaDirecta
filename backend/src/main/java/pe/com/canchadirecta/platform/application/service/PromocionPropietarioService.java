@@ -41,7 +41,8 @@ public class PromocionPropietarioService implements PromocionesPropietarioUseCas
 
     @Override
     public PromocionAdmin crear(Long idEstablecimiento, Long idUsuario, String codigo, String descripcion,
-                                String tipo, BigDecimal valor, LocalDate fechaInicio, LocalDate fechaFin) {
+                                String tipo, BigDecimal valor, LocalDate fechaInicio, LocalDate fechaFin,
+                                Integer limiteUsos, Integer limitePorUsuario) {
         exigirPropietario(idEstablecimiento, idUsuario);
         List<Long> canchas = admin.canchasDeEstablecimiento(idEstablecimiento);
         if (canchas.isEmpty()) {
@@ -49,7 +50,7 @@ public class PromocionPropietarioService implements PromocionesPropietarioUseCas
                     "El establecimiento no tiene canchas para asociar la promocion.");
         }
         return catalogo.crearPromocion(idUsuario, codigo, descripcion, tipo, valor, fechaInicio, fechaFin,
-                canchas);
+                limiteUsos, limitePorUsuario, canchas);
     }
 
     @Override

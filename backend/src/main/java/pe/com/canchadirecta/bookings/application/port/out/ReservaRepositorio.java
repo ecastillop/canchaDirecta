@@ -48,8 +48,8 @@ public interface ReservaRepositorio {
     boolean existeBloqueoSolapado(Long idCancha, Instant inicio, Instant fin);
 
     /** Inserta la reserva y su entrada de historial; devuelve el id generado. */
-    Long registrar(Long idUsuario, Long idCancha, FranjaHoraria franja, BigDecimal monto,
-                   BigDecimal montoDescuento, String claveIdempotencia);
+    Long registrar(Long idUsuario, Long idCancha, Long idPromocion, FranjaHoraria franja,
+                   BigDecimal monto, BigDecimal montoDescuento, String claveIdempotencia);
 
     /** Reserva ya creada con esa clave de idempotencia para el titular (CU03.2). */
     Optional<Reserva> buscarPorClaveIdempotencia(Long idUsuario, String claveIdempotencia);

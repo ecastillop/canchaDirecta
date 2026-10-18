@@ -26,6 +26,15 @@ public final class SqlUtc {
 
     /** Interpreta un `DATETIME` leido (siempre en UTC) como el instante que representa. */
     public static Instant aInstant(Object valor) {
+        if (valor instanceof Instant instante) {
+            return instante;
+        }
+        if (valor instanceof LocalDateTime local) {
+            return local.toInstant(ZoneOffset.UTC);
+        }
+        if (valor instanceof java.sql.Timestamp marca) {
+            return marca.toInstant();
+        }
         String iso = String.valueOf(valor).trim().replace(' ', 'T');
         if (!iso.endsWith("Z")) {
             iso = iso + "Z";

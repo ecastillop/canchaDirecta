@@ -137,6 +137,50 @@ class CatalogoCanchaTest {
     }
 
     @Test
+    void laFichaDelEspacioAgrupaCanchasServiciosFotosYReputacion() {
+        String dueno = nuevoUsuario("dueno.espacio");
+        Long idEstablecimiento = crearEstablecimiento(dueno);
+        Long idCancha = crearCancha(dueno, idEstablecimiento, "Cancha espacio A " + System.nanoTime(),
+                new BigDecimal("50.00"));
+        Long idSegunda = crearCancha(dueno, idEstablecimiento, "Cancha espacio B " + System.nanoTime(),
+                new BigDecimal("80.00"));
+        Long idDeporte = primerId("/api/v1/deportes");
+        Long idCaracteristica = primerId("/api/v1/caracteristicas");
+
+        given().auth().oauth2(dueno).contentType(ContentType.JSON)
+                .body(Map.of("ids", List.of(idDeporte)))
+                .when().put("/api/v1/canchas/" + idCancha + "/deportes")
+                .then().statusCode(200);
+        given().auth().oauth2(dueno).contentType(ContentType.JSON)
+                .body(Map.of("ids", List.of(idCaracteristica)))
+                .when().put("/api/v1/canchas/" + idCancha + "/caracteristicas")
+                .then().statusCode(200);
+        given().auth().oauth2(dueno).contentType(ContentType.JSON)
+                .body(Map.of("url", "https://cdn.canchadirecta.pe/espacio-" + idCancha + ".jpg",
+                        "orden", 1, "principal", true))
+                .when().post("/api/v1/canchas/" + idCancha + "/fotos")
+                .then().statusCode(201);
+
+        given().when().get("/api/v1/establecimientos/" + idEstablecimiento + "/ficha")
+                .then().statusCode(200)
+                .body("id", equalTo(idEstablecimiento.intValue()))
+                .body("distrito.departamento", equalTo("Lima"))
+                .body("estado", equalTo("ACTIVO"))
+                .body("canchas", hasSize(2))
+                .body("canchas[0].id", equalTo(idCancha.intValue()))
+                .body("canchas[0].deportes", hasSize(1))
+                .body("canchas[0].fotoPrincipal", org.hamcrest.Matchers.containsString("espacio"))
+                .body("servicios", hasSize(1))
+                .body("fotos", hasSize(1))
+                .body("reputacion.total", equalTo(0))
+                .body("precioDesde", equalTo(50.0f))
+                .body("canchas[1].id", equalTo(idSegunda.intValue()));
+
+        given().when().get("/api/v1/establecimientos/999999999/ficha")
+                .then().statusCode(404);
+    }
+
+    @Test
     void filtraPorDeportePrecioYTexto() {
         String dueno = nuevoUsuario("dueno.filtro");
         Long idEstablecimiento = crearEstablecimiento(dueno);

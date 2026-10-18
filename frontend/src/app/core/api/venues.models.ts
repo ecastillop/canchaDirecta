@@ -61,6 +61,31 @@ export interface CanchaDetalle {
   reputacion: Reputacion;
 }
 
+export interface CanchaEspacio {
+  id: number;
+  nombre: string;
+  capacidad: number;
+  precioBase: number;
+  estado: 'ACTIVA' | 'INACTIVA' | 'MANTENIMIENTO';
+  deportes: Item[];
+  fotoPrincipal: string | null;
+  reputacion: Reputacion;
+}
+
+export interface FichaEspacio {
+  id: number;
+  nombre: string;
+  direccion: string;
+  referencia: string | null;
+  estado: 'ACTIVO' | 'INACTIVO';
+  distrito: Distrito;
+  servicios: Caracteristica[];
+  fotos: Foto[];
+  reputacion: Reputacion;
+  precioDesde: number | null;
+  canchas: CanchaEspacio[];
+}
+
 export interface HorarioCancha {
   id: number;
   idCancha: number;

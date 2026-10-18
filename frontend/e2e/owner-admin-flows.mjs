@@ -63,6 +63,7 @@ const reg = await api('/auth/register', {
     confirmacionPassword: owner.password,
   },
 });
+owner.id = reg.id;
 console.log(`Owner registrado id=${reg.id}`);
 const loginOwner = await api('/auth/login', { method: 'POST', body: { correo: owner.correo, password: owner.password } });
 await api('/propietarios/solicitudes', {
@@ -100,8 +101,8 @@ async function login(correo, password) {
 try {
   // 1. Admin valida al propietario desde la UI y asigna OWNER
   await login(ADMIN.correo, ADMIN.password);
-  await page.goto(`${BASE}/admin`, { waitUntil: 'networkidle' });
-  await page.getByRole('heading', { name: 'Administración de plataforma' }).waitFor();
+  await page.goto(`${BASE}/admin/propietarios`, { waitUntil: 'networkidle' });
+  await page.getByRole('heading', { name: 'Propietarios', exact: true }).waitFor();
   await page.getByRole('button', { name: 'PENDIENTE', exact: true }).click();
   const fila = page.locator('article.fila', { hasText: owner.correo });
   await fila.waitFor({ timeout: 20000 });
@@ -119,11 +120,10 @@ try {
   else fallo(`OWNER ausente en roles: ${meOwner.roles.join(',')}`);
 
   // 2. Panel del propietario
-  await page.locator('summary.cuenta-btn').click();
-  await page.getByRole('button', { name: 'Cerrar sesión' }).click();
+  await page.locator('.admin-side__salir').click();
   await login(owner.correo, owner.password);
   await page.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
-  await page.getByRole('heading', { name: 'Gestiona tus espacios' }).waitFor({ timeout: 20000 });
+  await page.getByRole('heading', { name: 'Tu operación, bajo control.' }).waitFor({ timeout: 20000 });
   ok('panel del propietario accesible tras validacion');
 
   const nombreEst = `Establecimiento E2E ${stamp}`;
@@ -249,29 +249,90 @@ try {
   ok('promocion del propietario creada');
   await page.screenshot({ path: `${EVID}/panel-promociones-1440.png`, fullPage: false });
 
+  // Actividades del establecimiento
+  await navPanel.getByRole('link', { name: 'Actividades' }).click();
+  await page.getByRole('heading', { name: 'Nueva actividad' }).waitFor();
+  const inicioActividad = new Date(Date.now() + 4 * 86400000);
+  inicioActividad.setHours(18, 0, 0, 0);
+  const finActividad = new Date(inicioActividad.getTime() + 2 * 3600000);
+  const local = (fecha) =>
+    `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(
+      fecha.getDate(),
+    ).padStart(2, '0')}T${String(fecha.getHours()).padStart(2, '0')}:${String(fecha.getMinutes()).padStart(2, '0')}`;
+  await page.locator('label:has-text("Nombre") input').fill('Actividad E2E');
+  await page.locator('label:has-text("Descripción") textarea').fill('Torneo abierto de prueba');
+  await page.locator('label:has-text("Inicio") input').fill(local(inicioActividad));
+  await page.locator('label:has-text("Fin") input').fill(local(finActividad));
+  await page.locator('label:has-text("Cupos") input').fill('12');
+  await page.locator('label:has-text("Precio") input').fill('25');
+  await page.getByRole('button', { name: 'Publicar actividad' }).click();
+  await page.getByText('Actividad E2E').first().waitFor({ timeout: 20000 });
+  ok('actividad publicada desde el panel del propietario');
+  await page.getByRole('button', { name: 'Ver inscritos' }).first().click();
+  await page.getByText('Todavía no hay inscritos confirmados.').waitFor({ timeout: 20000 });
+  ok('el propietario consulta los inscritos de la actividad');
+  await page.screenshot({ path: `${EVID}/panel-actividades-1440.png`, fullPage: false });
+
+  // Metricas del establecimiento
+  await navPanel.getByRole('link', { name: 'Métricas' }).click();
+  await page.getByRole('heading', { name: 'Métricas del establecimiento' }).waitFor();
+  await page.getByText('Reservas recibidas').waitFor();
+  await Promise.all([
+    page.waitForResponse((r) => r.url().includes('/metricas') && r.status() === 200),
+    page.getByRole('button', { name: '7 días' }).click(),
+  ]);
+  await page.locator('.kpi').first().waitFor();
+  await page.getByText('Ocupación estimada').waitFor();
+  ok('metricas del panel con KPIs y periodo');
+  await page.screenshot({ path: `${EVID}/panel-metricas-1440.png`, fullPage: false });
+
   // Reservas recibidas
   await navPanel.getByRole('link', { name: 'Reservas' }).click();
   await page.getByText('Sin reservas recibidas').waitFor({ timeout: 20000 });
   ok('reservas recibidas consulta OK');
 
   // 3. Administracion: tabs nuevas
-  await page.locator('summary.cuenta-btn').click();
-  await page.getByRole('button', { name: 'Cerrar sesión' }).click();
+  await page.locator('.panel-side__salir').click();
   await login(ADMIN.correo, ADMIN.password);
   await page.goto(`${BASE}/admin`, { waitUntil: 'networkidle' });
-  await page.getByRole('heading', { name: 'Administración de plataforma' }).waitFor();
+  await page.getByRole('heading', { name: 'Visión global de la plataforma' }).waitFor();
+  const navAdmin = page.getByRole('navigation', { name: 'Menú de administración' });
+  await page.getByText('Volumen aprobado').waitFor();
+  ok('admin dashboard de visión global renderiza');
+  await page.screenshot({ path: `${EVID}/admin-dashboard-1440.png`, fullPage: false });
 
-  await page.getByRole('button', { name: 'Propietarios', exact: true }).click();
+  await navAdmin.getByRole('link', { name: 'Reportes' }).click();
+  await page.getByRole('heading', { name: 'Reportes de plataforma' }).waitFor();
+  await page.getByText('Ingresos aprobados').waitFor();
+  ok('admin consulta reportes agregados de plataforma');
+  await page.screenshot({ path: `${EVID}/admin-reportes-1440.png`, fullPage: false });
+
+  await navAdmin.getByRole('link', { name: 'Configuración' }).click();
+  await page.getByRole('heading', { name: 'Configuración de la plataforma' }).waitFor();
+  await page.getByRole('button', { name: 'Guardar cambios' }).click();
+  await page.getByText('Configuración guardada.').waitFor({ timeout: 20000 });
+  ok('admin consulta y guarda la configuración de plataforma');
+  await page.screenshot({ path: `${EVID}/admin-configuracion-1440.png`, fullPage: false });
+
+  await navAdmin.getByRole('link', { name: 'Propietarios' }).click();
   await page.getByText(owner.correo).first().waitFor({ timeout: 20000 });
   ok('admin lista propietarios con el owner validado');
 
-  await page.getByRole('button', { name: 'Reclamos', exact: true }).click();
+  await navAdmin.getByRole('link', { name: 'Reclamos y soporte' }).click();
   await page.locator('button.reclamo').first().waitFor({ timeout: 20000 });
   await page.locator('button.reclamo').first().click();
   await page.getByRole('heading', { name: 'Seguimientos' }).waitFor();
   ok('admin consulta reclamo y seguimientos');
 
-  await page.getByRole('button', { name: 'Usuarios', exact: true }).click();
+  const asuntoTicket = `Ticket mesa de ayuda ${String(stamp).slice(-5)}`;
+  await page.locator('label:has-text("ID de usuario") input').fill(String(owner.id));
+  await page.locator('label:has-text("Asunto") input').fill(asuntoTicket);
+  await page.locator('label:has-text("Descripción") textarea').fill('Consulta creada desde la mesa de ayuda.');
+  await page.getByRole('button', { name: 'Crear ticket' }).click();
+  await page.getByText(asuntoTicket).first().waitFor({ timeout: 20000 });
+  ok('admin crea ticket desde la mesa de ayuda');
+
+  await navAdmin.getByRole('link', { name: 'Usuarios' }).click();
   await page.getByText(owner.correo).first().waitFor({ timeout: 20000 });
   const filaUsuario = page.locator('tr', { hasText: owner.correo }).first();
   await filaUsuario.getByRole('button', { name: 'Roles' }).click();
@@ -282,7 +343,7 @@ try {
   await page.keyboard.press('Escape');
   await modalRoles.waitFor({ state: 'detached' });
 
-  await page.getByRole('button', { name: 'Promociones', exact: true }).click();
+  await navAdmin.getByRole('link', { name: 'Promociones' }).click();
   await page.getByRole('heading', { name: 'Promociones de plataforma' }).waitFor();
   await page.getByRole('heading', { name: 'Nueva promoción global' }).waitFor();
   const codigoGlobal = `GLOBAL${String(stamp).slice(-4)}`;
@@ -294,13 +355,18 @@ try {
   await page.getByText(codigoGlobal).first().waitFor({ timeout: 20000 });
   ok('admin crea promocion global');
 
-  await page.getByRole('button', { name: 'Cocheras', exact: true }).click();
+  await navAdmin.getByRole('link', { name: 'Cocheras' }).click();
   await page.getByText('Cochera E2E').first().waitFor({ timeout: 20000 });
   ok('admin lista cocheras');
 
-  await page.getByRole('button', { name: 'Supervisión', exact: true }).click();
+  await navAdmin.getByRole('link', { name: 'Supervisión' }).click();
   await page.getByText(nombreEst).first().waitFor({ timeout: 20000 });
-  ok('admin supervisa establecimientos');
+  const filaSede = page.locator('tr', { hasText: nombreEst }).first();
+  await filaSede.getByRole('button', { name: 'Desactivar' }).click();
+  await page.getByText('Establecimiento inactivo.').waitFor({ timeout: 20000 });
+  await filaSede.getByRole('button', { name: 'Activar' }).click();
+  await page.getByText('Establecimiento activo.').waitFor({ timeout: 20000 });
+  ok('admin activa y desactiva sedes');
   await page.getByRole('button', { name: 'reservas', exact: true }).click();
   await page.getByRole('columnheader', { name: 'Titular' }).waitFor();
   await page.getByRole('button', { name: 'pagos', exact: true }).click();
@@ -308,11 +374,87 @@ try {
   ok('admin supervisa reservas y pagos');
   await page.screenshot({ path: `${EVID}/admin-supervision-1440.png`, fullPage: false });
 
-  await page.getByRole('button', { name: 'Auditoría', exact: true }).click();
+  await navAdmin.getByRole('link', { name: 'Transacciones' }).click();
+  await page.getByRole('heading', { name: 'Transacciones y comisiones' }).waitFor();
+  await page.getByText('Total procesado').waitFor();
+  ok('admin consulta transacciones y comisiones');
+
+  await navAdmin.getByRole('link', { name: 'Actividades' }).click();
+  await page.getByRole('heading', { name: 'Actividades de la plataforma' }).waitFor();
+  await page.getByText('Actividad E2E').first().waitFor({ timeout: 20000 });
+  ok('admin supervisa actividades de la plataforma');
+
+  await navAdmin.getByRole('link', { name: 'Auditoría' }).click();
   await page.getByRole('columnheader', { name: 'Acción' }).waitFor();
   const filasAuditoria = await page.locator('table.tabla tbody tr').count();
   if (filasAuditoria > 0) ok(`admin consulta auditoria (${filasAuditoria} eventos)`);
   else fallo('auditoria sin eventos');
+
+  // 4. Recepcion: la administracion vincula al operador y este opera su turno
+  const adminToken = (
+    await api('/auth/login', { method: 'POST', body: { correo: ADMIN.correo, password: ADMIN.password } })
+  ).accessToken;
+  const operador = {
+    correo: `e2e.recep.${stamp}@canchadirecta.pe`,
+    password: 'ClaveSegura123',
+  };
+  const regRecep = await api('/auth/register', {
+    method: 'POST',
+    body: {
+      nombres: 'Operador',
+      apellidos: `E2E ${stamp}`,
+      correo: operador.correo,
+      telefono: '977666555',
+      password: operador.password,
+      confirmacionPassword: operador.password,
+    },
+  });
+  operador.id = regRecep.id;
+  await api(`/admin/usuarios/${operador.id}/roles`, {
+    method: 'POST',
+    token: adminToken,
+    body: { roles: ['USER', 'OPERADOR'] },
+  });
+  const sedesAdmin = await api('/admin/establecimientos?limite=200', { token: adminToken });
+  const sede = sedesAdmin.find((s) => s.nombre === nombreEst);
+  if (!sede) throw new Error(`no se encontro la sede ${nombreEst} para vincular al operador`);
+
+  await navAdmin.getByRole('link', { name: 'Operadores' }).click();
+  await page.getByRole('heading', { level: 2, name: 'Operadores de recepción' }).waitFor({ timeout: 20000 });
+  await page.locator('label:has-text("Sede") select').selectOption(String(sede.id));
+  await page.locator('label:has-text("Buscar usuario por correo") input').fill(operador.correo);
+  const filaCandidato = page.locator('li', { hasText: operador.correo }).first();
+  await filaCandidato.waitFor({ timeout: 20000 });
+  await filaCandidato.getByRole('button', { name: 'Vincular' }).click();
+  await page.getByText('ahora opera esta sede.').waitFor({ timeout: 20000 });
+  ok('admin vincula un operador de recepcion a la sede');
+  await page.screenshot({ path: `${EVID}/admin-operadores-1440.png`, fullPage: false });
+
+  await page.locator('.admin-side__salir').click();
+  await login(operador.correo, operador.password);
+  await page.goto(`${BASE}/recepcion`, { waitUntil: 'networkidle' });
+  await page.getByRole('heading', { name: 'Turno actual' }).waitFor({ timeout: 20000 });
+  await page.getByText('Reservas del día').waitFor({ timeout: 20000 });
+  ok('el operador entra al portal de recepcion');
+  await page.screenshot({ path: `${EVID}/recepcion-turno-1440.png`, fullPage: false });
+
+  const navRecep = page.getByRole('navigation', { name: 'Menú de recepción' });
+  await navRecep.getByRole('link', { name: 'Agenda del día' }).click();
+  await page.locator('input[type="date"]').waitFor({ timeout: 20000 });
+  ok('agenda de recepcion carga para el operador');
+  await page.screenshot({ path: `${EVID}/recepcion-agenda-1440.png`, fullPage: false });
+
+  await navRecep.getByRole('link', { name: 'Reserva presencial' }).click();
+  await page.getByRole('button', { name: 'Registrar reserva' }).waitFor({ timeout: 20000 });
+  ok('formulario de reserva presencial disponible');
+
+  await navRecep.getByRole('link', { name: 'Cobros' }).click();
+  await page.getByRole('heading', { name: 'Cobros', exact: true }).waitFor({ timeout: 20000 });
+  ok('cobros de recepcion disponibles');
+
+  await navRecep.getByRole('link', { name: 'Incidencias' }).click();
+  await page.getByRole('heading', { name: 'Reportar incidencia' }).waitFor({ timeout: 20000 });
+  ok('incidencias de recepcion disponibles');
 } catch (error) {
   fallo(`excepcion: ${error.message}`);
   await page.screenshot({ path: `${EVID}/fallo-owner-admin.png`, fullPage: false }).catch(() => {});

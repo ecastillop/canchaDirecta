@@ -10,6 +10,7 @@ import pe.com.canchadirecta.bookings.application.dto.HorarioSemanal;
 import pe.com.canchadirecta.bookings.application.port.in.ConsultarDisponibilidadUseCase;
 import pe.com.canchadirecta.bookings.application.port.out.ReservaRepositorio;
 import pe.com.canchadirecta.bookings.domain.model.FranjaHoraria;
+import pe.com.canchadirecta.shared.application.port.out.ConfiguracionPlataforma;
 import pe.com.canchadirecta.shared.application.port.out.Reloj;
 import pe.com.canchadirecta.shared.domain.DomainException;
 import pe.com.canchadirecta.shared.domain.ErrorCodes;
@@ -39,8 +40,8 @@ public class ConsultarDisponibilidadService implements ConsultarDisponibilidadUs
 
     private final ReservaRepositorio reservas;
     private final Reloj reloj;
+    private final ConfiguracionPlataforma configuracion;
     private final ZoneId zona;
-    private final long diasAnticipacionMax;
     private final LocalTime ventanaDefectoInicio;
     private final LocalTime ventanaDefectoFin;
 
@@ -48,14 +49,14 @@ public class ConsultarDisponibilidadService implements ConsultarDisponibilidadUs
     public ConsultarDisponibilidadService(
             ReservaRepositorio reservas,
             Reloj reloj,
+            ConfiguracionPlataforma configuracion,
             @ConfigProperty(name = "cd.zona-horaria", defaultValue = "America/Lima") String zonaHoraria,
-            @ConfigProperty(name = "cd.reservas.dias-anticipacion-max", defaultValue = "7") long diasAnticipacionMax,
             @ConfigProperty(name = "cd.reservas.ventana-defecto-inicio", defaultValue = "06:00") String inicioDefecto,
             @ConfigProperty(name = "cd.reservas.ventana-defecto-fin", defaultValue = "23:00") String finDefecto) {
         this.reservas = reservas;
         this.reloj = reloj;
+        this.configuracion = configuracion;
         this.zona = ZoneId.of(zonaHoraria);
-        this.diasAnticipacionMax = diasAnticipacionMax;
         this.ventanaDefectoInicio = LocalTime.parse(inicioDefecto);
         this.ventanaDefectoFin = LocalTime.parse(finDefecto);
     }
@@ -72,6 +73,7 @@ public class ConsultarDisponibilidadService implements ConsultarDisponibilidadUs
         }
 
         Instant ahora = reloj.ahora();
+        long diasAnticipacionMax = configuracion.diasAnticipacionMax();
         LocalDate hoy = LocalDate.ofInstant(ahora, zona);
         if (fecha.isBefore(hoy)) {
             throw new DomainException(ErrorCodes.DATOS_INVALIDOS, "No se puede consultar la disponibilidad de una fecha pasada.");

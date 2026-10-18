@@ -9,6 +9,7 @@ import pe.com.canchadirecta.platform.domain.model.Auditoria;
 import pe.com.canchadirecta.platform.domain.model.CocheraAdmin;
 import pe.com.canchadirecta.platform.domain.model.PromocionAdmin;
 import pe.com.canchadirecta.platform.domain.model.PropietarioAdmin;
+import pe.com.canchadirecta.platform.domain.model.ReporteAdmin;
 import pe.com.canchadirecta.platform.domain.model.SupervisionAdmin;
 import pe.com.canchadirecta.platform.domain.model.UsuarioAdmin;
 import pe.com.canchadirecta.shared.adapter.out.persistence.SqlUtc;
@@ -17,12 +18,17 @@ import pe.com.canchadirecta.shared.application.port.out.RegistroAuditoria;
 import pe.com.canchadirecta.shared.application.port.out.Reloj;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -35,6 +41,8 @@ import java.util.Set;
 @ApplicationScoped
 public class AdminPlataformaPersistenciaAdapter implements AdminPlataformaRepositorio, RegistroAuditoria,
         PromocionesCancha {
+
+    private static final ZoneId ZONA_NEGOCIO = ZoneId.of("America/Lima");
 
     private static final String PROPIETARIO_COLUMNAS =
             "p.id_propietario, p.id_usuario, CONCAT(u.nombres, ' ', u.apellidos), u.correo, "
@@ -50,6 +58,9 @@ public class AdminPlataformaPersistenciaAdapter implements AdminPlataformaReposi
     private static final String PROMOCION_COLUMNAS =
             "SELECT p.id_promocion, p.codigo, p.descripcion, p.tipo_descuento, p.valor, "
                     + "CAST(p.fecha_inicio AS CHAR), CAST(p.fecha_fin AS CHAR), p.estado, "
+                    + "p.limite_usos, p.limite_por_usuario, "
+                    + "(SELECT COUNT(*) FROM reserva r WHERE r.id_promocion = p.id_promocion "
+                    + "AND r.estado NOT IN ('CANCELADA','RECHAZADA','EXPIRADA')), "
                     + "COALESCE(GROUP_CONCAT(cp.id_cancha ORDER BY cp.id_cancha SEPARATOR ','), '') "
                     + "FROM promocion p LEFT JOIN cancha_promocion cp ON cp.id_promocion = p.id_promocion";
 
@@ -166,6 +177,40 @@ public class AdminPlataformaPersistenciaAdapter implements AdminPlataformaReposi
                     (String) f[4], ((Number) f[5]).longValue()));
         }
         return lista;
+    }
+
+    @Override
+    public Optional<SupervisionAdmin.Establecimiento> establecimiento(Long idEstablecimiento) {
+        List<?> filas = em.createNativeQuery("SELECT e.id_establecimiento, e.nombre, d.nombre, "
+                        + "CONCAT(u.nombres, ' ', u.apellidos), e.estado, COUNT(c.id_cancha) "
+                        + "FROM establecimiento e "
+                        + "JOIN propietario p ON p.id_propietario = e.id_propietario "
+                        + "JOIN usuario u ON u.id_usuario = p.id_usuario "
+                        + "JOIN distrito d ON d.id_distrito = e.id_distrito "
+                        + "LEFT JOIN cancha c ON c.id_establecimiento = e.id_establecimiento "
+                        + "WHERE e.id_establecimiento = :id "
+                        + "GROUP BY e.id_establecimiento, e.nombre, d.nombre, u.nombres, u.apellidos, e.estado")
+                .setParameter("id", idEstablecimiento)
+                .setMaxResults(1)
+                .getResultList();
+        if (filas.isEmpty()) {
+            return Optional.empty();
+        }
+        Object[] f = (Object[]) filas.get(0);
+        return Optional.of(new SupervisionAdmin.Establecimiento(
+                ((Number) f[0]).longValue(), (String) f[1], (String) f[2], (String) f[3],
+                (String) f[4], ((Number) f[5]).longValue()));
+    }
+
+    @Override
+    @Transactional
+    public boolean cambiarEstadoEstablecimiento(Long idEstablecimiento, String esperado, String nuevo) {
+        return em.createNativeQuery("UPDATE establecimiento SET estado = :nuevo "
+                        + "WHERE id_establecimiento = :id AND estado = :esperado")
+                .setParameter("nuevo", nuevo)
+                .setParameter("id", idEstablecimiento)
+                .setParameter("esperado", esperado)
+                .executeUpdate() > 0;
     }
 
     @Override
@@ -352,7 +397,8 @@ public class AdminPlataformaPersistenciaAdapter implements AdminPlataformaReposi
             sql.append(" WHERE p.estado = :estado");
         }
         sql.append(" GROUP BY p.id_promocion, p.codigo, p.descripcion, p.tipo_descuento, p.valor, ")
-                .append("p.fecha_inicio, p.fecha_fin, p.estado ORDER BY p.id_promocion DESC");
+                .append("p.fecha_inicio, p.fecha_fin, p.estado, p.limite_usos, p.limite_por_usuario ")
+                .append("ORDER BY p.id_promocion DESC");
         var query = em.createNativeQuery(sql.toString());
         if (estado != null) {
             query.setParameter("estado", estado);
@@ -369,7 +415,8 @@ public class AdminPlataformaPersistenciaAdapter implements AdminPlataformaReposi
     public Optional<PromocionAdmin> promocion(Long idPromocion) {
         List<?> filas = em.createNativeQuery(PROMOCION_COLUMNAS
                         + " WHERE p.id_promocion = :id GROUP BY p.id_promocion, p.codigo, p.descripcion, "
-                        + "p.tipo_descuento, p.valor, p.fecha_inicio, p.fecha_fin, p.estado")
+                        + "p.tipo_descuento, p.valor, p.fecha_inicio, p.fecha_fin, p.estado, "
+                        + "p.limite_usos, p.limite_por_usuario")
                 .setParameter("id", idPromocion)
                 .setMaxResults(1)
                 .getResultList();
@@ -398,8 +445,9 @@ public class AdminPlataformaPersistenciaAdapter implements AdminPlataformaReposi
     @Transactional
     public PromocionAdmin registrarPromocion(PromocionAdmin promocion) {
         em.createNativeQuery("INSERT INTO promocion (codigo, descripcion, tipo_descuento, valor, "
-                        + "fecha_inicio, fecha_fin, estado) "
-                        + "VALUES (:codigo, :descripcion, :tipo, :valor, :inicio, :fin, :estado)")
+                        + "fecha_inicio, fecha_fin, estado, limite_usos, limite_por_usuario) "
+                        + "VALUES (:codigo, :descripcion, :tipo, :valor, :inicio, :fin, :estado, "
+                        + ":limiteUsos, :limitePorUsuario)")
                 .setParameter("codigo", promocion.codigo())
                 .setParameter("descripcion", promocion.descripcion())
                 .setParameter("tipo", promocion.tipoDescuento())
@@ -407,6 +455,8 @@ public class AdminPlataformaPersistenciaAdapter implements AdminPlataformaReposi
                 .setParameter("inicio", java.sql.Date.valueOf(promocion.fechaInicio()))
                 .setParameter("fin", java.sql.Date.valueOf(promocion.fechaFin()))
                 .setParameter("estado", promocion.estado())
+                .setParameter("limiteUsos", promocion.limiteUsos())
+                .setParameter("limitePorUsuario", promocion.limitePorUsuario())
                 .executeUpdate();
         Long id = ((Number) em.createNativeQuery("SELECT LAST_INSERT_ID()").getSingleResult()).longValue();
         for (Long idCancha : promocion.canchas()) {
@@ -418,7 +468,8 @@ public class AdminPlataformaPersistenciaAdapter implements AdminPlataformaReposi
         }
         return new PromocionAdmin(id, promocion.codigo(), promocion.descripcion(),
                 promocion.tipoDescuento(), promocion.valor(), promocion.fechaInicio(),
-                promocion.fechaFin(), promocion.estado(), promocion.canchas());
+                promocion.fechaFin(), promocion.estado(), promocion.limiteUsos(),
+                promocion.limitePorUsuario(), 0, promocion.canchas());
     }
 
     @Override
@@ -472,22 +523,60 @@ public class AdminPlataformaPersistenciaAdapter implements AdminPlataformaReposi
     }
 
     @Override
-    public Optional<Promocion> vigente(String codigo, Long idCancha, LocalDate fecha) {
-        List<?> filas = em.createNativeQuery("SELECT p.codigo, p.tipo_descuento, p.valor "
+    public Optional<Promocion> vigente(String codigo, Long idCancha, LocalDate fecha, Long idUsuario) {
+        List<?> filas = em.createNativeQuery("SELECT p.id_promocion, p.codigo, p.tipo_descuento, p.valor "
                         + "FROM promocion p "
                         + "JOIN cancha_promocion cp ON cp.id_promocion = p.id_promocion "
                         + "WHERE p.codigo = :codigo AND cp.id_cancha = :idCancha "
-                        + "AND p.estado = 'ACTIVA' AND :fecha BETWEEN p.fecha_inicio AND p.fecha_fin")
+                        + "AND p.estado = 'ACTIVA' AND :fecha BETWEEN p.fecha_inicio AND p.fecha_fin "
+                        + "AND (p.limite_usos IS NULL OR (SELECT COUNT(*) FROM reserva r "
+                        + "WHERE r.id_promocion = p.id_promocion "
+                        + "AND r.estado NOT IN ('CANCELADA','RECHAZADA','EXPIRADA')) < p.limite_usos) "
+                        + "AND (p.limite_por_usuario IS NULL OR (SELECT COUNT(*) FROM reserva r "
+                        + "WHERE r.id_promocion = p.id_promocion AND r.id_usuario = :idUsuario "
+                        + "AND r.estado NOT IN ('CANCELADA','RECHAZADA','EXPIRADA')) < p.limite_por_usuario)")
                 .setParameter("codigo", codigo)
                 .setParameter("idCancha", idCancha)
                 .setParameter("fecha", java.sql.Date.valueOf(fecha))
+                .setParameter("idUsuario", idUsuario.intValue())
                 .setMaxResults(1)
                 .getResultList();
         if (filas.isEmpty()) {
             return Optional.empty();
         }
         Object[] f = (Object[]) filas.get(0);
-        return Optional.of(new Promocion((String) f[0], (String) f[1], (BigDecimal) f[2]));
+        return Optional.of(new Promocion(((Number) f[0]).longValue(), (String) f[1], (String) f[2],
+                (BigDecimal) f[3]));
+    }
+
+    @Override
+    @Transactional
+    public boolean consumir(Long idPromocion, Long idUsuario) {
+        List<?> limites = em.createNativeQuery("SELECT limite_usos, limite_por_usuario FROM promocion "
+                        + "WHERE id_promocion = :id FOR UPDATE")
+                .setParameter("id", idPromocion)
+                .setMaxResults(1)
+                .getResultList();
+        if (limites.isEmpty()) {
+            return false;
+        }
+        Object[] fila = (Object[]) limites.get(0);
+        Integer limiteUsos = fila[0] == null ? null : ((Number) fila[0]).intValue();
+        Integer limitePorUsuario = fila[1] == null ? null : ((Number) fila[1]).intValue();
+        if (limiteUsos == null && limitePorUsuario == null) {
+            return true;
+        }
+        List<?> usos = em.createNativeQuery("SELECT id_usuario FROM reserva "
+                        + "WHERE id_promocion = :id "
+                        + "AND estado NOT IN ('CANCELADA','RECHAZADA','EXPIRADA') FOR UPDATE")
+                .setParameter("id", idPromocion)
+                .getResultList();
+        long total = usos.size();
+        long delUsuario = usos.stream()
+                .filter(filaUso -> ((Number) filaUso).longValue() == idUsuario.longValue())
+                .count();
+        return (limiteUsos == null || total <= limiteUsos)
+                && (limitePorUsuario == null || delUsuario <= limitePorUsuario);
     }
 
     @Override
@@ -521,7 +610,8 @@ public class AdminPlataformaPersistenciaAdapter implements AdminPlataformaReposi
                         + "JOIN cancha c2 ON c2.id_cancha = cp2.id_cancha "
                         + "WHERE cp2.id_promocion = p.id_promocion AND c2.id_establecimiento = :id) "
                         + "GROUP BY p.id_promocion, p.codigo, p.descripcion, p.tipo_descuento, p.valor, "
-                        + "p.fecha_inicio, p.fecha_fin, p.estado ORDER BY p.id_promocion DESC")
+                        + "p.fecha_inicio, p.fecha_fin, p.estado, p.limite_usos, p.limite_por_usuario "
+                        + "ORDER BY p.id_promocion DESC")
                 .setParameter("id", idEstablecimiento)
                 .setMaxResults(Math.max(1, Math.min(limite, 200)))
                 .getResultList();
@@ -543,10 +633,115 @@ public class AdminPlataformaPersistenciaAdapter implements AdminPlataformaReposi
                 .getResultList().isEmpty();
     }
 
+    @Override
+    public ReporteAdmin reporte(int dias, Instant desde, Instant hasta) {
+        Object[] f = (Object[]) em.createNativeQuery("SELECT "
+                        + "(SELECT COUNT(*) FROM usuario), "
+                        + "(SELECT COUNT(*) FROM usuario WHERE fecha_registro >= :desde "
+                        + "AND fecha_registro < :hasta), "
+                        + "(SELECT COUNT(*) FROM propietario WHERE estado_validacion = 'VALIDADO'), "
+                        + "(SELECT COUNT(*) FROM establecimiento WHERE estado = 'ACTIVO'), "
+                        + "(SELECT COUNT(*) FROM reserva WHERE fecha_creacion >= :desde "
+                        + "AND fecha_creacion < :hasta), "
+                        + "(SELECT COALESCE(SUM(monto), 0) FROM pago WHERE estado = 'APROBADO' "
+                        + "AND fecha_pago >= :desde AND fecha_pago < :hasta), "
+                        + "(SELECT COUNT(*) FROM pago WHERE estado = 'APROBADO' "
+                        + "AND fecha_pago >= :desde AND fecha_pago < :hasta), "
+                        + "(SELECT COUNT(*) FROM reclamo WHERE estado IN ('ABIERTO','EN_REVISION'))")
+                .setParameter("desde", SqlUtc.aLiteral(desde))
+                .setParameter("hasta", SqlUtc.aLiteral(hasta))
+                .getSingleResult();
+
+        ReporteAdmin.Resumen resumen = new ReporteAdmin.Resumen(
+                ((Number) f[0]).longValue(), ((Number) f[1]).longValue(),
+                ((Number) f[2]).longValue(), ((Number) f[3]).longValue(),
+                ((Number) f[4]).longValue(),
+                new BigDecimal(f[5].toString()).setScale(2, RoundingMode.HALF_UP),
+                ((Number) f[6]).longValue(), ((Number) f[7]).longValue());
+
+        Map<LocalDate, Long> reservas = mapaConteo(
+                "SELECT DATE(fecha_creacion), COUNT(*) FROM reserva "
+                        + "WHERE fecha_creacion >= :desde AND fecha_creacion < :hasta "
+                        + "GROUP BY DATE(fecha_creacion)", desde, hasta);
+        Map<LocalDate, Long> usuarios = mapaConteo(
+                "SELECT DATE(fecha_registro), COUNT(*) FROM usuario "
+                        + "WHERE fecha_registro >= :desde AND fecha_registro < :hasta "
+                        + "GROUP BY DATE(fecha_registro)", desde, hasta);
+        Map<LocalDate, BigDecimal> ingresos = new HashMap<>();
+        List<?> ingresosFilas = em.createNativeQuery("SELECT DATE(fecha_pago), COALESCE(SUM(monto), 0) "
+                        + "FROM pago WHERE estado = 'APROBADO' "
+                        + "AND fecha_pago >= :desde AND fecha_pago < :hasta "
+                        + "GROUP BY DATE(fecha_pago)")
+                .setParameter("desde", SqlUtc.aLiteral(desde))
+                .setParameter("hasta", SqlUtc.aLiteral(hasta))
+                .getResultList();
+        for (Object fila : ingresosFilas) {
+            Object[] i = (Object[]) fila;
+            ingresos.put(LocalDate.parse(i[0].toString()),
+                    new BigDecimal(i[1].toString()).setScale(2, RoundingMode.HALF_UP));
+        }
+        LocalDate inicio = LocalDate.ofInstant(desde, ZONA_NEGOCIO);
+        List<ReporteAdmin.PuntoDia> serie = new ArrayList<>(dias);
+        for (int i = 0; i < dias; i++) {
+            LocalDate fecha = inicio.plusDays(i);
+            serie.add(new ReporteAdmin.PuntoDia(fecha, reservas.getOrDefault(fecha, 0L),
+                    usuarios.getOrDefault(fecha, 0L),
+                    ingresos.getOrDefault(fecha, BigDecimal.ZERO.setScale(2))));
+        }
+
+        List<?> estadosFilas = em.createNativeQuery("SELECT estado, COUNT(*) FROM reserva "
+                        + "WHERE fecha_creacion >= :desde AND fecha_creacion < :hasta "
+                        + "GROUP BY estado ORDER BY COUNT(*) DESC")
+                .setParameter("desde", SqlUtc.aLiteral(desde))
+                .setParameter("hasta", SqlUtc.aLiteral(hasta))
+                .getResultList();
+        List<ReporteAdmin.EstadoReserva> estados = new ArrayList<>(estadosFilas.size());
+        for (Object fila : estadosFilas) {
+            Object[] e = (Object[]) fila;
+            estados.add(new ReporteAdmin.EstadoReserva((String) e[0], ((Number) e[1]).longValue()));
+        }
+
+        List<?> topFilas = em.createNativeQuery("SELECT e.id_establecimiento, e.nombre, d.nombre, "
+                        + "COUNT(r.id_reserva), COALESCE(SUM(CASE WHEN r.estado IN ('CONFIRMADA','FINALIZADA') "
+                        + "THEN (r.monto_cancha - r.monto_descuento) ELSE 0 END), 0) "
+                        + "FROM establecimiento e JOIN distrito d ON d.id_distrito = e.id_distrito "
+                        + "LEFT JOIN cancha c ON c.id_establecimiento = e.id_establecimiento "
+                        + "LEFT JOIN reserva r ON r.id_cancha = c.id_cancha "
+                        + "AND r.fecha_creacion >= :desde AND r.fecha_creacion < :hasta "
+                        + "GROUP BY e.id_establecimiento, e.nombre, d.nombre "
+                        + "HAVING COUNT(r.id_reserva) > 0 ORDER BY COUNT(r.id_reserva) DESC LIMIT 5")
+                .setParameter("desde", SqlUtc.aLiteral(desde))
+                .setParameter("hasta", SqlUtc.aLiteral(hasta))
+                .getResultList();
+        List<ReporteAdmin.EstablecimientoTop> establecimientos = new ArrayList<>(topFilas.size());
+        for (Object fila : topFilas) {
+            Object[] e = (Object[]) fila;
+            establecimientos.add(new ReporteAdmin.EstablecimientoTop(
+                    ((Number) e[0]).longValue(), (String) e[1], (String) e[2],
+                    ((Number) e[3]).longValue(),
+                    new BigDecimal(e[4].toString()).setScale(2, RoundingMode.HALF_UP)));
+        }
+
+        return new ReporteAdmin(dias, desde, hasta, resumen, serie, estados, establecimientos);
+    }
+
+    private Map<LocalDate, Long> mapaConteo(String sql, Instant desde, Instant hasta) {
+        Map<LocalDate, Long> conteo = new HashMap<>();
+        List<?> filas = em.createNativeQuery(sql)
+                .setParameter("desde", SqlUtc.aLiteral(desde))
+                .setParameter("hasta", SqlUtc.aLiteral(hasta))
+                .getResultList();
+        for (Object fila : filas) {
+            Object[] f = (Object[]) fila;
+            conteo.put(LocalDate.parse(f[0].toString()), ((Number) f[1]).longValue());
+        }
+        return conteo;
+    }
+
     private static PromocionAdmin aPromocion(Object[] f) {
         List<Long> canchas = new ArrayList<>();
-        if (f[8] != null) {
-            for (String id : ((String) f[8]).split(",")) {
+        if (f[11] != null) {
+            for (String id : ((String) f[11]).split(",")) {
                 if (!id.isBlank()) {
                     canchas.add(Long.valueOf(id.trim()));
                 }
@@ -561,6 +756,9 @@ public class AdminPlataformaPersistenciaAdapter implements AdminPlataformaReposi
                 java.time.LocalDate.parse((String) f[5]),
                 java.time.LocalDate.parse((String) f[6]),
                 (String) f[7],
+                f[8] == null ? null : ((Number) f[8]).intValue(),
+                f[9] == null ? null : ((Number) f[9]).intValue(),
+                ((Number) f[10]).longValue(),
                 canchas);
     }
 

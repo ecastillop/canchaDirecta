@@ -17,6 +17,9 @@ public record PromocionAdmin(
         LocalDate fechaInicio,
         LocalDate fechaFin,
         String estado,
+        Integer limiteUsos,
+        Integer limitePorUsuario,
+        long usos,
         List<Long> canchas
 ) {
 

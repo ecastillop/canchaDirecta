@@ -51,18 +51,36 @@ const rutas = [
   '/canchas',
   '/actividades',
   '/como-funciona',
+  '/ayuda',
   '/canchas/1',
+  '/establecimientos/1',
+  '/mi-resumen',
   '/mis-reservas',
+  '/mis-inscripciones',
   '/favoritos',
   '/perfil',
   '/notificaciones',
   '/reclamos',
   '/panel',
+  '/panel/metricas',
   '/panel/reservas',
   '/panel/agenda',
+  '/panel/actividades',
   '/panel/promociones',
   '/panel/liquidaciones',
   '/admin',
+  '/admin/usuarios',
+  '/admin/transacciones',
+  '/admin/actividades',
+  '/admin/reportes',
+  '/admin/configuracion',
+  '/admin/operadores',
+  '/recepcion',
+  '/recepcion/agenda',
+  '/recepcion/reservas',
+  '/recepcion/nueva',
+  '/recepcion/cobros',
+  '/recepcion/incidencias',
 ];
 
 for (const ruta of rutas) {
@@ -159,14 +177,15 @@ if (!salio) ok('25 Tabs recorren controles sin perder el foco');
 else mal('/canchas', 'el foco se pierde durante el recorrido de teclado');
 
 await page.goto(`${BASE}/admin`, { waitUntil: 'networkidle' });
-await page.getByRole('button', { name: 'Usuarios', exact: true }).click();
+const navAdmin = page.getByRole('navigation', { name: 'Menú de administración' });
+await navAdmin.getByRole('link', { name: 'Usuarios' }).click();
 await page.locator('table.tabla tbody tr').first().waitFor({ timeout: 20000 });
 await page.locator('table.tabla tbody tr').first().getByRole('button', { name: 'Roles' }).click();
 await page.getByRole('dialog').waitFor();
 await page.screenshot({ path: resolve(EVID, 'a11y-modal-roles.png'), fullPage: false });
 await page.keyboard.press('Escape');
 
-await page.getByRole('button', { name: 'Auditoría', exact: true }).click();
+await navAdmin.getByRole('link', { name: 'Auditoría' }).click();
 await page.getByRole('navigation', { name: 'Paginación de auditoría' }).waitFor({ timeout: 20000 });
 await page.screenshot({ path: resolve(EVID, 'a11y-paginacion-auditoria.png'), fullPage: false });
 

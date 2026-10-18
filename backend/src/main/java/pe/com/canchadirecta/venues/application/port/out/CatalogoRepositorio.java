@@ -1,6 +1,7 @@
 package pe.com.canchadirecta.venues.application.port.out;
 
 import pe.com.canchadirecta.venues.domain.model.CatalogoCancha;
+import pe.com.canchadirecta.venues.domain.model.FichaEspacio;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +18,8 @@ public interface CatalogoRepositorio {
     List<CatalogoCancha.Item> caracteristicas();
 
     Optional<CatalogoCancha.Detalle> detalle(Long idCancha);
+
+    Optional<FichaEspacio.Espacio> fichaEspacio(Long idEstablecimiento);
 
     void reemplazarDeportes(Long idCancha, List<Long> idsDeporte);
 

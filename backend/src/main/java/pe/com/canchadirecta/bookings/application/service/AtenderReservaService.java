@@ -59,7 +59,7 @@ public class AtenderReservaService implements AtenderReservaUseCase {
     @Override
     @Transactional
     public Reserva confirmar(Long idReserva, Long idUsuario) {
-        Reserva pendiente = pendienteAtendible(idReserva, idUsuario);
+        Reserva pendiente = pendienteAtendible(idReserva, idUsuario, true);
         reservas.cambiarEstado(idReserva, pendiente.estado(), Reserva.Estado.CONFIRMADA,
                 "Confirmada por el propietario");
         avisos.avisar(pendiente.idUsuario(), "Reserva confirmada",
@@ -69,8 +69,31 @@ public class AtenderReservaService implements AtenderReservaUseCase {
 
     @Override
     @Transactional
+    public Reserva confirmarComoAdmin(Long idReserva) {
+        Reserva pendiente = pendienteAtendible(idReserva, null, false);
+        reservas.cambiarEstado(idReserva, pendiente.estado(), Reserva.Estado.CONFIRMADA,
+                "Confirmada por administracion");
+        avisos.avisar(pendiente.idUsuario(), "Reserva confirmada",
+                "Tu reserva #" + idReserva + " fue confirmada por la plataforma.");
+        return conEstado(pendiente, Reserva.Estado.CONFIRMADA);
+    }
+
+    @Override
+    @Transactional
+    public Reserva rechazarComoAdmin(Long idReserva, String motivo) {
+        Reserva pendiente = pendienteAtendible(idReserva, null, false);
+        reservas.cambiarEstado(idReserva, pendiente.estado(), Reserva.Estado.RECHAZADA,
+                textoRechazo(motivo));
+        reembolsos.alLiberarReserva(idReserva, pendiente.franja().inicio(), reloj.ahora(), true);
+        avisos.avisar(pendiente.idUsuario(), "Reserva rechazada",
+                "Tu reserva #" + idReserva + " fue rechazada por la plataforma.");
+        return conEstado(pendiente, Reserva.Estado.RECHAZADA);
+    }
+
+    @Override
+    @Transactional
     public Reserva rechazar(Long idReserva, Long idUsuario, String motivo) {
-        Reserva pendiente = pendienteAtendible(idReserva, idUsuario);
+        Reserva pendiente = pendienteAtendible(idReserva, idUsuario, true);
         reservas.cambiarEstado(idReserva, pendiente.estado(), Reserva.Estado.RECHAZADA, textoRechazo(motivo));
         reembolsos.alLiberarReserva(idReserva, pendiente.franja().inicio(), reloj.ahora(), true);
         avisos.avisar(pendiente.idUsuario(), "Reserva rechazada",
@@ -110,14 +133,14 @@ public class AtenderReservaService implements AtenderReservaUseCase {
     }
 
     /** Reglas comunes de aceptacion y rechazo: existencia, propiedad, estado y tiempo. */
-    private Reserva pendienteAtendible(Long idReserva, Long idUsuario) {
+    private Reserva pendienteAtendible(Long idReserva, Long idUsuario, boolean exigirPropietario) {
         if (idReserva == null) {
             throw new DomainException(ErrorCodes.DATOS_INVALIDOS, "La reserva es obligatoria.");
         }
         Reserva reserva = reservas.buscarParaActualizar(idReserva)
                 .orElseThrow(() -> new DomainException(ErrorCodes.NO_ENCONTRADO, "La reserva no existe."));
 
-        if (!reservas.esPropietarioDeReserva(idReserva, idUsuario)) {
+        if (exigirPropietario && !reservas.esPropietarioDeReserva(idReserva, idUsuario)) {
             throw new DomainException(ErrorCodes.SIN_PERMISO,
                     "Solo el propietario de la cancha puede atender sus reservas.");
         }

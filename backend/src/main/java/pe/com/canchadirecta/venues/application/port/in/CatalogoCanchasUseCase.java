@@ -2,6 +2,7 @@ package pe.com.canchadirecta.venues.application.port.in;
 
 import pe.com.canchadirecta.venues.domain.model.Cancha;
 import pe.com.canchadirecta.venues.domain.model.CatalogoCancha;
+import pe.com.canchadirecta.venues.domain.model.FichaEspacio;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -21,6 +22,9 @@ public interface CatalogoCanchasUseCase {
                                         BigDecimal precioMax, String texto, int limite, int desplazamiento);
 
     CatalogoCancha.Detalle detalle(Long idCancha);
+
+    /** Ficha publica del establecimiento con sus canchas, servicios, fotos y reputacion. */
+    FichaEspacio.Espacio fichaEspacio(Long idEstablecimiento);
 
     /**
      * Ficha de 2 a 4 canchas para compararlas (CU02.2), en el mismo orden solicitado.

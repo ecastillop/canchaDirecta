@@ -155,7 +155,12 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
                     </span>
                   </div>
                   <h3>{{ cancha.nombre }}</h3>
-                  <p class="cd-small cd-muted">Capacidad {{ cancha.capacidad }} · {{ cancha.establecimiento }}</p>
+                  <p class="cd-small cd-muted">
+                    Capacidad {{ cancha.capacidad }} ·
+                    <a class="enlace-espacio" [routerLink]="['/establecimientos', cancha.idEstablecimiento]">
+                      {{ cancha.establecimiento }}
+                    </a>
+                  </p>
                   <div class="tarjeta-cancha__pie">
                     <span class="precio">
                       <small>Desde</small>
@@ -449,6 +454,14 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       display: grid;
       gap: 8px;
       padding: 18px;
+    }
+    .enlace-espacio {
+      color: var(--cd-color-primary);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .enlace-espacio:hover {
+      text-decoration: underline;
     }
     .tarjeta-cancha__meta {
       display: flex;

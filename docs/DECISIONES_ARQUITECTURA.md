@@ -872,3 +872,82 @@ franja; backend 144/144 y smoke 112/112 (2026-10-17). El detalle se rediseno con
 (fallback sin fotos), bloques de informacion, reserva sticky a la derecha y calendario en la
 columna principal; en movil la reserva aparece antes del contenido. Capturas en
 `docs/evidencias/ui/detalle-calendario-*.png`.
+
+## ADR-0037 - Configuracion persistente de la plataforma
+
+**Contexto:** La comision, las ventanas de cancelacion y la anticipacion maxima vivian en
+`application.properties` (`@ConfigProperty`) y solo cambiaban reiniciando el backend. El delta
+del standalone pide una pantalla de configuracion administrable (Bloque C).
+
+**Decision:**
+1. Migracion `V17` crea `configuracion_plataforma` (clave/valor + descripcion + fecha de
+   actualizacion) y siembra cinco claves: `comision_porcentaje`, `horas_cancelacion_gratis`,
+   `horas_minimas_cancelacion`, `dias_anticipacion_max` y `correo_soporte`.
+2. El puerto compartido `ConfiguracionPlataforma` expone los valores tipados y lo implementa
+   `ConfiguracionPlataformaPersistenciaAdapter` (SQL nativo, ADR-0012). Los modulos de reservas,
+   pagos y liquidaciones lo leen **en cada operacion**, por lo que un cambio rige sin reiniciar.
+   Si una fila faltara, se usa el valor por defecto historico.
+3. `GET/PUT /api/v1/admin/configuracion` (solo `PLATFORM_ADMIN`) consulta y reemplaza los cinco
+   valores. El servicio valida rangos (comision 0..100, horas 0..720, dias 1..365, correo con
+   formato valido) y registra `CONFIGURACION_ACTUALIZADA` en auditoria.
+4. El frontend agrega `/admin/configuracion` con formulario reactivo, estado de carga/error y
+   confirmacion por toast.
+
+**Consecuencias:** las reglas de negocio dejan de requerir despliegue. `APP_CONFIG` del frontend
+conserva 365 dias como valor inicial; si la administracion reduce la anticipacion, el backend
+rechaza fechas fuera del nuevo rango aunque el calendario siga permitiendo navegar hasta 365
+(mejora futura: endpoint publico de configuracion para el frontend). El correo de soporte queda
+persistido para futuras superficies publicas.
+
+**Evidencia:** `ConfiguracionPlataformaTest` (consulta, actualizacion, validaciones, `403/401` y
+lectura por el puerto compartido), humo con GET/PUT/restauracion, E2E de administracion y
+accesibilidad de la nueva ruta.
+
+## ADR-0038 - Rol OPERADOR y portal de recepcion
+
+**Contexto:** El delta del standalone incorpora el trabajo de mostrador: el personal de una sede
+necesita consultar su turno, registrar reservas presenciales, cobrar en efectivo o billetera y
+reportar incidencias sin recibir los permisos del propietario ni de la plataforma (Bloque D). Hasta
+ahora solo existian `USER`, `OWNER` y `PLATFORM_ADMIN`.
+
+**Decision:**
+1. Migracion `V18` agrega el rol `OPERADOR` y la tabla `operador_establecimiento`
+   (`id_usuario` + `id_establecimiento` como clave, `cargo`, `activo`, `fecha_alta`). El vinculo
+   —no el rol suelto— define que sedes opera cada persona.
+2. El alcance se resuelve en SQL y no en el cliente: `ADMIN` ve todas las sedes, `OPERADOR` solo
+   las asignadas con `activo = 1` y `OWNER` las propias. Toda consulta o accion de recepcion
+   vuelve a comprobar el acceso, por lo que quitar una asignacion surte efecto de inmediato. Un
+   usuario autenticado sin rol de recepcion recibe `403`.
+3. `RecepcionRepositorio`/`RecepcionUseCase` (paquete `reception`, SQL nativo, ADR-0012) exponen
+   `GET /api/v1/recepcion/{establecimientos,canchas,resumen,agenda,reservas,clientes,incidencias}`,
+   `POST /api/v1/recepcion/reservas` (walk-in), `POST .../reservas/{id}/checkin`,
+   `POST .../reservas/{id}/cobro` y `POST /api/v1/recepcion/incidencias`.
+4. La reserva presencial reutiliza `ReservasUseCase.crear` (RN-01/RN-03, anticipacion maxima y
+   solapamiento) y exige un cliente ya registrado (`idCliente`) mas una cancha activa de una sede
+   operada. Descartamos crear cuentas invitado en este bloque.
+5. El check-in mueve `CONFIRMADA -> FINALIZADA` y solo se habilita desde 2 horas antes del inicio
+   hasta el fin de la franja; la reserva presencial nace `PENDIENTE`, como cualquier reserva, y la
+   confirma el propietario. El cobro presencial (EFECTIVO/YAPE/PLIN/TARJETA/POS) registra un pago
+   `APROBADO` reutilizando `PagoRepositorio`, con un unico pago aprobado por reserva (RN-05).
+6. Las incidencias reutilizan la tabla `reclamo` con `estado = 'ABIERTO'`, `id_usuario` = operador
+   que reporta y `id_reserva` opcional, de modo que la mesa de ayuda de `PLATFORM_ADMIN` las
+   atienda con el flujo existente.
+7. La administracion gestiona los vinculos con
+   `GET/POST/DELETE /api/v1/admin/establecimientos/{id}/operadores[/{idUsuario}]` (solo
+   `PLATFORM_ADMIN`, con auditoria). `AdminPlataformaService.ROLES` incluye `OPERADOR`.
+8. El frontend agrega `/admin/operadores` (buscar usuario por correo y vincular a una sede) y el
+   portal `/recepcion` con Turno actual, Agenda del dia, Reservas, Reserva presencial, Cobros e
+   Incidencias, protegido por `roleGuard(['OPERADOR','OWNER','PLATFORM_ADMIN'])`.
+
+**Consecuencias:** el mostrador opera con privilegios minimos y acotados por sede, sin acceder a
+paneles de propietario ni de plataforma. La reserva presencial exige que el cliente ya tenga
+cuenta (una reserva telefonica sin usuario registrado no es posible todavia) y la confirmacion
+del walk-in sigue dependiendo del propietario porque la creacion reutiliza el flujo estandar de
+`ReservasUseCase.crear`. Queda fuera del bloque la gestion de bloqueos desde recepcion.
+
+**Evidencia:** `RecepcionTest` (permiso por sede, agenda, walk-in, check-in idempotente, cobro y
+conflictos), humo con vinculacion/desvinculacion y turno completo (153/153 PowerShell, 134/134
+Bash), E2E `owner-admin-flows.mjs` (alta de operador desde la UI y recorrido del portal),
+accesibilidad de las siete rutas nuevas y capturas `docs/evidencias/ui/recepcion-*.png` y
+`admin-operadores-1440.png` (2026-10-18).
+

@@ -3,10 +3,10 @@ package pe.com.canchadirecta.bookings.application.service;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pe.com.canchadirecta.bookings.application.port.in.CancelarReservaUseCase;
 import pe.com.canchadirecta.bookings.application.port.out.ReservaRepositorio;
 import pe.com.canchadirecta.bookings.domain.model.Reserva;
+import pe.com.canchadirecta.shared.application.port.out.ConfiguracionPlataforma;
 import pe.com.canchadirecta.shared.application.port.out.PoliticaReembolso;
 import pe.com.canchadirecta.shared.application.port.out.Reloj;
 import pe.com.canchadirecta.shared.domain.DomainException;
@@ -34,18 +34,18 @@ public class CancelarReservaService implements CancelarReservaUseCase {
     private final ReservaRepositorio reservas;
     private final PoliticaReembolso reembolsos;
     private final Reloj reloj;
-    private final long horasMinimas;
+    private final ConfiguracionPlataforma configuracion;
 
     @Inject
     public CancelarReservaService(
             ReservaRepositorio reservas,
             PoliticaReembolso reembolsos,
             Reloj reloj,
-            @ConfigProperty(name = "cd.reservas.horas-minimas-cancelacion", defaultValue = "2") long horasMinimas) {
+            ConfiguracionPlataforma configuracion) {
         this.reservas = reservas;
         this.reembolsos = reembolsos;
         this.reloj = reloj;
-        this.horasMinimas = horasMinimas;
+        this.configuracion = configuracion;
     }
 
     @Override
@@ -69,6 +69,7 @@ public class CancelarReservaService implements CancelarReservaUseCase {
         }
 
         Instant ahora = reloj.ahora();
+        long horasMinimas = configuracion.horasMinimasCancelacion();
         if (!reserva.franja().inicio().isAfter(ahora)) {
             throw new DomainException(ErrorCodes.CONFLICTO, "La reserva ya comenzo y no se puede cancelar.");
         }

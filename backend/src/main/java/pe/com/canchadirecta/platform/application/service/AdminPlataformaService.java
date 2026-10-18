@@ -9,6 +9,7 @@ import pe.com.canchadirecta.platform.domain.model.Auditoria;
 import pe.com.canchadirecta.platform.domain.model.CocheraAdmin;
 import pe.com.canchadirecta.platform.domain.model.PromocionAdmin;
 import pe.com.canchadirecta.platform.domain.model.PropietarioAdmin;
+import pe.com.canchadirecta.platform.domain.model.ReporteAdmin;
 import pe.com.canchadirecta.platform.domain.model.SupervisionAdmin;
 import pe.com.canchadirecta.platform.domain.model.UsuarioAdmin;
 import pe.com.canchadirecta.shared.application.port.out.AvisosUsuario;
@@ -17,7 +18,9 @@ import pe.com.canchadirecta.shared.domain.DomainException;
 import pe.com.canchadirecta.shared.domain.ErrorCodes;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
@@ -38,8 +41,9 @@ import java.util.Set;
 public class AdminPlataformaService implements AdminPlataformaUseCase {
 
     private static final int LIMITE_DEFECTO = 50;
+    private static final ZoneId ZONA_NEGOCIO = ZoneId.of("America/Lima");
 
-    private static final Set<String> ROLES = Set.of("USER", "OWNER", "PLATFORM_ADMIN");
+    private static final Set<String> ROLES = Set.of("USER", "OWNER", "OPERADOR", "PLATFORM_ADMIN");
     private static final String ADMIN = "PLATFORM_ADMIN";
 
     private static final Map<PropietarioAdmin.Estado, Set<PropietarioAdmin.Estado>> TRANSICIONES = Map.of(
@@ -107,6 +111,31 @@ public class AdminPlataformaService implements AdminPlataformaUseCase {
     @Override
     public List<SupervisionAdmin.Establecimiento> establecimientos(String estado, int limite) {
         return admin.establecimientos(texto(estado), limite(limite));
+    }
+
+    @Override
+    @Transactional
+    public SupervisionAdmin.Establecimiento cambiarEstadoEstablecimiento(Long idEstablecimiento, Long idAdmin,
+                                                                         String estado) {
+        SupervisionAdmin.Establecimiento actual = admin.establecimiento(idEstablecimiento)
+                .orElseThrow(() -> new DomainException(ErrorCodes.NO_ENCONTRADO,
+                        "El establecimiento no existe."));
+        String nuevo = estado == null ? null : estado.trim().toUpperCase(Locale.ROOT);
+        if (!"ACTIVO".equals(nuevo) && !"INACTIVO".equals(nuevo)) {
+            throw new DomainException(ErrorCodes.DATOS_INVALIDOS,
+                    "El estado debe ser ACTIVO o INACTIVO.");
+        }
+        if (nuevo.equals(actual.estado())) {
+            throw new DomainException(ErrorCodes.CONFLICTO,
+                    "El establecimiento ya esta en ese estado.");
+        }
+        if (!admin.cambiarEstadoEstablecimiento(idEstablecimiento, actual.estado(), nuevo)) {
+            throw new DomainException(ErrorCodes.CONFLICTO,
+                    "El establecimiento cambio mientras se actualizaba.");
+        }
+        auditoria.registrar(idAdmin, "ESTABLECIMIENTO_" + nuevo, "establecimiento",
+                String.valueOf(idEstablecimiento), "de=" + actual.estado() + " a=" + nuevo);
+        return admin.establecimiento(idEstablecimiento).orElseThrow();
     }
 
     @Override
@@ -194,6 +223,7 @@ public class AdminPlataformaService implements AdminPlataformaUseCase {
     @Transactional
     public PromocionAdmin crearPromocion(Long idAdmin, String codigo, String descripcion, String tipo,
                                          BigDecimal valor, LocalDate fechaInicio, LocalDate fechaFin,
+                                         Integer limiteUsos, Integer limitePorUsuario,
                                          List<Long> canchas) {
         String codigoLimpio = codigo == null ? "" : codigo.trim().toUpperCase(Locale.ROOT);
         if (!codigoLimpio.matches("[A-Z0-9_-]{1," + PromocionAdmin.CODIGO_MAX + "}")) {
@@ -220,6 +250,18 @@ public class AdminPlataformaService implements AdminPlataformaUseCase {
             throw new DomainException(ErrorCodes.DATOS_INVALIDOS,
                     "La fecha de inicio no puede ser posterior a la de fin.");
         }
+        if (limiteUsos != null && limiteUsos <= 0) {
+            throw new DomainException(ErrorCodes.DATOS_INVALIDOS,
+                    "El limite total de usos debe ser mayor que cero.");
+        }
+        if (limitePorUsuario != null && limitePorUsuario <= 0) {
+            throw new DomainException(ErrorCodes.DATOS_INVALIDOS,
+                    "El limite por usuario debe ser mayor que cero.");
+        }
+        if (limiteUsos != null && limitePorUsuario != null && limitePorUsuario > limiteUsos) {
+            throw new DomainException(ErrorCodes.DATOS_INVALIDOS,
+                    "El limite por usuario no puede superar el limite total de usos.");
+        }
         List<Long> canchasLimpio = canchas == null ? List.of()
                 : canchas.stream().filter(Objects::nonNull).distinct().toList();
         if (admin.codigoPromocionExiste(codigoLimpio)) {
@@ -231,7 +273,7 @@ public class AdminPlataformaService implements AdminPlataformaUseCase {
 
         PromocionAdmin creada = admin.registrarPromocion(new PromocionAdmin(null, codigoLimpio,
                 descripcion.trim(), tipoValor.name(), valor, fechaInicio, fechaFin,
-                PromocionAdmin.Estado.ACTIVA.name(), canchasLimpio));
+                PromocionAdmin.Estado.ACTIVA.name(), limiteUsos, limitePorUsuario, 0, canchasLimpio));
         auditoria.registrar(idAdmin, "PROMOCION_CREADA", "promocion", String.valueOf(creada.id()),
                 "codigo=" + codigoLimpio + " tipo=" + tipoValor + " valor=" + valor
                         + " canchas=" + canchasLimpio.size());
@@ -256,6 +298,16 @@ public class AdminPlataformaService implements AdminPlataformaUseCase {
         auditoria.registrar(idAdmin, "PROMOCION_" + nuevo, "promocion", String.valueOf(actual.id()),
                 "codigo=" + actual.codigo() + " de=" + actual.estado() + " a=" + nuevo);
         return admin.promocion(actual.id()).orElseThrow();
+    }
+
+    @Override
+    public ReporteAdmin reporte(int dias) {
+        int ventana = Math.max(1, Math.min(dias <= 0 ? 30 : dias, 365));
+        Instant ahora = Instant.now();
+        LocalDate hoy = LocalDate.ofInstant(ahora, ZONA_NEGOCIO);
+        Instant desde = hoy.minusDays(ventana - 1L).atStartOfDay(ZONA_NEGOCIO).toInstant();
+        Instant hasta = hoy.plusDays(1).atStartOfDay(ZONA_NEGOCIO).toInstant();
+        return admin.reporte(ventana, desde, hasta);
     }
 
     @Override

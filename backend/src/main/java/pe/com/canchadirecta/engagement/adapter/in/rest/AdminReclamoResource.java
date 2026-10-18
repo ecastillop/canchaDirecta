@@ -17,12 +17,14 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import pe.com.canchadirecta.engagement.adapter.in.rest.dto.AdminCrearReclamoRequest;
 import pe.com.canchadirecta.engagement.adapter.in.rest.dto.AdminReclamoDetalleResponse;
 import pe.com.canchadirecta.engagement.adapter.in.rest.dto.AdminReclamoResponse;
 import pe.com.canchadirecta.engagement.adapter.in.rest.dto.CambiarEstadoReclamoRequest;
 import pe.com.canchadirecta.engagement.adapter.in.rest.dto.ComentarReclamoRequest;
 import pe.com.canchadirecta.engagement.adapter.in.rest.dto.SeguimientoResponse;
 import pe.com.canchadirecta.engagement.application.port.in.ModerarReclamosUseCase;
+import pe.com.canchadirecta.engagement.application.port.in.ReclamosUseCase;
 import pe.com.canchadirecta.engagement.domain.model.Reclamo;
 import pe.com.canchadirecta.engagement.domain.model.ReclamoSeguimiento;
 
@@ -37,11 +39,14 @@ import java.util.List;
 public class AdminReclamoResource {
 
     private final ModerarReclamosUseCase moderar;
+    private final ReclamosUseCase reclamos;
     private final JsonWebToken jwt;
 
     @Inject
-    public AdminReclamoResource(ModerarReclamosUseCase moderar, JsonWebToken jwt) {
+    public AdminReclamoResource(ModerarReclamosUseCase moderar, ReclamosUseCase reclamos,
+                                JsonWebToken jwt) {
         this.moderar = moderar;
+        this.reclamos = reclamos;
         this.jwt = jwt;
     }
 
@@ -51,6 +56,19 @@ public class AdminReclamoResource {
     public List<AdminReclamoResponse> listar(@QueryParam("estado") String estado,
                                              @QueryParam("limite") @DefaultValue("50") int limite) {
         return moderar.listar(estado, limite).stream().map(AdminReclamoResponse::de).toList();
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Crea un ticket de soporte a nombre de un usuario")
+    public Response crear(@Valid AdminCrearReclamoRequest request) {
+        Reclamo creado = reclamos.crear(request.idUsuario(), request.idReserva(),
+                request.asunto(), request.descripcion());
+        return Response.created(UriBuilder.fromPath("/api/v1/admin/reclamos/{id}")
+                        .build(creado.id()))
+                .entity(AdminReclamoResponse.de(creado))
+                .build();
     }
 
     @GET
