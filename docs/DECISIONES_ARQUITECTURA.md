@@ -1081,3 +1081,41 @@ bloquea 10:00-11:00 desde "Agenda del dia", lo ve listado y lo levanta; evidenci
 `docs/evidencias/ui/recepcion-bloqueo-1440.png`); backend 160/160, build OK, 22/22 unitarios, E2E
 usuario OK, a11y 34 rutas OK, humo 153/153 PS y 134/134 Bash (2026-10-18).
 
+## ADR-0043 - La ocupacion semanal del propietario se deriva de sus reservas y bloqueos
+
+**Contexto:** el panel del propietario mostraba la agenda como configuracion (horario semanal
+recurrente y bloqueos) y las reservas como una bandeja en lista (`/panel/reservas`). Para responder
+"que horas de esta semana tengo ocupadas" habia que cruzar a mano la lista de reservas con el
+horario, y la unica vista de rejilla existente era la del cliente en la ficha publica (ADR-0041).
+
+**Decision:**
+1. `GET /api/v1/reservas/recibidas` acepta tres filtros opcionales mas: `idCancha`, `desde` y `hasta`
+   (el rango se aplica por solape, `fin > desde AND inicio < hasta`); `limite` sigue con 50 por
+   defecto y tope de 100. La consulta sigue restringida a las canchas del propietario del token
+   (subconsulta de propiedad + filtro), de modo que un `idCancha` ajeno devuelve vacio, no `403` con
+   datos: no se abre acceso lateral.
+2. La pantalla "Agenda" estrena la seccion "Ocupacion de la semana": rejilla de 7 dias por las horas
+   del horario configurado (tramos de 60 min), estado por hora (`Libre`, `Reservada`, `Bloqueada`,
+   `Ya paso`, `Cerrado` para el dia sin horario y `Fuera de horario`) y navegacion de semana.
+3. El estado se calcula en el frontend con las mismas reglas que la disponibilidad publica: ocupan
+   cupo las reservas `PENDIENTE`/`CONFIRMADA` y los bloqueos; el tramo que ya termino se rotula
+   aparte. No se anade un endpoint de disponibilidad para el propietario ni se duplica la regla en el
+   backend.
+4. La rejilla es informativa; bloquear y levantar sigue en "Bloqueos y excepciones" (que el personal
+   de la sede tambien puede usar, ADR-0042).
+5. Los ayudantes de calendario (semana, dias, etiquetas, minutos del dia, fecha y hora de Lima) se
+   mueven a `frontend/src/app/shared/util/fecha-lima.ts`; la ficha publica los importa en lugar de
+   mantener su copia local.
+
+**Consecuencias:** el propietario ve de un vistazo la ocupacion de sus canchas y detecta huecos y
+solapes sin cruzar datos a mano, alimentandose del contrato existente con dos filtros nuevos y sin
+tablas ni cache. La semana en Lima se implementa una sola vez y la comparten ficha y panel. La
+rejilla trabaja en tramos de 60 min sobre horarios configurados: si la cancha no tiene horarios la
+seccion lo indica (L-27/L-28).
+
+**Evidencia:** `ReservasTest` (bandeja filtrada por cancha y por rango: aparece la reserva de la
+cancha y del dia pedidos y no la otra; rango sin solape vacio; `desde` mal formado => 400); E2E
+propietario/admin (nueva semana con horas "libre" y dias "cerrado", y vuelta a la semana actual;
+evidencia `docs/evidencias/ui/panel-agenda-1440.png`); backend 162/162, build OK, 22/22 unitarios,
+E2E usuario OK, a11y 34 rutas OK, humo 153/153 PS y 134/134 Bash (2026-10-18).
+

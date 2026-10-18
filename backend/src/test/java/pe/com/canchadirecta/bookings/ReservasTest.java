@@ -437,6 +437,40 @@ class ReservasTest {
     }
 
     @Test
+    void bandejaDelPropietarioFiltraPorCanchaYRango() {
+        // Dos canchas del mismo propietario y una reserva en cada una, en dias distintos.
+        Long canchaA = crearCancha("Cancha bandeja A");
+        Long canchaB = crearCancha("Cancha bandeja B");
+        LocalDate fecha = LocalDate.ofInstant(base, ZONA);
+        Instant inicioA = fecha.atTime(9, 0).atZone(ZONA).toInstant();
+        Instant inicioB = fecha.plusDays(1).atTime(9, 0).atZone(ZONA).toInstant();
+        Long reservaA = idDe(crearEnComo(tokenReservante, canchaA, inicioA, inicioA.plus(1, ChronoUnit.HOURS))
+                .then().statusCode(201).extract().response());
+        Long reservaB = idDe(crearEnComo(tokenReservante, canchaB, inicioB, inicioB.plus(1, ChronoUnit.HOURS))
+                .then().statusCode(201).extract().response());
+
+        // Sin filtros siguen apareciendo las dos.
+        assertEquals("PENDIENTE", estadoDe(recibidas(token, null), reservaA));
+        assertEquals("PENDIENTE", estadoDe(recibidas(token, null), reservaB));
+
+        // Filtro por cancha: solo la de esa cancha.
+        List<Map<String, Object>> soloA = recibidas(token, null, canchaA, null, null);
+        assertEquals("PENDIENTE", estadoDe(soloA, reservaA));
+        assertNull(estadoDe(soloA, reservaB), "No debe mezclar canchas.");
+
+        // Filtro por rango: la ventana del dia de la reserva A solo la contiene a ella.
+        List<Map<String, Object>> delDia = recibidas(token, null, null,
+                inicioA.minus(4, ChronoUnit.HOURS), inicioA.plus(2, ChronoUnit.HOURS));
+        assertEquals("PENDIENTE", estadoDe(delDia, reservaA));
+        assertNull(estadoDe(delDia, reservaB), "La reserva de otro dia no debe aparecer.");
+
+        // Rango sin solape con ninguna reserva.
+        assertEquals(0, recibidas(token, null, null,
+                inicioA.plus(20, ChronoUnit.DAYS), inicioA.plus(21, ChronoUnit.DAYS)).size(),
+                "Un rango futuro sin reservas debe venir vacio.");
+    }
+
+    @Test
     void atenderReservaConDatosInvalidosFallaCon400o404() {
         given().when().get("/api/v1/reservas/recibidas").then().statusCode(401);
         given().when().post("/api/v1/reservas/1/confirmar").then().statusCode(401);
@@ -445,6 +479,9 @@ class ReservasTest {
         rechazar(999_999_999L, token, null).then().statusCode(404).body("code", equalTo("NOT_FOUND"));
 
         given().auth().oauth2(token).queryParam("estado", "VOLANDO")
+                .when().get("/api/v1/reservas/recibidas")
+                .then().statusCode(400).body("code", equalTo("VALIDATION_ERROR"));
+        given().auth().oauth2(token).queryParam("desde", "el lunes")
                 .when().get("/api/v1/reservas/recibidas")
                 .then().statusCode(400).body("code", equalTo("VALIDATION_ERROR"));
         given().auth().oauth2(token).contentType(ContentType.JSON).body(Map.of("motivo", "x".repeat(201)))
@@ -613,9 +650,24 @@ class ReservasTest {
 
     /** Bandeja del propietario; `estado` nulo no aplica filtro. */
     private List<Map<String, Object>> recibidas(String tokenUsado, String estado) {
+        return recibidas(tokenUsado, estado, null, null, null);
+    }
+
+    /** Bandeja del propietario con filtros opcionales de cancha y rango de instantes. */
+    private List<Map<String, Object>> recibidas(String tokenUsado, String estado, Long idCancha,
+                                                Instant desde, Instant hasta) {
         var peticion = given().auth().oauth2(tokenUsado);
         if (estado != null) {
             peticion = peticion.queryParam("estado", estado);
+        }
+        if (idCancha != null) {
+            peticion = peticion.queryParam("idCancha", idCancha);
+        }
+        if (desde != null) {
+            peticion = peticion.queryParam("desde", desde.toString());
+        }
+        if (hasta != null) {
+            peticion = peticion.queryParam("hasta", hasta.toString());
         }
         return peticion.when().get("/api/v1/reservas/recibidas")
                 .then().statusCode(200)

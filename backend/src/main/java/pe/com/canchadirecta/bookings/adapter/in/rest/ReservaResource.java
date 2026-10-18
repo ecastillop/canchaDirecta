@@ -30,6 +30,8 @@ import pe.com.canchadirecta.bookings.domain.model.Reserva;
 import pe.com.canchadirecta.shared.domain.DomainException;
 import pe.com.canchadirecta.shared.domain.ErrorCodes;
 
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
 
@@ -104,8 +106,12 @@ public class ReservaResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Lista las reservas recibidas en las canchas del propietario (HU-008-2)")
     public List<ReservaResponse> recibidas(@QueryParam("estado") String estado,
+                                           @QueryParam("idCancha") Long idCancha,
+                                           @QueryParam("desde") String desde,
+                                           @QueryParam("hasta") String hasta,
                                            @QueryParam("limite") @DefaultValue("50") int limite) {
-        return atencion.recibidas(idUsuarioAutenticado(), estadoDe(estado), limite).stream()
+        return atencion.recibidas(idUsuarioAutenticado(), estadoDe(estado), idCancha,
+                        aInstante(desde, "desde"), aInstante(hasta, "hasta"), limite).stream()
                 .map(ReservaResource::aRespuesta)
                 .toList();
     }
@@ -150,6 +156,19 @@ public class ReservaResource {
         } catch (IllegalArgumentException ex) {
             throw new DomainException(ErrorCodes.DATOS_INVALIDOS,
                     "Estado de reserva desconocido: " + estado + ".");
+        }
+    }
+
+    /** Filtro opcional de instante ISO-8601 para el rango de la bandeja; en blanco no filtra. */
+    private static Instant aInstante(String valor, String nombre) {
+        if (valor == null || valor.isBlank()) {
+            return null;
+        }
+        try {
+            return Instant.parse(valor.trim());
+        } catch (DateTimeParseException ex) {
+            throw new DomainException(ErrorCodes.DATOS_INVALIDOS,
+                    "El parametro " + nombre + " debe ser un instante ISO-8601 (por ejemplo 2026-11-02T18:00:00Z).");
         }
     }
 

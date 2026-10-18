@@ -28,11 +28,28 @@ export class ReservasApi {
     return this.http.post<Reserva>(apiUrl(`/reservas/${id}/modificar`), { inicio, fin });
   }
 
-  /** Reservas recibidas por el propietario. */
-  recibidas(estado?: EstadoReserva | null, limite = 50): Observable<Reserva[]> {
+  /**
+   * Reservas recibidas por el propietario. `filtros` permite acotar a una cancha y a un rango
+   * de instantes (`desde`/`hasta` en ISO-8601, se aplican por solape), que es lo que usa la
+   * rejilla de ocupacion semanal del panel.
+   */
+  recibidas(
+    estado?: EstadoReserva | null,
+    limite = 50,
+    filtros: { idCancha?: number; desde?: string; hasta?: string } = {},
+  ): Observable<Reserva[]> {
     let params = new HttpParams().set('limite', limite);
     if (estado) {
       params = params.set('estado', estado);
+    }
+    if (filtros.idCancha) {
+      params = params.set('idCancha', filtros.idCancha);
+    }
+    if (filtros.desde) {
+      params = params.set('desde', filtros.desde);
+    }
+    if (filtros.hasta) {
+      params = params.set('hasta', filtros.hasta);
     }
     return this.http.get<Reserva[]>(apiUrl('/reservas/recibidas'), { params });
   }

@@ -20,7 +20,9 @@ Usan `playwright-core` con el Chrome instalado (no descargan navegadores).
 $env:BASE='http://localhost:4300'; npm run test:e2e
 
 # Flujo propietario/admin (requiere admin). Incluye el portal de recepcion: el administrador
-# vincula al operador y este bloquea y levanta una franja de las canchas de su sede (ADR-0042).
+# vincula al operador y este bloquea y levanta una franja de las canchas de su sede (ADR-0042),
+# y la rejilla "Ocupacion de la semana" del panel (semana futura con horas libres y dias
+# cerrados, y vuelta a la semana actual; ADR-0043).
 $env:BASE='http://localhost:4300'
 $env:ADMIN_CORREO='admin@dominio.com'
 $env:ADMIN_PASSWORD='...'

@@ -14,31 +14,25 @@ import { CdErrorStateComponent } from '../../shared/ui/states/cd-error-state.com
 import { CdIconComponent } from '../../shared/ui/icon/cd-icon.component';
 import { CdInputDirective } from '../../shared/ui/input/cd-input.directive';
 import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.component';
-import { horaLima } from '../../shared/util/fecha-lima';
+import {
+  DIAS,
+  DIAS_CORTOS,
+  MESES_LARGOS,
+  etiquetaDeSemana,
+  horaDeMinutos,
+  horaLima,
+  hoyLima,
+  lunesDe,
+  minutosDe,
+  partesDeFecha,
+  sumarDias,
+} from '../../shared/util/fecha-lima';
 
 const FOTO_FALLBACK =
   'data:image/svg+xml;charset=UTF-8,' +
   encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"><rect width="800" height="600" fill="#e8edf4"/><path d="M120 420l160-180 120 135 90-105 190 220z" fill="#b7c3d3"/><circle cx="600" cy="150" r="55" fill="#b7c3d3"/><text x="400" y="520" text-anchor="middle" font-family="Segoe UI,Arial" font-size="28" fill="#5b6b80">Foto no disponible</text></svg>',
   );
-
-const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-const DIAS_CORTOS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-const MESES_LARGOS = [
-  'enero',
-  'febrero',
-  'marzo',
-  'abril',
-  'mayo',
-  'junio',
-  'julio',
-  'agosto',
-  'septiembre',
-  'octubre',
-  'noviembre',
-  'diciembre',
-];
 
 interface DiaSemana {
   fecha: string;
@@ -50,49 +44,6 @@ interface DiaSemana {
   /** La cancha tiene agenda configurada y ese dia de la semana no esta en ella. */
   cerrado: boolean;
   franjas: FranjaDisponible[];
-}
-
-function sumarDias(fecha: string, dias: number): string {
-  const valor = new Date(`${fecha}T12:00:00Z`);
-  valor.setUTCDate(valor.getUTCDate() + dias);
-  return valor.toISOString().slice(0, 10);
-}
-
-function lunesDe(fecha: string): string {
-  const valor = new Date(`${fecha}T12:00:00Z`);
-  return sumarDias(fecha, -((valor.getUTCDay() + 6) % 7));
-}
-
-/** 'HH:mm[:ss]' del horario configurado a minutos del dia. */
-function minutosDe(hora: string): number {
-  const [h, m] = hora.slice(0, 5).split(':');
-  return Number(h) * 60 + Number(m);
-}
-
-function horaDeMinutos(minutos: number): string {
-  const h = String(Math.floor(minutos / 60)).padStart(2, '0');
-  const m = String(minutos % 60).padStart(2, '0');
-  return `${h}:${m}`;
-}
-
-function partesDeFecha(fecha: string): { indice: number; numero: number; mes: number; anio: number } {
-  const valor = new Date(`${fecha}T12:00:00Z`);
-  return {
-    indice: (valor.getUTCDay() + 6) % 7,
-    numero: valor.getUTCDate(),
-    mes: valor.getUTCMonth(),
-    anio: valor.getUTCFullYear(),
-  };
-}
-
-function etiquetaDeSemana(inicio: string): string {
-  const fin = sumarDias(inicio, 6);
-  const a = partesDeFecha(inicio);
-  const b = partesDeFecha(fin);
-  if (a.mes === b.mes && a.anio === b.anio) {
-    return `${a.numero} – ${b.numero} ${MESES[a.mes]} ${b.anio}`;
-  }
-  return `${a.numero} ${MESES[a.mes]} – ${b.numero} ${MESES[b.mes]} ${b.anio}`;
 }
 
 @Component({
@@ -1657,9 +1608,9 @@ export class CanchaDetalleComponent implements OnInit {
   protected readonly horarios = signal<HorarioCancha[]>([]);
   protected readonly calificaciones = signal<CalificacionesCancha | null>(null);
   protected readonly diasSemana = signal<DiaSemana[]>([]);
-  protected readonly inicioSemana = signal(lunesDe(this.hoyLima()));
-  protected readonly mesSeleccionado = signal(this.hoyLima().slice(0, 7));
-  protected readonly fechaSeleccionada = signal(this.hoyLima());
+  protected readonly inicioSemana = signal(lunesDe(hoyLima()));
+  protected readonly mesSeleccionado = signal(hoyLima().slice(0, 7));
+  protected readonly fechaSeleccionada = signal(hoyLima());
   protected readonly seleccionada = signal<FranjaDisponible | null>(null);
   protected readonly cargando = signal(true);
   protected readonly cargandoSemana = signal(false);
@@ -1667,11 +1618,11 @@ export class CanchaDetalleComponent implements OnInit {
   protected readonly errorSemana = signal<string | null>(null);
   protected readonly duracion = signal(60);
 
-  protected readonly mesActual = this.hoyLima().slice(0, 7);
-  protected readonly fechaMaxima = sumarDias(this.hoyLima(), APP_CONFIG.diasAnticipacionMax);
+  protected readonly mesActual = hoyLima().slice(0, 7);
+  protected readonly fechaMaxima = sumarDias(hoyLima(), APP_CONFIG.diasAnticipacionMax);
   protected readonly mesMax = this.fechaMaxima.slice(0, 7);
   protected readonly etiquetaSemana = computed(() => etiquetaDeSemana(this.inicioSemana()));
-  protected readonly esSemanaActual = computed(() => this.inicioSemana() === lunesDe(this.hoyLima()));
+  protected readonly esSemanaActual = computed(() => this.inicioSemana() === lunesDe(hoyLima()));
   protected readonly esUltimaSemana = computed(() => sumarDias(this.inicioSemana(), 7) > this.fechaMaxima);
   protected readonly diaSeleccionado = computed(
     () => this.diasSemana().find((dia) => dia.fecha === this.fechaSeleccionada()) ?? null,
@@ -1746,7 +1697,7 @@ export class CanchaDetalleComponent implements OnInit {
 
   protected semanaAnterior(): void {
     const anterior = sumarDias(this.inicioSemana(), -7);
-    const actual = lunesDe(this.hoyLima());
+    const actual = lunesDe(hoyLima());
     this.cambiarSemana(anterior < actual ? actual : anterior);
   }
 
@@ -1761,12 +1712,12 @@ export class CanchaDetalleComponent implements OnInit {
     const valor = (event.target as HTMLInputElement).value;
     const mes = valor && valor >= this.mesActual ? (valor > this.mesMax ? this.mesMax : valor) : this.mesActual;
     (event.target as HTMLInputElement).value = mes;
-    const base = mes === this.mesActual ? this.hoyLima() : `${mes}-01`;
+    const base = mes === this.mesActual ? hoyLima() : `${mes}-01`;
     this.cambiarSemana(lunesDe(base));
   }
 
   protected irAHoy(): void {
-    const hoy = this.hoyLima();
+    const hoy = hoyLima();
     this.inicioSemana.set(lunesDe(hoy));
     this.fechaSeleccionada.set(hoy);
     this.mesSeleccionado.set(hoy.slice(0, 7));
@@ -1891,7 +1842,7 @@ export class CanchaDetalleComponent implements OnInit {
       return;
     }
     const fechas = Array.from({ length: 7 }, (_, i) => sumarDias(this.inicioSemana(), i));
-    const hoy = this.hoyLima();
+    const hoy = hoyLima();
     const fechaMaxima = this.fechaMaxima;
     this.cargandoSemana.set(true);
     this.errorSemana.set(null);
@@ -1927,7 +1878,7 @@ export class CanchaDetalleComponent implements OnInit {
     const elegido =
       conservar && (conservar.franjas.length > 0 || !dias.some((dia) => !dia.esPasado && dia.franjas.length))
         ? conservar
-        : (dias.find((dia) => dia.fecha === this.hoyLima() && dia.franjas.length > 0 && !dia.esPasado) ??
+        : (dias.find((dia) => dia.fecha === hoyLima() && dia.franjas.length > 0 && !dia.esPasado) ??
           dias.find((dia) => !dia.esPasado && dia.franjas.length > 0) ??
           dias.find((dia) => !dia.esPasado) ??
           dias[0]);
@@ -1937,7 +1888,7 @@ export class CanchaDetalleComponent implements OnInit {
 
   private crearDia(fecha: string, franjas: FranjaDisponible[]): DiaSemana {
     const partes = partesDeFecha(fecha);
-    const hoy = this.hoyLima();
+    const hoy = hoyLima();
     const agenda = this.horarios();
     return {
       fecha,
@@ -1951,14 +1902,5 @@ export class CanchaDetalleComponent implements OnInit {
       cerrado: agenda.length > 0 && !agenda.some((horario) => horario.diaSemana === partes.indice + 1),
       franjas,
     };
-  }
-
-  private hoyLima(): string {
-    return new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/Lima',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(new Date());
   }
 }

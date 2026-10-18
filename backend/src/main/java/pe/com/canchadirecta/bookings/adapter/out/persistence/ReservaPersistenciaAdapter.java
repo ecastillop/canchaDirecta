@@ -311,7 +311,8 @@ public class ReservaPersistenciaAdapter implements ReservaRepositorio {
     }
 
     @Override
-    public List<Reserva> listarPorPropietario(Long idUsuario, Reserva.Estado estado, int limite) {
+    public List<Reserva> listarPorPropietario(Long idUsuario, Reserva.Estado estado, Long idCancha,
+                                              Instant desde, Instant hasta, int limite) {
         // Subconsulta en lugar de JOIN para poder reutilizar COLUMNAS_RESERVA sin calificar.
         Query consulta = em.createNativeQuery("SELECT " + COLUMNAS_RESERVA + RESERVA_CON_COCHERA
                         + " WHERE r.id_cancha IN (SELECT c.id_cancha FROM cancha c "
@@ -319,11 +320,23 @@ public class ReservaPersistenciaAdapter implements ReservaRepositorio {
                         + "JOIN propietario p ON p.id_propietario = e.id_propietario "
                         + "WHERE p.id_usuario = :idUsuario)"
                         + (estado == null ? "" : " AND r.estado = :estado")
+                        + (idCancha == null ? "" : " AND r.id_cancha = :idCancha")
+                        + (desde == null ? "" : " AND r.fin > :desde")
+                        + (hasta == null ? "" : " AND r.inicio < :hasta")
                         + " ORDER BY r.inicio DESC")
                 .setParameter("idUsuario", idUsuario.intValue())
                 .setMaxResults(Math.max(1, Math.min(limite, 100)));
         if (estado != null) {
             consulta.setParameter("estado", estado.name());
+        }
+        if (idCancha != null) {
+            consulta.setParameter("idCancha", idCancha.intValue());
+        }
+        if (desde != null) {
+            consulta.setParameter("desde", SqlUtc.aLiteral(desde));
+        }
+        if (hasta != null) {
+            consulta.setParameter("hasta", SqlUtc.aLiteral(hasta));
         }
 
         List<?> filas = consulta.getResultList();

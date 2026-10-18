@@ -1,11 +1,13 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { OwnerApi } from '../../core/api/owner.api';
 import { OwnerStore } from '../../core/api/owner.store';
 import { BloqueoCancha } from '../../core/api/owner.models';
+import { ReservasApi } from '../../core/api/reservas.api';
+import { Reserva } from '../../core/api/reservas.models';
 import { HorarioCancha } from '../../core/api/venues.models';
 import { toApiError } from '../../core/http/api-error';
 import { CdButtonDirective } from '../../shared/ui/button/cd-button.directive';
@@ -13,8 +15,38 @@ import { ConfirmService } from '../../shared/ui/confirm/confirm.service';
 import { CdInputDirective } from '../../shared/ui/input/cd-input.directive';
 import { CdEmptyStateComponent } from '../../shared/ui/states/cd-empty-state.component';
 import { ToastService } from '../../shared/ui/toast/toast.service';
+import {
+  DESFASE_LIMA,
+  DIAS,
+  DIAS_CORTOS,
+  MESES_LARGOS,
+  etiquetaDeSemana,
+  horaDeMinutos,
+  hoyLima,
+  lunesDe,
+  minutosDe,
+  partesDeFecha,
+  sumarDias,
+} from '../../shared/util/fecha-lima';
 
-const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+/** Estado de una hora del horario semanal en la vista de ocupacion del propietario. */
+type EstadoCelda = 'libre' | 'reservada' | 'bloqueada' | 'pasado' | 'fuera' | 'cerrado';
+
+interface FranjaSemana {
+  hora: string;
+  estado: EstadoCelda;
+}
+
+interface DiaSemana {
+  fecha: string;
+  corta: string;
+  larga: string;
+  numero: number;
+  esHoy: boolean;
+  /** La cancha tiene agenda configurada y ese dia de la semana no esta en ella. */
+  cerrado: boolean;
+  franjas: FranjaSemana[];
+}
 
 @Component({
   selector: 'app-panel-agenda',
@@ -42,6 +74,106 @@ const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado
       </div>
 
       @if (canchaId()) {
+        <section class="cd-card semana">
+          <div class="semana__cabecera">
+            <div>
+              <h2 class="seccion">Ocupación de la semana</h2>
+              <p class="cd-xs cd-muted">
+                Cada hora de tu horario semanal con lo que ya está tomado: reservas de clientes y
+                bloqueos propios.
+              </p>
+            </div>
+            <div class="semana__nav" role="group" aria-label="Cambiar de semana">
+              <button
+                cdButton
+                variant="secondary"
+                size="sm"
+                type="button"
+                aria-label="Semana anterior"
+                (click)="semanaAnterior()"
+              >
+                ‹
+              </button>
+              <span class="semana__titulo">{{ etiquetaSemana() }}</span>
+              <button
+                cdButton
+                variant="secondary"
+                size="sm"
+                type="button"
+                aria-label="Semana siguiente"
+                (click)="semanaSiguiente()"
+              >
+                ›
+              </button>
+              @if (!esSemanaActual()) {
+                <button cdButton variant="ghost" size="sm" type="button" (click)="semanaActual()">
+                  Hoy
+                </button>
+              }
+            </div>
+          </div>
+
+          @if (errorSemana()) {
+            <p class="alerta" role="alert">{{ errorSemana() }}</p>
+          } @else if (horas().length === 0) {
+            <p class="cd-small cd-muted">
+              Agrega un horario de al menos una hora para ver la ocupación de la semana.
+            </p>
+          } @else {
+            <div class="calendario__scroll">
+              <table class="calendario__tabla">
+                <caption class="cd-visually-hidden">
+                  Ocupación por hora y día de la semana de la cancha seleccionada
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col" class="col-hora">Hora</th>
+                    @for (dia of diasSemana(); track dia.fecha) {
+                      <th scope="col" [class.col-hoy]="dia.esHoy">
+                        <span class="dia__corta">{{ dia.corta }}</span>
+                        <span class="dia__numero">{{ dia.numero }}</span>
+                      </th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (hora of horas(); track hora) {
+                    <tr>
+                      <th scope="row" class="col-hora">{{ hora }}</th>
+                      @for (dia of diasSemana(); track dia.fecha) {
+                        @if (dia.cerrado) {
+                          @if (hora === horas()[0]) {
+                            <td
+                              [attr.rowspan]="horas().length"
+                              class="celda celda--cerrado"
+                              [attr.aria-label]="dia.larga + ': cerrado'"
+                            >
+                              Cerrado
+                            </td>
+                          }
+                        } @else {
+                          <td
+                            [class]="'celda celda--' + estadoEn(dia, hora)"
+                            [attr.aria-label]="etiquetaCelda(dia, hora)"
+                          >
+                            {{ textoEstado(estadoEn(dia, hora)) }}
+                          </td>
+                        }
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <ul class="leyenda">
+              <li><span class="punto punto--libre" aria-hidden="true"></span>Libre</li>
+              <li><span class="punto punto--reservada" aria-hidden="true"></span>Reservada</li>
+              <li><span class="punto punto--bloqueada" aria-hidden="true"></span>Bloqueada</li>
+              <li><span class="punto punto--ocupada" aria-hidden="true"></span>Ya pasó o fuera de horario</li>
+            </ul>
+          }
+        </section>
+
         <div class="columnas">
           <section class="cd-card">
             <h2 class="seccion">Horario semanal recurrente</h2>
@@ -203,6 +335,116 @@ const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado
       font-size: var(--cd-text-sm);
       font-weight: 600;
     }
+    .semana {
+      margin-bottom: var(--cd-space-4);
+    }
+    .semana__cabecera {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: space-between;
+      gap: var(--cd-space-3);
+    }
+    .semana__nav {
+      display: flex;
+      align-items: center;
+      gap: var(--cd-space-2);
+    }
+    .semana__titulo {
+      min-width: 9rem;
+      text-align: center;
+      font-size: var(--cd-text-sm);
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+    .calendario__scroll {
+      overflow-x: auto;
+      margin-top: var(--cd-space-3);
+    }
+    .calendario__tabla {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--cd-text-xs);
+    }
+    .calendario__tabla th,
+    .calendario__tabla td {
+      padding: var(--cd-space-1) var(--cd-space-2);
+      border: 1px solid var(--cd-color-border);
+      text-align: center;
+      white-space: nowrap;
+    }
+    .calendario__tabla thead th {
+      background: var(--cd-color-surface-alt);
+    }
+    .col-hora {
+      text-align: left;
+      font-variant-numeric: tabular-nums;
+    }
+    .dia__corta,
+    .dia__numero {
+      display: block;
+    }
+    .dia__numero {
+      font-size: var(--cd-text-sm);
+      font-weight: 700;
+    }
+    .col-hoy {
+      background: var(--cd-color-accent-soft, var(--cd-color-accent));
+    }
+    .celda--libre {
+      color: var(--cd-color-text-muted);
+    }
+    .celda--reservada {
+      background: var(--cd-color-info-soft);
+      color: var(--cd-color-info);
+      font-weight: 600;
+    }
+    .celda--bloqueada {
+      background: var(--cd-color-warning-soft);
+      color: var(--cd-color-warning);
+      font-weight: 600;
+    }
+    .celda--pasado,
+    .celda--fuera,
+    .celda--cerrado {
+      background: var(--cd-color-surface-alt);
+      color: var(--cd-color-text-muted);
+    }
+    .leyenda {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--cd-space-3);
+      margin-top: var(--cd-space-2);
+      padding: 0;
+      list-style: none;
+      font-size: var(--cd-text-xs);
+      color: var(--cd-color-text-muted);
+    }
+    .leyenda li {
+      display: flex;
+      align-items: center;
+      gap: var(--cd-space-1);
+    }
+    .punto {
+      width: 0.75rem;
+      height: 0.75rem;
+      border: 1px solid var(--cd-color-border);
+      border-radius: 3px;
+    }
+    .punto--libre {
+      background: var(--cd-color-surface);
+    }
+    .punto--reservada {
+      background: var(--cd-color-info-soft);
+      border-color: var(--cd-color-info);
+    }
+    .punto--bloqueada {
+      background: var(--cd-color-warning-soft);
+      border-color: var(--cd-color-warning);
+    }
+    .punto--ocupada {
+      background: var(--cd-color-surface-alt);
+    }
     @media (min-width: 640px) {
       .cuatro {
         grid-template-columns: 1.2fr 1fr 1fr 1fr;
@@ -218,6 +460,7 @@ const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado
 })
 export class PanelAgendaComponent implements OnInit {
   private readonly api = inject(OwnerApi);
+  private readonly reservasApi = inject(ReservasApi);
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly confirm = inject(ConfirmService);
@@ -231,6 +474,20 @@ export class PanelAgendaComponent implements OnInit {
   protected readonly guardando = signal(false);
   protected readonly errorHorario = signal<string | null>(null);
   protected readonly errorBloqueo = signal<string | null>(null);
+
+  /** Ocupacion semanal: la semana que se muestra y los datos de esa semana. */
+  protected readonly inicioSemana = signal(lunesDe(hoyLima()));
+  protected readonly bloqueosSemana = signal<BloqueoCancha[]>([]);
+  protected readonly reservasSemana = signal<Reserva[]>([]);
+  protected readonly errorSemana = signal<string | null>(null);
+
+  protected readonly etiquetaSemana = computed(() => etiquetaDeSemana(this.inicioSemana()));
+  protected readonly esSemanaActual = computed(() => this.inicioSemana() === lunesDe(hoyLima()));
+  protected readonly diasSemana = computed<DiaSemana[]>(() => this.construirDias());
+  /** Horas (filas) de la tabla: la union de las franjas de los siete dias. */
+  protected readonly horas = computed(() =>
+    [...new Set(this.diasSemana().flatMap((dia) => dia.franjas.map((franja) => franja.hora)))].sort(),
+  );
 
   protected readonly horarioForm = this.fb.nonNullable.group({
     diaSemana: [1, [Validators.required, Validators.min(1), Validators.max(7)]],
@@ -376,6 +633,132 @@ export class PanelAgendaComponent implements OnInit {
     });
   }
 
+  protected semanaAnterior(): void {
+    this.inicioSemana.set(sumarDias(this.inicioSemana(), -7));
+    void this.cargarSemana();
+  }
+
+  protected semanaSiguiente(): void {
+    this.inicioSemana.set(sumarDias(this.inicioSemana(), 7));
+    void this.cargarSemana();
+  }
+
+  protected semanaActual(): void {
+    this.inicioSemana.set(lunesDe(hoyLima()));
+    void this.cargarSemana();
+  }
+
+  /** Estado de una hora concreta de un dia de la rejilla. */
+  protected estadoEn(dia: DiaSemana, hora: string): EstadoCelda {
+    if (dia.cerrado) {
+      return 'cerrado';
+    }
+    return dia.franjas.find((franja) => franja.hora === hora)?.estado ?? 'fuera';
+  }
+
+  protected etiquetaCelda(dia: DiaSemana, hora: string): string {
+    return `${dia.larga}, ${hora}: ${this.textoEstado(this.estadoEn(dia, hora)).toLowerCase()}`;
+  }
+
+  protected textoEstado(estado: EstadoCelda): string {
+    switch (estado) {
+      case 'reservada':
+        return 'Reservada';
+      case 'bloqueada':
+        return 'Bloqueada';
+      case 'libre':
+        return 'Libre';
+      case 'pasado':
+        return 'Ya pasó';
+      case 'cerrado':
+        return 'Cerrado';
+      default:
+        return 'Fuera de horario';
+    }
+  }
+
+  /**
+   * Ocupacion de los siete dias de `inicioSemana`: por cada hora del horario semanal se marca
+   * si esta reservada, bloqueada, libre o si ya paso. Los datos salen de la misma fuente que ve
+   * el cliente (reservas `PENDIENTE`/`CONFIRMADA` y bloqueos retienen cupo; ADR-0043).
+   */
+  private construirDias(): DiaSemana[] {
+    const inicio = this.inicioSemana();
+    const hoy = hoyLima();
+    const agenda = this.horarios();
+    const bloqueos = this.bloqueosSemana();
+    const reservas = this.reservasSemana();
+    const ahora = new Date();
+    return Array.from({ length: 7 }, (_, indice) => {
+      const fecha = sumarDias(inicio, indice);
+      const partes = partesDeFecha(fecha);
+      const delDia = agenda.filter((horario) => horario.diaSemana === partes.indice + 1);
+      const franjas: FranjaSemana[] = [];
+      for (const horario of delDia) {
+        let minuto = minutosDe(horario.horaInicio);
+        const fin = minutosDe(horario.horaFin);
+        while (minuto + 60 <= fin) {
+          franjas.push({
+            hora: horaDeMinutos(minuto),
+            estado: this.estadoDeSlot(fecha, minuto, bloqueos, reservas, ahora),
+          });
+          minuto += 60;
+        }
+      }
+      return {
+        fecha,
+        corta: DIAS_CORTOS[partes.indice],
+        larga: `${DIAS[partes.indice + 1]} ${partes.numero} de ${MESES_LARGOS[partes.mes]}`,
+        numero: partes.numero,
+        esHoy: fecha === hoy,
+        cerrado: agenda.length > 0 && delDia.length === 0,
+        franjas,
+      };
+    });
+  }
+
+  private estadoDeSlot(
+    fecha: string,
+    minuto: number,
+    bloqueos: BloqueoCancha[],
+    reservas: Reserva[],
+    ahora: Date,
+  ): EstadoCelda {
+    const inicio = new Date(`${fecha}T${horaDeMinutos(minuto)}:00${DESFASE_LIMA}`);
+    const fin = new Date(inicio.getTime() + 60 * 60 * 1000);
+    const solapa = (franja: { inicio: string; fin: string }): boolean =>
+      new Date(franja.inicio) < fin && new Date(franja.fin) > inicio;
+    if (bloqueos.some(solapa)) {
+      return 'bloqueada';
+    }
+    if (reservas.some(solapa)) {
+      return 'reservada';
+    }
+    return fin <= ahora ? 'pasado' : 'libre';
+  }
+
+  /** Bloqueos y reservas de la semana mostrada, para la rejilla de ocupacion. */
+  private async cargarSemana(): Promise<void> {
+    const idCancha = this.canchaId();
+    if (!idCancha) {
+      return;
+    }
+    const inicio = this.inicioSemana();
+    const desde = new Date(`${inicio}T00:00:00${DESFASE_LIMA}`).toISOString();
+    const hasta = new Date(`${sumarDias(inicio, 7)}T00:00:00${DESFASE_LIMA}`).toISOString();
+    this.errorSemana.set(null);
+    try {
+      const [bloqueos, reservas] = await Promise.all([
+        firstValueFrom(this.api.bloqueos(idCancha, desde, hasta)),
+        firstValueFrom(this.reservasApi.recibidas(null, 100, { idCancha, desde, hasta })),
+      ]);
+      this.bloqueosSemana.set(bloqueos);
+      this.reservasSemana.set(reservas);
+    } catch (error) {
+      this.errorSemana.set(toApiError(error).message);
+    }
+  }
+
   private async cargar(): Promise<void> {
     const idCancha = this.canchaId();
     if (!idCancha) {
@@ -391,5 +774,6 @@ export class PanelAgendaComponent implements OnInit {
     } catch (error) {
       this.errorHorario.set(toApiError(error).message);
     }
+    await this.cargarSemana();
   }
 }

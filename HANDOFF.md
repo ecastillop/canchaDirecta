@@ -17,7 +17,7 @@
 - Stack operativo: frontend `http://localhost:8083`, backend `http://localhost:8089`,
   MySQL del host `127.0.0.1:3306` (el `compose.yml` usa `host.docker.internal`).
 - Superadmin local: `admin@canchadirecta.pe`; clave en `.env` (`ADMIN_PASSWORD`).
-- Pruebas: backend **160/160**, humo **153/153** (PowerShell) y **134/134** (Bash), unitarios **22/22**,
+- Pruebas: backend **162/162**, humo **153/153** (PowerShell) y **134/134** (Bash), unitarios **22/22**,
   E2E usuario **OK**, E2E propietario/admin **OK**, accesibilidad **34 rutas OK**.
 - Ficha de espacio implementada (2026-10-18): `GET /api/v1/establecimientos/{id}/ficha`,
   ruta `/establecimientos/:id` y enlace desde el detalle de cancha.
@@ -76,6 +76,11 @@
   franjas sin depender del propietario; la "Agenda del día" del portal de recepción suma la sección
   "Bloqueos de la fecha" (listado por sede y fecha, alta con cancha/desde/hasta/motivo y baja con
   confirmación) reutilizando `/canchas/{id}/bloqueos` (ADR-0042). Resuelve L-25.
+- Ocupación semanal del propietario (2026-10-18): la pantalla "Agenda" del panel suma la sección
+  "Ocupación de la semana" (rejilla de 7 días por las horas del horario configurado, con estados
+  Libre/Reservada/Bloqueada/Ya pasó/Cerrado, leyenda y navegación de semana) alimentada por la
+  bandeja de reservas recibidas con los filtros nuevos `idCancha`/`desde`/`hasta`; los ayudantes de
+  calendario se unificaron en `shared/util/fecha-lima.ts` para la ficha pública y el panel (ADR-0043).
 
 ### Ya integrado del standalone
 
@@ -105,6 +110,9 @@
    o datos semilla controlados (incluido un operador asignado a una sede).
 6. **Enlace de tema en los portales**: hoy el toggle vive en la topbar pública y en el pie; los
    portales (`panel`, `admin`, `recepcion`, `cuenta`) no exponen su propio control de tema.
+7. **Cara pública de la agenda** (menor): distinguir "Reservada"/"Bloqueada" en la rejilla del
+   cliente (L-26; exige ampliar el contrato de disponibilidad) y rotular "Cerrado" en los chips de
+   día sin franjas.
 
 ### Reglas para continuar
 
@@ -131,12 +139,12 @@ npm run test:a11y
 ## 0.1 Estado global
 
 
-- **Estado:** **BACKEND + FRONTEND OPERATIVOS**. Backend 160/160 tests y 153/153 humo;
+- **Estado:** **BACKEND + FRONTEND OPERATIVOS**. Backend 162/162 tests y 153/153 humo;
   frontend Angular 22 compila, pasa 22/22 tests unitarios y 2 suites E2E reales (usuario y
   propietario/admin) contra backend, tanto en dev como en el contenedor Nginx (`8083`). Rediseño
   de fusión aplicado. Fase 0 y Fase 2 completadas. Modo claro/oscuro, badge de notificaciones,
-  calendario fiel a la agenda y bloqueos desde recepción añadidos (ADR-0039, ADR-0040, ADR-0041,
-  ADR-0042).
+  calendario fiel a la agenda, bloqueos desde recepción y ocupación semanal del propietario
+  añadidos (ADR-0039, ADR-0040, ADR-0041, ADR-0042, ADR-0043).
 - **Backend completado y verificado** (modulos `shared`, `identity`, `venues`, `bookings`,
   `payments`, `settlements`, `engagement`, `platform`): identidad completa (registro, verificacion
   de correo, login con limite de intentos, refresh, logout, recuperacion, perfil editable y
@@ -151,9 +159,9 @@ npm run test:a11y
   revocacion de access tokens (L-20) y rate limiting de login (S-4). **Todos los CU del backend
   implementados**; F05 real (pasarela/desembolso) queda **fuera de alcance por decision del
   usuario** y documentado.
-- **Evidencia vigente (2026-10-18):** `mvnw test` -> **160/160 PASS** (`BUILD SUCCESS`); humo
+- **Evidencia vigente (2026-10-18):** `mvnw test` -> **162/162 PASS** (`BUILD SUCCESS`); humo
   -> **153/153 PASS** en `smoke.ps1` y **134/134** en `smoke.sh` contra el contenedor
-  (8089/3309, imagen reconstruida). CI en `.github/workflows/backend.yml` (MySQL 8.4 efimero).
+  (8089/3306, imagen reconstruida). CI en `.github/workflows/backend.yml` (MySQL 8.4 efimero).
 - **Estado:** Fase 4 completada y cerrada. Exclusiones documentadas: F05 real, penalidad
   parcial/no-show (L-12) y excepciones de agenda por fecha (L-13).
 - **Frontend (2026-10-17):** Angular 22.2.3 standalone + CDK. **Rediseño de fusión aplicado**
@@ -341,6 +349,10 @@ canchadirecta/
   asignacion), E2E propietario/admin con el alta y la baja desde "Agenda del dia"
   (`docs/evidencias/ui/recepcion-bloqueo-1440.png`), backend 160/160, 22/22 unitarios y a11y 34
   rutas OK.
+- Ocupacion semanal del propietario (ADR-0043): `ReservasTest` filtra la bandeja por cancha y por
+  rango (y `400` con `desde` no ISO), E2E propietario/admin navega a la semana siguiente (horas
+  "libre" y dias "cerrado") y vuelve a la actual (`docs/evidencias/ui/panel-agenda-1440.png`),
+  backend 162/162, build OK, 22/22 unitarios, E2E usuario OK y a11y 34 rutas OK.
 - `smoke.ps1` -> **153/153 PASS** (contenedor en 8089 con la imagen reconstruida y `-DbPort 3306`;
   incluye ficha, actividades, cupones, ayuda, reportes, operadores de recepción y el modulo de
   recepcion).
@@ -369,7 +381,7 @@ canchadirecta/
 5. **Docker**: `compose.yml`, `compose.mysql.yml` y Dockerfiles de backend **y frontend**
    verificados (`frontend` en 8083 con proxy `/api`).
 6. **Docs**: base completa (requisitos, arquitectura, modelo, seguridad, pruebas, limitaciones,
-   ADR-0001..**0042**, contratos API del frontend). Faltan diagramas finales y limpiar filas
+   ADR-0001..**0043**, contratos API del frontend). Faltan diagramas finales y limpiar filas
    obsoletas de `TRAZABILIDAD.md`; evidencia E2E ya existe.
 7. **Testcontainers**: pruebas de integracion con MySQL real en CI (Docker requerido).
 
@@ -423,7 +435,11 @@ topbar, la cabecera de cuenta y `/notificaciones`) - ADR-0040 modo claro/oscuro 
 (`cd.modo`, `data-theme='dark'`, `color-scheme` y juego oscuro de tokens) - ADR-0041 el calendario de la
 ficha se deriva del horario configurado ("Sin cupo" en la hora ocupada o bloqueada y "Cerrado" en los
 dias sin agenda) - ADR-0042 los bloqueos de la cancha los gestiona tambien el personal asignado a la
-sede (`esGestorDeCancha`; los horarios y precios siguen siendo del propietario; L-25 resuelta).
+sede (`esGestorDeCancha`; los horarios y precios siguen siendo del propietario; L-25 resuelta) -
+ADR-0043 ocupacion semanal del propietario (la bandeja de reservas recibidas acepta `idCancha`,
+`desde` y `hasta` por solape sin ampliar el alcance del token, la pantalla "Agenda" suma la rejilla
+de la semana derivada del horario con reservas y bloqueos, y los ayudantes de calendario se unifican
+en `shared/util/fecha-lima.ts`; L-28 documenta el alcance de 60 min).
 Ver `docs/DECISIONES_ARQUITECTURA.md`.
 
 ## 8. PRUEBAS EJECUTADAS
@@ -548,13 +564,15 @@ Valores reales unicamente en `canchadirecta/.env` (gitignored). Nunca en Git.
 La hoja de ruta vigente esta en **`## 0. Mirada hacia adelante`** al inicio de este documento.
 Prioridad inmediata:
 
-1. Seed/reset de demo controlado (incluye un operador asignado a una sede).
-2. Control de tema dentro de los portales (hoy el toggle está en la topbar pública y el pie).
-3. Pulido de a11y manual (teclado/contraste, L-23) y diagramas finales.
+1. Ficha publica: distinguir "Reservada"/"Bloqueada" en la rejilla del cliente (L-26) y rotular
+   "Cerrado" en los chips de dia sin franjas.
+2. Seed/reset de demo controlado (incluye un operador asignado a una sede).
+3. Control de tema dentro de los portales (hoy el toggle está en la topbar pública y el pie).
+4. Pulido de a11y manual (teclado/contraste, L-23) y diagramas finales.
 
 **Estado:** entrega base cerrada el 2026-10-17; rediseno de fusion, integraciones del standalone y
 bloques A/B/C/D del delta completados el 2026-10-18, más badge de notificaciones, modo claro/oscuro,
-calendario fiel a la agenda y bloqueos desde recepción.
+calendario fiel a la agenda, bloqueos desde recepción y ocupación semanal del propietario.
 Acta: `docs/ACTA_CIERRE.md`.
 
 Cuenta superadministrador local (roles `USER`, `OWNER`, `PLATFORM_ADMIN`):
@@ -568,6 +586,10 @@ Notas de la última sesión:
   `backend:8080`. Para E2E contra el backend de Compose usar `--proxy-config` hacia 8089.
 - E2E: `npm run test:e2e` y `npm run test:e2e:owner` (requiere `ADMIN_CORREO`/`ADMIN_PASSWORD`);
   ver `frontend/e2e/README.md`.
+- Humo: usar el MySQL del host (`scripts/smoke.ps1 -BaseUrl http://localhost:8089 -DbPort 3306`, o
+  dejar que lea `DB_PORT` de `.env`). El contenedor `canchadirecta-mysql-1` (3309) es **otra** base:
+  con 3309 los pasos que leen/escriben la BD fallan (`403` en `/admin/*`, reserva sin finalizar).
+  `mvnw test`, el humo y los E2E comparten la BD (Modo B): **no ejecutarlos en paralelo**.
 - `GET /establecimientos/mios` **ya existe** y el panel descubre el local automáticamente.
   Para precargar la edición también está `GET /establecimientos/{id}` (solo propietario). Las canchas
   propias se listan con `GET /canchas?idEstablecimiento=...`.

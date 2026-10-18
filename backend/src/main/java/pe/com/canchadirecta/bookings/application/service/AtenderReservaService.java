@@ -12,6 +12,7 @@ import pe.com.canchadirecta.shared.application.port.out.Reloj;
 import pe.com.canchadirecta.shared.domain.DomainException;
 import pe.com.canchadirecta.shared.domain.ErrorCodes;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -52,8 +53,9 @@ public class AtenderReservaService implements AtenderReservaUseCase {
     }
 
     @Override
-    public List<Reserva> recibidas(Long idUsuario, Reserva.Estado estado, int limite) {
-        return reservas.listarPorPropietario(idUsuario, estado, limite);
+    public List<Reserva> recibidas(Long idUsuario, Reserva.Estado estado, Long idCancha,
+                                   Instant desde, Instant hasta, int limite) {
+        return reservas.listarPorPropietario(idUsuario, estado, idCancha, desde, hasta, limite);
     }
 
     @Override

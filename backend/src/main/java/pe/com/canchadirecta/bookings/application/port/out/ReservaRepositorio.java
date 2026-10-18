@@ -84,9 +84,12 @@ public interface ReservaRepositorio {
 
     /**
      * Reservas recibidas por todas las canchas del propietario, mas recientes primero.
-     * `estado` nulo devuelve todos los estados.
+     * `estado`, `idCancha`, `desde` y `hasta` son filtros opcionales (nulos = sin filtro);
+     * el rango se aplica por solape (`fin &gt; desde`, `inicio &lt; hasta`) y es lo que alimenta
+     * la vista semanal de ocupacion del panel (ADR-0043).
      */
-    List<Reserva> listarPorPropietario(Long idUsuario, Reserva.Estado estado, int limite);
+    List<Reserva> listarPorPropietario(Long idUsuario, Reserva.Estado estado, Long idCancha,
+                                       Instant desde, Instant hasta, int limite);
 
     // --- Expiracion del hold de pago (ADR-0022) -------------------------------
 

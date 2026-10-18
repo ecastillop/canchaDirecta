@@ -235,6 +235,17 @@ try {
   await page.getByRole('button', { name: 'Agregar horario' }).click();
   await page.getByText('Lunes · 18:00-23:00').first().waitFor({ timeout: 20000 });
   ok('horario agregado');
+
+  // Ocupacion semanal del propietario: la rejilla sale del horario configurado (ADR-0043).
+  await page.getByRole('button', { name: 'Semana siguiente' }).click();
+  await page.getByRole('rowheader', { name: '18:00' }).waitFor({ timeout: 20000 });
+  await page.getByRole('cell', { name: /18:00: libre/ }).first().waitFor({ timeout: 20000 });
+  await page.getByRole('cell', { name: /: cerrado/ }).first().waitFor({ timeout: 20000 });
+  ok('ocupacion semanal con horas libres y dias cerrados');
+  await page.getByRole('button', { name: 'Hoy', exact: true }).click();
+  await page.getByRole('button', { name: 'Semana siguiente' }).waitFor();
+  ok('la rejilla vuelve a la semana actual');
+
   await page.screenshot({ path: `${EVID}/panel-agenda-1440.png`, fullPage: false });
 
   // Promociones del propietario
