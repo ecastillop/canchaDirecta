@@ -1013,3 +1013,39 @@ El toggle vive en la topbar publica y el pie: los portales no exponen todavia su
 `data-theme` y la persistencia tras recargar; guarda `docs/evidencias/ui/{claro,oscuro}-*-1440.png`),
 build OK, 22/22 unitarios, E2E usuario y propietario/admin OK y a11y 34 rutas OK (2026-10-18).
 
+## ADR-0041 - El calendario publicado se deriva del horario configurado
+
+**Contexto:** la ficha de la cancha mostraba la disponibilidad de dos formas redundantes: la rejilla
+"Disponibilidad semanal" (hora x dia, con las franjas libres) y, debajo, un listado plano "Horario
+semanal" que repetia dia, rango y precio. Ademas, la rejilla construia sus filas con la union de las
+franjas libres de la semana: como el backend omite de la disponibilidad lo ocupado y lo bloqueado
+(RN-03), una hora bloqueada no se marcaba como no disponible, **desaparecia de la tabla**, y el
+propietario no veia reflejado en el calendario el bloqueo que acababa de registrar.
+
+**Decision:**
+1. Se elimina el listado "Horario semanal" de la ficha: el horario configurado se refleja en el
+   calendario, que es la unica vista del horario y de la disponibilidad.
+2. Las filas de la rejilla se derivan del **horario configurado** (`GET /canchas/{id}/horarios`)
+   partido por la duracion elegida (60/90/120). Si la cancha no tiene agenda se mantiene el
+   comportamiento anterior (filas a partir de las franjas libres que devuelve el backend, que ya
+   aplica la ventana por defecto).
+3. Con las filas fijas por horario, una hora ocupada o bloqueada se pinta como "Sin cupo" en lugar
+   de desaparecer, asi que un bloqueo del propietario queda visible en el calendario.
+4. Se distingue el cierre del dia: si la cancha tiene agenda y ese dia de la semana no esta en ella,
+   la columna se rotula "Cerrado" y sus celdas usan un estilo propio. La leyenda pasa a
+   Libre / Sin cupo / Cerrado.
+5. Las horas de la ficha se formatean en `America/Lima` (helper `hora()`) tambien en el panel de
+   reserva y en el resumen de la franja elegida, que antes usaban la zona del navegador.
+
+**Consecuencias:** el calendario es la fuente unica y refleja lo que el propietario configuro y
+bloqueo, sin listados duplicados; el dia cerrado se entiende como tal. El backend no cambia: sigue
+devolviendo solo franjas libres, por lo que no se puede etiquetar el motivo ("reservada" vs
+"bloqueada") y esa distincion queda como mejora posible (L-26). En canchas sin horario configurado
+persiste el caso limite de L-27.
+
+**Evidencia:** `frontend/e2e` (script temporal `_bloqueo-check.mjs`) sobre datos reales: cancha nueva
+con horario 08:00-15:00 y bloqueo 10:00-11:00; la API pasa de 7 a 6 franjas libres, la rejilla mantiene
+las 7 filas con la de 10:00 como "Sin cupo", los dias sin horario se rotulan "Cerrado" y ya no existe
+el bloque "Horario semanal". Build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK y a11y
+34 rutas OK (2026-10-18).
+

@@ -46,6 +46,8 @@ interface DiaSemana {
   numero: number;
   esHoy: boolean;
   esPasado: boolean;
+  /** La cancha tiene agenda configurada y ese dia de la semana no esta en ella. */
+  cerrado: boolean;
   franjas: FranjaDisponible[];
 }
 
@@ -58,6 +60,18 @@ function sumarDias(fecha: string, dias: number): string {
 function lunesDe(fecha: string): string {
   const valor = new Date(`${fecha}T12:00:00Z`);
   return sumarDias(fecha, -((valor.getUTCDay() + 6) % 7));
+}
+
+/** 'HH:mm[:ss]' del horario configurado a minutos del dia. */
+function minutosDe(hora: string): number {
+  const [h, m] = hora.slice(0, 5).split(':');
+  return Number(h) * 60 + Number(m);
+}
+
+function horaDeMinutos(minutos: number): string {
+  const h = String(Math.floor(minutos / 60)).padStart(2, '0');
+  const m = String(minutos % 60).padStart(2, '0');
+  return `${h}:${m}`;
 }
 
 function partesDeFecha(fecha: string): { indice: number; numero: number; mes: number; anio: number } {
@@ -276,12 +290,14 @@ function etiquetaDeSemana(inicio: string): string {
                 <div>
                   <h2 id="calendario-titulo" class="seccion">Disponibilidad semanal</h2>
                   <p class="cd-small cd-muted">
-                    Consulta las franjas libres de toda la semana y selecciona una para reservar.
+                    Estas son las franjas del horario configurado: elige una libre para reservar. Las
+                    franjas ocupadas o bloqueadas no tienen cupo.
                   </p>
                 </div>
                 <div class="leyenda cd-xs cd-muted">
                   <span><i class="punto punto--libre" aria-hidden="true"></i> Libre</span>
                   <span><i class="punto punto--ocupado" aria-hidden="true"></i> Sin cupo</span>
+                  <span><i class="punto punto--cerrado" aria-hidden="true"></i> Cerrado</span>
                 </div>
               </div>
               <p class="cd-xs cd-muted solo-movil">Desliza horizontalmente para ver toda la semana.</p>
@@ -313,7 +329,7 @@ function etiquetaDeSemana(inicio: string): string {
                             <button type="button" class="cabecera-dia" (click)="seleccionarDia(dia)" [disabled]="dia.esPasado">
                               <span>{{ dia.corta }}</span>
                               <strong>{{ dia.numero }}</strong>
-                              <small>{{ textoCupos(dia.franjas.length) }}</small>
+                              <small>{{ dia.cerrado ? 'Cerrado' : textoCupos(dia.franjas.length) }}</small>
                             </button>
                           </th>
                         }
@@ -338,7 +354,11 @@ function etiquetaDeSemana(inicio: string): string {
                               </td>
                             } @else {
                               <td>
-                                <span class="celda celda--ocupada" aria-label="Sin cupo">—</span>
+                                @if (dia.cerrado) {
+                                  <span class="celda celda--cerrada" aria-label="Cerrado">—</span>
+                                } @else {
+                                  <span class="celda celda--ocupada" aria-label="Sin cupo">—</span>
+                                }
                               </td>
                             }
                           }
@@ -350,22 +370,6 @@ function etiquetaDeSemana(inicio: string): string {
               }
             </section>
 
-            @if (horarios().length) {
-              <section class="bloque">
-                <h2 class="seccion">Horario semanal</h2>
-                <ul class="horarios">
-                  @for (horario of horarios(); track horario.id) {
-                    <li>
-                      <span>{{ dia(horario.diaSemana) }}</span>
-                      <span>{{ horario.horaInicio.slice(0, 5) }} - {{ horario.horaFin.slice(0, 5) }}</span>
-                      <span class="cd-small cd-muted">
-                        {{ (horario.precio ?? c.precioBase) | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}
-                      </span>
-                    </li>
-                  }
-                </ul>
-              </section>
-            }
             <section class="bloque">
               <h2 class="seccion">Opiniones recientes</h2>
               @if (calificaciones()?.calificaciones?.length) {
@@ -436,7 +440,7 @@ function etiquetaDeSemana(inicio: string): string {
                     [class.dia--hoy]="dia.esHoy"
                     [class.dia--pasado]="dia.esPasado"
                     [attr.aria-selected]="fechaSeleccionada() === dia.fecha"
-                    [attr.aria-label]="dia.larga + ', ' + dia.franjas.length + ' horarios disponibles'"
+                    [attr.aria-label]="textoDia(dia)"
                     [disabled]="dia.esPasado"
                     (click)="seleccionarDia(dia)"
                   >
@@ -485,7 +489,7 @@ function etiquetaDeSemana(inicio: string): string {
                       [attr.aria-pressed]="seleccionada()?.inicio === franja.inicio"
                       (click)="seleccionada.set(franja)"
                     >
-                      <span>{{ franja.inicio | date: 'HH:mm' }} - {{ franja.fin | date: 'HH:mm' }}</span>
+                      <span>{{ hora(franja.inicio) }} - {{ hora(franja.fin) }}</span>
                       <strong>{{ franja.precio | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</strong>
                     </button>
                   }
@@ -499,8 +503,8 @@ function etiquetaDeSemana(inicio: string): string {
 
             @if (seleccionada(); as franja) {
               <p class="cd-small resumen">
-                {{ franja.inicio | date: 'EEE d MMM' }} · {{ franja.inicio | date: 'HH:mm' }} a
-                {{ franja.fin | date: 'HH:mm' }} ·
+                {{ diaSeleccionado()?.larga }} · {{ hora(franja.inicio) }} a
+                {{ hora(franja.fin) }} ·
                 <strong>{{ franja.precio | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</strong>
               </p>
             }
@@ -593,20 +597,6 @@ function etiquetaDeSemana(inicio: string): string {
       display: grid;
       gap: 6px;
       padding-left: var(--cd-space-4);
-      font-size: var(--cd-text-sm);
-    }
-    .horarios {
-      list-style: none;
-      padding: 0;
-      display: grid;
-      gap: 4px;
-    }
-    .horarios li {
-      display: flex;
-      justify-content: space-between;
-      gap: var(--cd-space-3);
-      padding: 6px 0;
-      border-bottom: 1px solid var(--cd-color-border);
       font-size: var(--cd-text-sm);
     }
     .opiniones {
@@ -799,6 +789,10 @@ function etiquetaDeSemana(inicio: string): string {
       border: 1px solid var(--cd-color-border);
       background: var(--cd-color-surface);
     }
+    .punto--cerrado {
+      border: 1px dashed var(--cd-color-border);
+      background: var(--cd-color-bg);
+    }
     .calendario__scroll {
       overflow-x: auto;
       border: 1px solid var(--cd-color-border);
@@ -904,6 +898,10 @@ function etiquetaDeSemana(inicio: string): string {
     .celda--ocupada {
       color: var(--cd-color-text-muted);
       background: var(--cd-color-bg);
+    }
+    .celda--cerrada {
+      color: var(--cd-color-border);
+      background: transparent;
     }
     @media (min-width: 1024px) {
       .columnas {
@@ -1127,12 +1125,6 @@ function etiquetaDeSemana(inicio: string): string {
       margin-right: 6px;
       color: var(--cd-color-success);
       font-weight: 800;
-    }
-    .horarios li:last-child {
-      border-bottom: 0;
-    }
-    .horarios li {
-      padding-block: 8px;
     }
     .opiniones li {
       background: var(--cd-color-surface-alt);
@@ -1683,8 +1675,23 @@ export class CanchaDetalleComponent implements OnInit {
   protected readonly diaSeleccionado = computed(
     () => this.diasSemana().find((dia) => dia.fecha === this.fechaSeleccionada()) ?? null,
   );
+  /**
+   * Filas del calendario: las franjas que define el horario configurado, de modo que un
+   * bloqueo o una reserva se vean como "sin cupo" en la tabla y no hagan desaparecer la
+   * hora. Si la cancha no tiene agenda, las filas salen de las franjas libres que devuelve
+   * el backend (que aplica la ventana por defecto).
+   */
   protected readonly horasSemana = computed(() => {
     const horas = new Set<string>();
+    const paso = this.duracion();
+    for (const horario of this.horarios()) {
+      let minuto = minutosDe(horario.horaInicio);
+      const fin = minutosDe(horario.horaFin);
+      while (minuto + paso <= fin) {
+        horas.add(horaDeMinutos(minuto));
+        minuto += paso;
+      }
+    }
     for (const dia of this.diasSemana()) {
       for (const franja of dia.franjas) {
         horas.add(this.hora(franja.inicio));
@@ -1853,6 +1860,11 @@ export class CanchaDetalleComponent implements OnInit {
     return `${cantidad} ${cantidad === 1 ? 'libre' : 'libres'}`;
   }
 
+  /** Etiqueta accesible de un dia del selector: informa cupos o el cierre. */
+  protected textoDia(dia: DiaSemana): string {
+    return dia.cerrado ? `${dia.larga}, cerrado` : `${dia.larga}, ${this.textoCupos(dia.franjas.length)}`;
+  }
+
   protected reservar(): void {
     const franja = this.seleccionada();
     if (!franja) {
@@ -1868,10 +1880,6 @@ export class CanchaDetalleComponent implements OnInit {
     if (cancha) {
       this.comparacion.toggle(cancha.id);
     }
-  }
-
-  protected dia(numero: number): string {
-    return DIAS[numero] ?? `Día ${numero}`;
   }
 
   private cambiarSemana(inicio: string): void {
@@ -1934,6 +1942,7 @@ export class CanchaDetalleComponent implements OnInit {
   private crearDia(fecha: string, franjas: FranjaDisponible[]): DiaSemana {
     const partes = partesDeFecha(fecha);
     const hoy = this.hoyLima();
+    const agenda = this.horarios();
     return {
       fecha,
       corta: DIAS_CORTOS[partes.indice],
@@ -1941,6 +1950,9 @@ export class CanchaDetalleComponent implements OnInit {
       numero: partes.numero,
       esHoy: fecha === hoy,
       esPasado: fecha < hoy,
+      // Solo se marca cerrado si el propietario definio agenda: sin agenda el backend
+      // ofrece la ventana por defecto y el dia nunca esta "cerrado" por configuracion.
+      cerrado: agenda.length > 0 && !agenda.some((horario) => horario.diaSemana === partes.indice + 1),
       franjas,
     };
   }

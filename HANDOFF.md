@@ -68,6 +68,10 @@
   `data-theme='dark'` aplica el juego oscuro de tokens sobre cualquier paleta y se migraron a tokens
   las superficies, bordes y textos fijos de los componentes de páginas y de los cuatro portales
   (ADR-0040).
+- Calendario fiel a la agenda (2026-10-18): la rejilla "Disponibilidad semanal" se deriva del horario
+  configurado, así que un bloqueo o una reserva se ven como "Sin cupo" en su hora (antes la hora
+  desaparecía), los días sin agenda se rotulan "Cerrado" y se retiró el listado redundante "Horario
+  semanal" de la ficha (ADR-0041).
 
 ### Ya integrado del standalone
 
@@ -354,7 +358,7 @@ canchadirecta/
 5. **Docker**: `compose.yml`, `compose.mysql.yml` y Dockerfiles de backend **y frontend**
    verificados (`frontend` en 8083 con proxy `/api`).
 6. **Docs**: base completa (requisitos, arquitectura, modelo, seguridad, pruebas, limitaciones,
-   ADR-0001..**0040**, contratos API del frontend). Faltan diagramas finales y limpiar filas
+   ADR-0001..**0041**, contratos API del frontend). Faltan diagramas finales y limpiar filas
    obsoletas de `TRAZABILIDAD.md`; evidencia E2E ya existe.
 7. **Testcontainers**: pruebas de integracion con MySQL real en CI (Docker requerido).
 
@@ -469,6 +473,7 @@ Ver `docs/DECISIONES_ARQUITECTURA.md`.
 | 2026-10-18 | Bloque C: configuración persistente de plataforma (`V17`, API, puerto compartido y UI) | **PASS** (backend **158/158**, humo **135/135** PS y **116/116** Bash, build OK, 22/22 unitarios, E2E usuario 20/20, propietario/admin 37/37, a11y 27 rutas OK; ADR-0037) |
 | 2026-10-18 | Bloque D: rol `OPERADOR` y portal de recepción (`V18`, paquete `reception`, `/recepcion`, `/admin/operadores`) | **PASS** (backend **160/160** (`RecepcionTest` 2/2), humo **153/153** PS y **134/134** Bash, build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK, a11y **34 rutas OK**; ADR-0038; capturas `recepcion-*.png` y `admin-operadores-1440.png`) |
 | 2026-10-18 | Badge de notificaciones sin leer + modo claro/oscuro (`NotificacionesStore`, `data-theme`, tokens oscuros y migración de colores fijos) | **PASS** (build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK, a11y **34 rutas OK**; badge verificado E2E: 2 → marcar una → 1 → marcar todas → desaparece; capturas `claro-*-1440.png` y `oscuro-*-1440.png`; ADR-0039/0040) |
+| 2026-10-18 | Calendario derivado del horario configurado y bloqueos visibles (`cancha-detalle`: filas del horario, "Sin cupo" en la hora bloqueada, "Cerrado" en días sin agenda, sin listado "Horario semanal") | **PASS** (datos reales: bloqueo 10:00-11:00 → API 7→6 franjas, la rejilla mantiene la fila 10:00 como "Sin cupo" y 6 libres; días sin horario "Cerrado"; build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK, a11y **34 rutas OK**; ADR-0041) |
 
 Resto de la matriz de pruebas (?13 del prompt): **NOT RUN**.
 
