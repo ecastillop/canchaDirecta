@@ -120,7 +120,7 @@ const COMISION = 0.1;
     }
     .eyebrow {
       margin: 0 0 8px;
-      color: #2d8773;
+      color: var(--cd-color-teal);
       font-size: 9px;
       font-weight: 900;
       letter-spacing: 0.19em;
@@ -133,7 +133,7 @@ const COMISION = 0.1;
     }
     .dashboard-intro p {
       margin: 0;
-      color: #829085;
+      color: var(--cd-color-text-muted);
       font-size: 12px;
     }
     .stats-grid {
@@ -145,9 +145,9 @@ const COMISION = 0.1;
     .stat-card {
       min-height: 140px;
       padding: 19px;
-      border: 1px solid #e7ede4;
+      border: 1px solid var(--cd-color-border);
       border-radius: 14px;
-      background: #fff;
+      background: var(--cd-color-surface);
       box-shadow: var(--cd-shadow-1);
     }
     .stat-top {
@@ -155,7 +155,7 @@ const COMISION = 0.1;
       align-items: start;
       justify-content: space-between;
       gap: 8px;
-      color: #708579;
+      color: var(--cd-color-text-muted);
       font-size: 11px;
       font-weight: 700;
     }
@@ -165,8 +165,8 @@ const COMISION = 0.1;
       width: 35px;
       height: 35px;
       border-radius: 10px;
-      background: #eaf4e6;
-      color: #3a8462;
+      background: var(--cd-color-success-soft);
+      color: var(--cd-color-success);
     }
     .stat-card > strong {
       display: block;
@@ -177,7 +177,7 @@ const COMISION = 0.1;
       letter-spacing: -0.04em;
     }
     .stat-card > small {
-      color: #829085;
+      color: var(--cd-color-text-muted);
       font-size: 11px;
     }
     .filtros {
@@ -188,25 +188,25 @@ const COMISION = 0.1;
     }
     .chip {
       padding: 7px 12px;
-      border: 1px solid #dde6dc;
+      border: 1px solid var(--cd-color-border);
       border-radius: 999px;
-      background: #fff;
-      color: #6d7e72;
+      background: var(--cd-color-surface);
+      color: var(--cd-color-text-muted);
       font: inherit;
       font-size: 11px;
       font-weight: 700;
       cursor: pointer;
     }
     .chip--activo {
-      border-color: #2d8773;
-      background: #e8f6ee;
-      color: #1e6a57;
+      border-color: var(--cd-color-teal);
+      background: var(--cd-color-success-soft);
+      color: var(--cd-color-teal);
     }
     .panel {
       padding: 20px;
-      border: 1px solid #e7ede4;
+      border: 1px solid var(--cd-color-border);
       border-radius: 16px;
-      background: #fff;
+      background: var(--cd-color-surface);
       box-shadow: var(--cd-shadow-1);
     }
     .tabla-scroll {
@@ -219,8 +219,8 @@ const COMISION = 0.1;
     }
     .tabla th {
       padding: 8px 10px;
-      border-bottom: 1px solid #e7ede4;
-      color: #708579;
+      border-bottom: 1px solid var(--cd-color-border);
+      color: var(--cd-color-text-muted);
       text-align: left;
       font-size: 10px;
       letter-spacing: 0.06em;
@@ -228,10 +228,10 @@ const COMISION = 0.1;
     }
     .tabla td {
       padding: 10px;
-      border-bottom: 1px solid #f0f3ef;
+      border-bottom: 1px solid var(--cd-color-border);
     }
     .code {
-      color: #2d8773;
+      color: var(--cd-color-teal);
       font-weight: 800;
     }
     @media (max-width: 900px) {

@@ -951,3 +951,65 @@ Bash), E2E `owner-admin-flows.mjs` (alta de operador desde la UI y recorrido del
 accesibilidad de las siete rutas nuevas y capturas `docs/evidencias/ui/recepcion-*.png` y
 `admin-operadores-1440.png` (2026-10-18).
 
+## ADR-0039 - Badge de notificaciones sin leer compartido
+
+**Contexto:** `GET /api/v1/notificaciones` ya devolvia `noLeidas`, y `/notificaciones` lo mostraba,
+pero la campana de la topbar publica y la de la cabecera de cuenta no indicaban nada: habia que
+entrar a la pagina para saber si habia avisos. Cada cabecera vivia en un componente distinto
+(`shell` y `cuenta-layout`), asi que un `fetch` por componente habria duplicado peticiones y
+quedado desincronizado al marcar leidas.
+
+**Decision:**
+1. `NotificacionesStore` (`core/api/notificaciones.store.ts`, `providedIn: 'root'`) expone una senal
+   `noLeidas` con `cargar()`, `fijar()`, `quitar()` y `limpiar()`. Es la unica fuente del conteo.
+2. El shell sincroniza el badge con la sesion mediante un `effect`: al autenticarse llama a `cargar()`
+   (una sola peticion, `limite = 1` porque solo interesa el contador) y al cerrar sesion llama a
+   `limpiar()`.
+3. Ambas campanas (`shell` y `cuenta-layout`) pintan el mismo badge cuando `noLeidas > 0`, con tope
+   visual `9+` y `aria-label` que anuncia el numero ("Notificaciones, N sin leer").
+4. `/notificaciones` ya no maneja su propio contador: escribe en el store (`fijar` al cargar,
+   `quitar` al marcar una) para que el badge y la pagina nunca diverjan.
+
+**Consecuencias:** una sola peticion alimenta ambos badges y la pagina; el estado sobrevive a la
+navegacion dentro de la sesion. El conteo no se refresca solo (ni por polling ni por websocket): se
+actualiza al entrar/salir de sesion y al usar la pagina; un aviso generado en otra pestana no se
+refleja hasta la proxima carga. Si la peticion falla, el badge conserva el ultimo valor conocido
+en vez de romper la UI.
+
+**Evidencia:** E2E manual con dos avisos sembrados para el admin (badge 2 en topbar y en la cabecera
+de cuenta; al marcar una pasa a 1 en la misma pagina; al marcar todas desaparece) y suites
+`user-flows.mjs`/`owner-admin-flows.mjs` + `a11y-check.mjs` sin regresiones (2026-10-18).
+
+## ADR-0040 - Modo claro/oscuro explicito y persistente
+
+**Contexto:** existian tres paletas (`cancha`, `grafito`, `arena`) y el dark del prototipo
+("Nocturno") era solo un acercamiento: no habia un toggle claro/oscuro explicito, no se respetaba la
+preferencia del sistema y la eleccion se confundia con la paleta. Ademas, aunque los tokens
+existian, buena parte de los componentes de pagina usaba hex fijos, por lo que cualquier tema oscuro
+quedaba con tarjetas claras y texto claro.
+
+**Decision:**
+1. `ThemeService` incorpora `modo` (`claro | oscuro`) con clave propia `cd.modo`, independiente de
+   `cd.palette`. Al arrancar usa la preferencia guardada y, si no hay, `prefers-color-scheme`.
+2. Un unico `effect` aplica ambos atributos en `<html>`: `data-palette` y `data-theme='dark'`
+   (ausente en claro) mas `color-scheme`, de modo que controles nativos y barras de scroll
+   acompanan al tema.
+3. `styles/_tokens.scss` declara el juego oscuro al final del archivo (`:root[data-theme='dark']`)
+   para ganar a las paletas de igual especificidad: el modo oscuro se aplica **sobre** cualquier
+   paleta elegida y tambien corrige la paleta "Nocturno".
+4. La interfaz expone el toggle en la topbar publica (boton con `aria-pressed`) y selectores "Modo"
+   junto a "Tema" en el menu lateral y en el pie, sin retirar el cambio de paleta.
+5. Se migraron a tokens las superficies, bordes y textos con hex fijo de los componentes de pagina
+   y del chrome de los cuatro portales (98 reemplazos). Se conservan a proposito los literales
+   oscuros del sidebar, el acento lima, los degradados decorativos y el SVG de "Foto no disponible",
+   que se leen igual en ambos temas.
+
+**Consecuencias:** el tema es explicito, persistente y estable al recargar, y el diseno queda
+realmente parametrizado por tokens (los componentes ya no codifican colores de superficie). Por
+diseno, el sidebar de los portales es siempre oscuro, así que el modo claro no es un "todo blanco".
+El toggle vive en la topbar publica y el pie: los portales no exponen todavia su propio control.
+
+**Evidencia:** `e2e/dark-mode-capturas.mjs` (aplica cada modo, recorre cinco rutas, comprueba
+`data-theme` y la persistencia tras recargar; guarda `docs/evidencias/ui/{claro,oscuro}-*-1440.png`),
+build OK, 22/22 unitarios, E2E usuario y propietario/admin OK y a11y 34 rutas OK (2026-10-18).
+

@@ -138,3 +138,36 @@
   --cd-shadow-2: 0 10px 30px rgba(35, 24, 15, 0.08);
   --cd-shadow-3: 0 24px 70px rgba(35, 24, 15, 0.16);
 }
+
+// Modo oscuro explicito (toggle claro/oscuro). Se declara al final para ganar a las paletas
+// de igual especificidad y aplicar el juego oscuro sobre cualquier paleta elegida.
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --cd-color-primary: #c5f56b;
+  --cd-color-primary-strong: #d5ff88;
+  --cd-color-teal: #69d3c3;
+  --cd-color-accent: #c5f56b;
+  --cd-color-accent-strong: #b2e356;
+  --cd-color-bg: #0b1417;
+  --cd-color-surface: #101c20;
+  --cd-color-surface-alt: #16262a;
+  --cd-color-text: #edf3ee;
+  --cd-color-text-muted: #a9b8af;
+  --cd-color-on-primary: #0b1417;
+  --cd-color-success: #7bdca6;
+  --cd-color-success-soft: #143328;
+  --cd-color-warning: #f0c27a;
+  --cd-color-warning-soft: #372a16;
+  --cd-color-danger: #f09a9d;
+  --cd-color-danger-soft: #3a1d20;
+  --cd-color-info: #9cc7ef;
+  --cd-color-info-soft: #162b3a;
+  --cd-color-border: #263a36;
+  --cd-color-focus: #c5f56b;
+  --cd-color-inverse-bg: #101c20;
+  --cd-color-inverse-text: #edf3ee;
+  --cd-color-inverse-muted: #a9b8af;
+  --cd-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --cd-shadow-2: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --cd-shadow-3: 0 24px 70px rgba(0, 0, 0, 0.6);
+}

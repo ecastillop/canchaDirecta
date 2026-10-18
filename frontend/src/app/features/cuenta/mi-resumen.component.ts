@@ -271,9 +271,9 @@ interface ResumenPanel {
       align-content: start;
       min-height: 132px;
       padding: 18px;
-      border: 1px solid #e7ede4;
+      border: 1px solid var(--cd-color-border);
       border-radius: 14px;
-      background: #fff;
+      background: var(--cd-color-surface);
       box-shadow: var(--cd-shadow-1);
     }
     .kpi__top {
@@ -288,8 +288,8 @@ interface ResumenPanel {
       width: 34px;
       height: 34px;
       border-radius: 10px;
-      background: #eaf4e6;
-      color: #3a8462;
+      background: var(--cd-color-success-soft);
+      color: var(--cd-color-success);
       font-size: 15px;
     }
     .kpi__label {
@@ -400,17 +400,17 @@ interface ResumenPanel {
       align-items: center;
       gap: 11px;
       padding: 13px 14px;
-      border: 1px solid #edf0ec;
+      border: 1px solid var(--cd-color-border);
       border-radius: 11px;
-      background: #f6f9f5;
-      color: #365041;
+      background: var(--cd-color-surface-alt);
+      color: var(--cd-color-text);
       font-size: 12px;
       font-weight: 700;
       text-decoration: none;
     }
     .quick-actions a:hover {
-      background: #edf7e7;
-      color: #216b47;
+      background: var(--cd-color-success-soft);
+      color: var(--cd-color-success);
     }
     .quick-actions a > span:nth-child(2) {
       flex: 1;
@@ -421,8 +421,8 @@ interface ResumenPanel {
       width: 30px;
       height: 30px;
       border-radius: 8px;
-      background: #e0f3d8;
-      color: #216b47;
+      background: var(--cd-color-success-soft);
+      color: var(--cd-color-success);
       font-size: 14px;
     }
     .favoritos,

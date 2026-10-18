@@ -301,7 +301,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
       display: flex;
       gap: 4px;
       font-size: 24px;
-      color: #d97706;
+      color: var(--cd-color-warning);
     }
     .estrellas button {
       border: 0;
@@ -313,7 +313,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
       padding: 0 2px;
     }
     .estrellas button.activa {
-      color: #d97706;
+      color: var(--cd-color-warning);
     }
     @media (min-width: 1024px) {
       .columnas {

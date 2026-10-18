@@ -545,7 +545,7 @@ function etiquetaDeSemana(inicio: string): string {
       gap: 6px;
     }
     .estrella {
-      color: #d97706;
+      color: var(--cd-color-warning);
       font-size: 20px;
     }
     .galeria {
@@ -622,7 +622,7 @@ function etiquetaDeSemana(inicio: string): string {
       border-bottom: 1px solid var(--cd-color-border);
     }
     .estrellas-texto {
-      color: #d97706;
+      color: var(--cd-color-warning);
     }
     .reserva {
       display: grid;
@@ -966,7 +966,7 @@ function etiquetaDeSemana(inicio: string): string {
     }
     .estrella {
       font-size: 18px;
-      color: #d97706;
+      color: var(--cd-color-warning);
     }
     .galeria {
       position: relative;
@@ -1012,7 +1012,7 @@ function etiquetaDeSemana(inicio: string): string {
       flex-wrap: wrap;
     }
     .galeria__badges .cd-badge {
-      background: rgba(255, 255, 255, 0.94);
+      background: color-mix(in srgb, var(--cd-color-surface) 94%, transparent);
       color: var(--cd-color-primary);
       box-shadow: var(--cd-shadow-1);
     }

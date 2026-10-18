@@ -100,7 +100,7 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       display: grid;
       grid-template-columns: 252px minmax(0, 1fr);
       min-height: 100dvh;
-      background: #f6f8f5;
+      background: var(--cd-color-bg);
     }
     .panel-side {
       position: sticky;
@@ -273,8 +273,8 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       gap: 15px;
       height: 78px;
       padding: 0 34px;
-      border-bottom: 1px solid #e5ebe5;
-      background: #fff;
+      border-bottom: 1px solid var(--cd-color-border);
+      background: var(--cd-color-surface);
     }
     .portal-top-left {
       display: flex;
@@ -306,15 +306,15 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       width: 36px;
       height: 36px;
       border-radius: 10px;
-      color: #607c76;
+      color: var(--cd-color-text-muted);
       text-decoration: none;
     }
     .icono-mini:hover {
-      background: #eef4ea;
-      color: #173a2b;
+      background: var(--cd-color-surface-alt);
+      color: var(--cd-color-text);
     }
     .accion-sitio {
-      color: #2d8773;
+      color: var(--cd-color-teal);
       font-size: 11px;
       font-weight: 800;
       text-decoration: none;
@@ -328,7 +328,7 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       width: 36px;
       height: 36px;
       border-radius: 10px;
-      background: #d8f5b9;
+      background: var(--cd-color-success-soft);
       color: #235336;
       font-family: var(--cd-font-display);
       font-size: 12px;

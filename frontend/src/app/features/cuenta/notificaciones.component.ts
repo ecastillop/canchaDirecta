@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal, computed } from '@angular/core';
 import { EngagementApi, Notificacion } from '../../core/api/engagement.api';
+import { NotificacionesStore } from '../../core/api/notificaciones.store';
 import { toApiError } from '../../core/http/api-error';
 import { CdButtonDirective } from '../../shared/ui/button/cd-button.directive';
 import { CdEmptyStateComponent } from '../../shared/ui/states/cd-empty-state.component';
@@ -112,8 +113,9 @@ export class NotificacionesComponent implements OnInit {
   private readonly api = inject(EngagementApi);
   private readonly toast = inject(ToastService);
 
+  private readonly notificacionesStore = inject(NotificacionesStore);
   protected readonly notificaciones = signal<Notificacion[]>([]);
-  protected readonly noLeidas = signal(0);
+  protected readonly noLeidas = this.notificacionesStore.noLeidas;
   protected readonly cargando = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly pagina = signal(1);
@@ -133,7 +135,7 @@ export class NotificacionesComponent implements OnInit {
     this.api.notificaciones().subscribe({
       next: (respuesta) => {
         this.notificaciones.set(respuesta.notificaciones);
-        this.noLeidas.set(respuesta.noLeidas);
+        this.notificacionesStore.fijar(respuesta.noLeidas);
         this.cargando.set(false);
       },
       error: (error) => {
@@ -149,7 +151,7 @@ export class NotificacionesComponent implements OnInit {
         this.notificaciones.update((lista) =>
           lista.map((n) => (n.id === notificacion.id ? { ...n, leida: true } : n)),
         );
-        this.noLeidas.update((n) => Math.max(0, n - 1));
+        this.notificacionesStore.quitar(1);
       },
       error: (error) => this.toast.error(toApiError(error).message),
     });

@@ -589,16 +589,16 @@ const EMOJIS: Record<string, string> = {
       font-size: 13px;
     }
     .deporte--verde {
-      background: linear-gradient(145deg, #e8f7d9, #f8fff2);
+      background: linear-gradient(145deg, var(--cd-color-success-soft), var(--cd-color-surface));
     }
     .deporte--azul {
-      background: linear-gradient(145deg, #e4eefb, #f6faff);
+      background: linear-gradient(145deg, var(--cd-color-info-soft), var(--cd-color-surface));
     }
     .deporte--naranja {
-      background: linear-gradient(145deg, #fff0dd, #fffaf3);
+      background: linear-gradient(145deg, var(--cd-color-warning-soft), var(--cd-color-surface));
     }
     .deporte--rosa {
-      background: linear-gradient(145deg, #fbe8ec, #fff7f8);
+      background: linear-gradient(145deg, var(--cd-color-danger-soft), var(--cd-color-surface));
     }
     .seccion--tinte {
       margin-top: 70px;

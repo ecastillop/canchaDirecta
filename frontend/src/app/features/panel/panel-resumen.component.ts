@@ -369,7 +369,7 @@ const FOTO_FALLBACK =
     }
     .dashboard-intro .eyebrow {
       margin: 0 0 8px;
-      color: #2d8773;
+      color: var(--cd-color-teal);
       font-size: 9px;
       font-weight: 900;
       letter-spacing: 0.19em;
@@ -382,7 +382,7 @@ const FOTO_FALLBACK =
     }
     .dashboard-intro p {
       margin: 0;
-      color: #829085;
+      color: var(--cd-color-text-muted);
       font-size: 12px;
     }
     .seccion {

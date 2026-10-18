@@ -253,9 +253,9 @@ import { CdErrorStateComponent } from '../../shared/ui/states/cd-error-state.com
       align-content: start;
       min-height: 140px;
       padding: 18px;
-      border: 1px solid #e7ede4;
+      border: 1px solid var(--cd-color-border);
       border-radius: 14px;
-      background: #fff;
+      background: var(--cd-color-surface);
       box-shadow: var(--cd-shadow-1);
     }
     .kpi__top {
@@ -270,8 +270,8 @@ import { CdErrorStateComponent } from '../../shared/ui/states/cd-error-state.com
       width: 34px;
       height: 34px;
       border-radius: 10px;
-      background: #eaf4e6;
-      color: #3a8462;
+      background: var(--cd-color-success-soft);
+      color: var(--cd-color-success);
       font-size: 14px;
       font-weight: 800;
     }

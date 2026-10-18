@@ -60,6 +60,14 @@
   reserva presencial, check-in, cobro e incidencias; `GET/POST/DELETE /api/v1/admin/establecimientos/{id}/operadores`;
   administración de operadores en `/admin/operadores` y portal `/recepcion` (Turno actual, Agenda del
   día, Reservas, Reserva presencial, Cobros e Incidencias) con `roleGuard` (ADR-0038).
+- Badge de notificaciones sin leer (2026-10-18): `NotificacionesStore` compartido (`noLeidas`), badge
+  en la campana de la topbar pública y de la cabecera de cuenta, y sincronización al marcar leídas
+  desde `/notificaciones` (ADR-0039).
+- Modo claro/oscuro explícito (2026-10-18): toggle en la topbar más selectores "Modo" en el menú y el
+  pie, persistencia en `localStorage` (`cd.modo`) y arranque según `prefers-color-scheme`;
+  `data-theme='dark'` aplica el juego oscuro de tokens sobre cualquier paleta y se migraron a tokens
+  las superficies, bordes y textos fijos de los componentes de páginas y de los cuatro portales
+  (ADR-0040).
 
 ### Ya integrado del standalone
 
@@ -82,10 +90,12 @@
 2. ~~**Operador/Recepción** (Bloque D)~~ (hecho 2026-10-18): rol `OPERADOR`, turno, agenda de
    recepción, reserva presencial, check-in, cobros e incidencias (ADR-0038). Pendiente menor del
    bloque: gestión de bloqueos desde recepción y reserva telefónica sin cuenta registrada.
-3. **Notificaciones**: badge de no leídas en el topbar y campana.
-4. **Modo oscuro** con toggle explícito y persistencia (la paleta “Nocturno” es solo un acercamiento).
+3. ~~**Notificaciones**: badge de no leídas en el topbar y campana~~ (hecho 2026-10-18, ADR-0039).
+4. ~~**Modo oscuro** con toggle explícito y persistencia~~ (hecho 2026-10-18, ADR-0040).
 5. **Seed/reset de demo**: la base tiene >2,000 canchas por humo/E2E; conviene un script de limpieza
    o datos semilla controlados (incluido un operador asignado a una sede).
+6. **Enlace de tema en los portales**: hoy el toggle vive en la topbar pública y en el pie; los
+   portales (`panel`, `admin`, `recepcion`, `cuenta`) no exponen su propio control de tema.
 
 ### Reglas para continuar
 
@@ -112,10 +122,11 @@ npm run test:a11y
 ## 0.1 Estado global
 
 
-- **Estado:** **BACKEND + FRONTEND OPERATIVOS**. Backend 146/146 tests y 112/112 humo;
-  frontend Angular 22 compila, pasa 15/15 tests unitarios y 2 suites E2E reales (usuario y
+- **Estado:** **BACKEND + FRONTEND OPERATIVOS**. Backend 160/160 tests y 153/153 humo;
+  frontend Angular 22 compila, pasa 22/22 tests unitarios y 2 suites E2E reales (usuario y
   propietario/admin) contra backend, tanto en dev como en el contenedor Nginx (`8083`). Rediseño
-  de fusión aplicado. Fase 0 y Fase 2 completadas.
+  de fusión aplicado. Fase 0 y Fase 2 completadas. Modo claro/oscuro y badge de notificaciones
+  añadidos (ADR-0039, ADR-0040).
 - **Backend completado y verificado** (modulos `shared`, `identity`, `venues`, `bookings`,
   `payments`, `settlements`, `engagement`, `platform`): identidad completa (registro, verificacion
   de correo, login con limite de intentos, refresh, logout, recuperacion, perfil editable y
@@ -130,9 +141,9 @@ npm run test:a11y
   revocacion de access tokens (L-20) y rate limiting de login (S-4). **Todos los CU del backend
   implementados**; F05 real (pasarela/desembolso) queda **fuera de alcance por decision del
   usuario** y documentado.
-- **Evidencia vigente (2026-10-18):** `mvnw test` -> **146/146 PASS** (`BUILD SUCCESS`); humo
-  -> **112/112 PASS** en `smoke.ps1` y `smoke.sh` contra el contenedor (8089/3309, imagen
-  reconstruida). CI en `.github/workflows/backend.yml` (MySQL 8.4 efimero).
+- **Evidencia vigente (2026-10-18):** `mvnw test` -> **160/160 PASS** (`BUILD SUCCESS`); humo
+  -> **153/153 PASS** en `smoke.ps1` y **134/134** en `smoke.sh` contra el contenedor
+  (8089/3309, imagen reconstruida). CI en `.github/workflows/backend.yml` (MySQL 8.4 efimero).
 - **Estado:** Fase 4 completada y cerrada. Exclusiones documentadas: F05 real, penalidad
   parcial/no-show (L-12) y excepciones de agenda por fecha (L-13).
 - **Frontend (2026-10-17):** Angular 22.2.3 standalone + CDK. **Rediseño de fusión aplicado**
@@ -156,7 +167,7 @@ npm run test:a11y
   original** (reserva/mis reservas). Un `PLATFORM_ADMIN` sin rol `OWNER` ya no ve el flujo de
   solicitud: se le indica que asigne `OWNER` desde Usuarios → Roles o use Supervision. El perfil
   permite **reenviar la verificacion de correo**.
-  `npm run build` **OK**, `npm test` **15/15 PASS** y E2E Playwright **OK** en dev y en Docker
+  `npm run build` **OK**, `npm test` **22/22 PASS** y E2E Playwright **OK** en dev y en Docker
   (`http://localhost:8083`). Incluye paginación numérica del catálogo (`X-Total-Count`, 12 por
   página), **detalle rediseñado con galería, bloques de información y reserva sticky**, **calendario
   semanal hora × día con navegación de semanas, salto de mes y ventana de 365 días**, textos con
@@ -312,9 +323,13 @@ canchadirecta/
 - Cierre automatico de reservas concluidas (ADR-0023, L-15): 4 tests de `FinalizacionReservasTest`
   (finaliza confirmada vencida y traza, no finaliza vigente, no finaliza pendiente, no arrastra
   vigentes del lote).
-- `smoke.ps1` -> **112/112 PASS** (contenedor en 8089 con la imagen reconstruida y `-DbPort 3309`;
-  8 pasos nuevos de edicion, baja y comparacion).
-- `smoke.sh` -> **112/112 PASS** con Git Bash (`DB_PORT=3309 bash scripts/smoke.sh http://localhost:8089`).
+- Badge de notificaciones y modo claro/oscuro (ADR-0039/0040): 22/22 unitarios frontend, E2E usuario
+  y propietario/admin OK, a11y 34 rutas OK; badge verificado E2E (2 -> 1 -> desaparece) y capturas
+  del tema en `docs/evidencias/ui/{claro,oscuro}-*-1440.png` (`e2e/dark-mode-capturas.mjs`).
+- `smoke.ps1` -> **153/153 PASS** (contenedor en 8089 con la imagen reconstruida y `-DbPort 3306`;
+  incluye ficha, actividades, cupones, ayuda, reportes, operadores de recepción y el modulo de
+  recepcion).
+- `smoke.sh` -> **134/134 PASS** con Git Bash (`DB_PORT=3306 bash scripts/smoke.sh http://localhost:8089`).
   Los pasos de calificacion y administracion necesitan el cliente `mysql`; si falta, se omiten con
   `[SKIP]` (el resto del humo sigue siendo HTTP).
 
@@ -339,7 +354,7 @@ canchadirecta/
 5. **Docker**: `compose.yml`, `compose.mysql.yml` y Dockerfiles de backend **y frontend**
    verificados (`frontend` en 8083 con proxy `/api`).
 6. **Docs**: base completa (requisitos, arquitectura, modelo, seguridad, pruebas, limitaciones,
-   ADR-0001..**0036**, contratos API del frontend). Faltan diagramas finales y limpiar filas
+   ADR-0001..**0040**, contratos API del frontend). Faltan diagramas finales y limpiar filas
    obsoletas de `TRAZABILIDAD.md`; evidencia E2E ya existe.
 7. **Testcontainers**: pruebas de integracion con MySQL real en CI (Docker requerido).
 
@@ -453,6 +468,7 @@ Ver `docs/DECISIONES_ARQUITECTURA.md`.
 | 2026-10-18 | Topbar standalone, Actividades/Cómo funciona, servicios demo y sidebars de panel | **PASS** (backend 146/146, humo 112/112, build OK, E2E usuario 15/15, E2E propietario/admin 28/28, a11y 16 rutas OK) |
 | 2026-10-18 | Bloque C: configuración persistente de plataforma (`V17`, API, puerto compartido y UI) | **PASS** (backend **158/158**, humo **135/135** PS y **116/116** Bash, build OK, 22/22 unitarios, E2E usuario 20/20, propietario/admin 37/37, a11y 27 rutas OK; ADR-0037) |
 | 2026-10-18 | Bloque D: rol `OPERADOR` y portal de recepción (`V18`, paquete `reception`, `/recepcion`, `/admin/operadores`) | **PASS** (backend **160/160** (`RecepcionTest` 2/2), humo **153/153** PS y **134/134** Bash, build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK, a11y **34 rutas OK**; ADR-0038; capturas `recepcion-*.png` y `admin-operadores-1440.png`) |
+| 2026-10-18 | Badge de notificaciones sin leer + modo claro/oscuro (`NotificacionesStore`, `data-theme`, tokens oscuros y migración de colores fijos) | **PASS** (build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK, a11y **34 rutas OK**; badge verificado E2E: 2 → marcar una → 1 → marcar todas → desaparece; capturas `claro-*-1440.png` y `oscuro-*-1440.png`; ADR-0039/0040) |
 
 Resto de la matriz de pruebas (?13 del prompt): **NOT RUN**.
 
@@ -508,12 +524,13 @@ Valores reales unicamente en `canchadirecta/.env` (gitignored). Nunca en Git.
 La hoja de ruta vigente esta en **`## 0. Mirada hacia adelante`** al inicio de este documento.
 Prioridad inmediata:
 
-1. Bloque D del delta: rol operador/recepción, turno, agenda de recepción, reserva presencial y cobros.
-2. Badge de notificaciones y modo oscuro.
-3. Seed/reset de demo controlado.
+1. Seed/reset de demo controlado (incluye un operador asignado a una sede).
+2. Control de tema dentro de los portales (hoy el toggle está en la topbar pública y el pie).
+3. Pulido de a11y manual (teclado/contraste, L-23) y diagramas finales.
 
 **Estado:** entrega base cerrada el 2026-10-17; rediseno de fusion, integraciones del standalone y
-bloques A/B/C del delta completados el 2026-10-18. Acta: `docs/ACTA_CIERRE.md`.
+bloques A/B/C/D del delta completados el 2026-10-18, más badge de notificaciones y modo claro/oscuro.
+Acta: `docs/ACTA_CIERRE.md`.
 
 Cuenta superadministrador local (roles `USER`, `OWNER`, `PLATFORM_ADMIN`):
 `admin@canchadirecta.pe`; la clave esta en `.env` (`ADMIN_PASSWORD`) y se usa tambien en los

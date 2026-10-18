@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthStore } from '../../core/auth/auth.store';
+import { NotificacionesStore } from '../../core/api/notificaciones.store';
 import { PortalIconComponent } from '../../shared/ui/portal-icon/portal-icon.component';
 
 @Component({
@@ -48,8 +49,17 @@ import { PortalIconComponent } from '../../shared/ui/portal-icon/portal-icon.com
             <strong>Mi cuenta</strong>
           </div>
           <div class="portal-actions">
-            <a routerLink="/notificaciones" class="icono-mini" aria-label="Notificaciones">
+            <a
+              routerLink="/notificaciones"
+              class="icono-mini"
+              [attr.aria-label]="
+                badge() > 0 ? 'Notificaciones, ' + badge() + ' sin leer' : 'Notificaciones'
+              "
+            >
               <cd-portal-icon name="bell" [size]="19" />
+              @if (badge() > 0) {
+                <span class="icono-badge" aria-hidden="true">{{ badge() > 9 ? '9+' : badge() }}</span>
+              }
             </a>
             <span class="avatar" aria-hidden="true">{{ inicial() }}</span>
           </div>
@@ -66,7 +76,7 @@ import { PortalIconComponent } from '../../shared/ui/portal-icon/portal-icon.com
       display: grid;
       grid-template-columns: 252px minmax(0, 1fr);
       min-height: 100dvh;
-      background: #f6f8f5;
+      background: var(--cd-color-bg);
     }
     .cuenta-side {
       position: sticky;
@@ -240,8 +250,8 @@ import { PortalIconComponent } from '../../shared/ui/portal-icon/portal-icon.com
       gap: 15px;
       height: 78px;
       padding: 0 34px;
-      border-bottom: 1px solid #e5ebe5;
-      background: #fff;
+      border-bottom: 1px solid var(--cd-color-border);
+      background: var(--cd-color-surface);
     }
     .portal-top-left {
       display: flex;
@@ -267,17 +277,34 @@ import { PortalIconComponent } from '../../shared/ui/portal-icon/portal-icon.com
       gap: 12px;
     }
     .icono-mini {
+      position: relative;
       display: grid;
       place-items: center;
       width: 36px;
       height: 36px;
       border-radius: 10px;
-      color: #607c76;
+      color: var(--cd-color-text-muted);
       text-decoration: none;
     }
+    .icono-badge {
+      position: absolute;
+      top: 1px;
+      right: 1px;
+      min-width: 17px;
+      height: 17px;
+      padding: 0 4px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: var(--cd-radius-pill);
+      background: #b55356;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1;
+    }
     .icono-mini:hover {
-      background: #eef4ea;
-      color: #173a2b;
+      background: var(--cd-color-surface-alt);
+      color: var(--cd-color-text);
     }
     .avatar {
       display: grid;
@@ -285,7 +312,7 @@ import { PortalIconComponent } from '../../shared/ui/portal-icon/portal-icon.com
       width: 36px;
       height: 36px;
       border-radius: 10px;
-      background: #d8f5b9;
+      background: var(--cd-color-success-soft);
       color: #235336;
       font-family: var(--cd-font-display);
       font-size: 12px;
@@ -334,7 +361,10 @@ import { PortalIconComponent } from '../../shared/ui/portal-icon/portal-icon.com
 })
 export class CuentaLayoutComponent {
   protected readonly auth = inject(AuthStore);
+  private readonly notificaciones = inject(NotificacionesStore);
   private readonly router = inject(Router);
+
+  protected readonly badge = this.notificaciones.noLeidas;
 
   protected inicial(): string {
     return this.auth.fullName().charAt(0).toUpperCase() || '?';

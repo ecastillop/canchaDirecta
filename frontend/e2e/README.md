@@ -24,10 +24,14 @@ $env:BASE='http://localhost:4300'
 $env:ADMIN_CORREO='admin@dominio.com'
 $env:ADMIN_PASSWORD='...'
 npm run test:e2e:owner
+
+# Tema claro/oscuro: capturas y comprobacion de persistencia (requiere admin)
+$env:MODO='oscuro'; node e2e/dark-mode-capturas.mjs
+$env:MODO='claro';  node e2e/dark-mode-capturas.mjs
 ```
 
 Variables: `BASE`, `API` (por defecto `http://localhost:8089/api/v1`), `CHROME_PATH`,
-`ADMIN_CORREO`, `ADMIN_PASSWORD`.
+`ADMIN_CORREO`, `ADMIN_PASSWORD`, `MODO` (`oscuro` por defecto en `dark-mode-capturas.mjs`).
 
 Las capturas se guardan en `../docs/evidencias/ui/`. El script falla si hay errores
 de consola, respuestas inesperadas >= 400 u overflow horizontal a 390 px.

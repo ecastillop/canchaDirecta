@@ -1,11 +1,20 @@
 import { A11yModule } from '@angular/cdk/a11y';
-import { ChangeDetectionStrategy, Component, HostListener, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
+import { NotificacionesStore } from '../../core/api/notificaciones.store';
 import { AuthStore } from '../../core/auth/auth.store';
 import { LoadingService } from '../../core/http/loading.service';
-import { PALETTES, PaletteId, ThemeService } from '../../core/theme/theme.service';
+import { MODOS, ModoId, PALETTES, PaletteId, ThemeService } from '../../core/theme/theme.service';
 import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
 
 @Component({
@@ -49,9 +58,28 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
         </nav>
 
         <div class="cuenta">
+          <button
+            type="button"
+            class="icono-btn"
+            (click)="theme.alternarModo()"
+            [attr.aria-pressed]="theme.oscuro()"
+            [attr.aria-label]="theme.oscuro() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
+            title="Modo claro u oscuro"
+          >
+            <span aria-hidden="true">{{ theme.oscuro() ? '☾' : '☀' }}</span>
+          </button>
           @if (auth.isAuthenticated()) {
-            <a routerLink="/notificaciones" class="icono-btn" aria-label="Notificaciones">
+            <a
+              routerLink="/notificaciones"
+              class="icono-btn"
+              [attr.aria-label]="
+                badge() > 0 ? 'Notificaciones, ' + badge() + ' sin leer' : 'Notificaciones'
+              "
+            >
               <span aria-hidden="true">◔</span>
+              @if (badge() > 0) {
+                <span class="icono-badge" aria-hidden="true">{{ badge() > 9 ? '9+' : badge() }}</span>
+              }
             </a>
           }
           <details #menuCuenta class="cuenta-menu">
@@ -137,6 +165,14 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
               }
             </select>
           </label>
+          <label class="cd-field">
+            <span class="cd-field__label">Modo</span>
+            <select cdInput [value]="theme.modo()" (change)="cambiarModo($event)">
+              @for (modo of modos; track modo.id) {
+                <option [value]="modo.id">{{ modo.nombre }}</option>
+              }
+            </select>
+          </label>
         </div>
       </aside>
     }
@@ -197,6 +233,14 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
           <select class="pie__select" [value]="theme.palette()" (change)="cambiarPaleta($event)" aria-label="Tema visual">
             @for (paleta of palettes; track paleta.id) {
               <option [value]="paleta.id">{{ paleta.nombre }}</option>
+            }
+          </select>
+        </label>
+        <label class="pie__paleta">
+          <span class="cd-xs">Modo</span>
+          <select class="pie__select" [value]="theme.modo()" (change)="cambiarModo($event)" aria-label="Modo claro u oscuro">
+            @for (modo of modos; track modo.id) {
+              <option [value]="modo.id">{{ modo.nombre }}</option>
             }
           </select>
         </label>
@@ -321,6 +365,7 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
       font-weight: 800;
     }
     .icono-btn {
+      position: relative;
       display: inline-grid;
       place-items: center;
       width: 40px;
@@ -332,6 +377,22 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
       cursor: pointer;
       color: var(--cd-color-text);
       text-decoration: none;
+    }
+    .icono-badge {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 4px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: var(--cd-radius-pill);
+      background: var(--cd-color-danger);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
     }
     .icono-btn:hover {
       background: var(--cd-color-surface-alt);
@@ -684,9 +745,18 @@ export class ShellComponent {
   protected readonly auth = inject(AuthStore);
   protected readonly loading = inject(LoadingService);
   protected readonly theme = inject(ThemeService);
+  private readonly notificaciones = inject(NotificacionesStore);
   private readonly router = inject(Router);
 
+  protected readonly badge = this.notificaciones.noLeidas;
+  /** Mantiene el badge de la campana al dia con la sesion (carga al entrar, limpia al salir). */
+  private readonly sincronizarBadge = effect(() => {
+    if (this.auth.isAuthenticated()) this.notificaciones.cargar();
+    else this.notificaciones.limpiar();
+  });
+
   protected readonly palettes = PALETTES;
+  protected readonly modos = MODOS;
   protected readonly year = new Date().getFullYear();
   protected readonly drawerOpen = signal(false);
   protected readonly inicial = computed(() => this.auth.fullName().charAt(0).toUpperCase() || '?');
@@ -713,6 +783,11 @@ export class ShellComponent {
   protected cambiarPaleta(event: Event): void {
     const value = (event.target as HTMLSelectElement).value as PaletteId;
     this.theme.setPalette(value);
+  }
+
+  protected cambiarModo(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value as ModoId;
+    this.theme.setModo(value);
   }
 
   protected async salir(): Promise<void> {

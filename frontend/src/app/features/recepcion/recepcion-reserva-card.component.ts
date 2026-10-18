@@ -59,10 +59,10 @@ import { CdButtonDirective } from '../../shared/ui/button/cd-button.directive';
       flex-wrap: wrap;
     }
     .pago--ok {
-      color: #1c7c46;
+      color: var(--cd-color-success);
     }
     .pago--pendiente {
-      color: #a4620a;
+      color: var(--cd-color-warning);
     }
   `,
 })
