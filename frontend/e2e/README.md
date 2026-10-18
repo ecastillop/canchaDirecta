@@ -6,7 +6,10 @@ Usan `playwright-core` con el Chrome instalado (no descargan navegadores).
 ## Prerrequisitos
 
 1. Backend en `http://localhost:8089` y base de datos con datos (el E2E elige una
-   franja disponible de los proximos 7 dias).
+   franja disponible de los proximos 7 dias). `scripts/demo-reset.ps1 -Force` deja el
+   escenario de demostracion (4 sedes, 16 canchas con horarios, operador y reservas),
+   que es la base con la que se validan estas suites; el catalogo necesita mas de 12
+   canchas para probar la paginacion.
 2. Frontend servido con proxy `/api` al backend:
    - desarrollo: `npm start` (4200, proxy a 8088) y definir `BASE`;
    - con proxy a 8089: `npx ng serve --port 4300 --proxy-config <archivo>`.

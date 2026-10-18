@@ -1156,3 +1156,39 @@ la rejilla marca la franja "reservada" y la bandeja muestra "Rosa Cliente ..." c
 `docs/evidencias/ui/panel-reservas-1440.png`); backend 162/162, build OK, 22/22 unitarios, E2E usuario
 OK, a11y 34 rutas OK, humo 153/153 PS y 134/134 Bash (2026-10-18).
 
+## ADR-0045 - La base de demostracion se regenera con un reset reproducible
+
+**Contexto:** la base local acumulaba miles de filas creadas por el humo y los E2E (mas de 3,000
+establecimientos y 3,800 canchas de prueba), asi que el catalogo, la administracion y los KPIs
+mostraban datos irrelevantes en la demostracion. Limpiar "a mano" exigia ordenar decenas de claves
+foraneas, dejaba los `AUTO_INCREMENT` altos y no era repetible.
+
+**Decision:**
+1. `scripts/demo-reset.ps1` centraliza el proceso: copia de seguridad (`mysqldump` en `%TEMP%`),
+   `DROP`/`CREATE` de `DB_NAME` con el usuario administrador, reinicio del backend para que Flyway
+   migre el esquema y siembra del escenario demo. Exige `-Force` o confirmacion escrita.
+2. La siembra usa la API real (registro, propietario, establecimientos, canchas, deportes,
+   caracteristicas, fotos, horarios, reservas, pagos, confirmacion, operadores y actividades), no
+   INSERT de negocio: el escenario queda coherente con las reglas vigentes (cupos, locking, auditoria)
+   y de paso ejercita el contrato completo.
+3. Solo tres pasos escapan a la API porque no hay ruta para ellos: crear el primer `PLATFORM_ADMIN`
+   (`INSERT` de roles), leer el `id` del distrito y verificar el conteo de tablas.
+4. El escenario es fijo para que las suites puedan apoyarse en el: administrador con las credenciales
+   de `.env`, propietario validado con 4 sedes y 16 canchas (deportes, caracteristicas, dos fotos y
+   horario de 7 dias por cancha), operador vinculado a la sede principal, cliente con una reserva
+   `PENDIENTE` pagada y otra `CONFIRMADA`, y una actividad publica. Las cuentas demo usan una clave
+   conocida y parametrizable (`-DemoPassword`, por defecto `DemoCancha2026`).
+5. Las fotos son marcadores de `picsum.photos`, el mismo criterio que la migracion `V11`.
+
+**Consecuencias:** la demostracion arranca con un catalogo pequeno y coherente (16 canchas, 4 sedes) y
+el script se puede repetir cuantas veces haga falta; el respaldo previo permite volver atras. Es
+destructivo por diseno y no se ejecuta en produccion: la validacion del nombre de la base y la
+confirmacion evitan accidentes sobre otra base del mismo servidor. Correr humo/E2E despues vuelve a
+sembrar filas de prueba, asi que el reset se ejecuta al final, antes de exponer la demo.
+
+**Evidencia:** dos ejecuciones consecutivas del script dejaron `usuarios=4 establecimientos=4
+canchas=16 horarios=112 fotos=32 reservas=2 actividades=1`; sobre esa base pasaron backend 162/162,
+E2E usuario OK (catalogo con 16 canchas y dos paginas), E2E propietario/admin OK, a11y 34 rutas OK y
+humo 153/153 PS y 134/134 Bash. Capturas `docs/evidencias/ui/demo-catalogo-1440.png` y
+`demo-ficha-1440.png` (2026-10-18).
+
