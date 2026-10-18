@@ -29,278 +29,449 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="cd-container cd-page">
-      <header class="cd-page__header">
-        <h1 class="cd-page__title">Canchas disponibles</h1>
-        <p class="cd-muted">Filtra por distrito, deporte y precio. Compara hasta 4 canchas.</p>
-      </header>
-
-      <form class="filtros" [formGroup]="filtros" (ngSubmit)="aplicar()" aria-label="Filtros de busqueda">
-        <label class="cd-field filtros__texto">
-          <span class="cd-field__label">Buscar</span>
-          <input cdInput formControlName="q" type="search" placeholder="Nombre de cancha o establecimiento" />
-        </label>
-        <label class="cd-field">
-          <span class="cd-field__label">Distrito</span>
-          <select cdInput formControlName="idDistrito">
-            <option [ngValue]="null">Todos</option>
-            @for (distrito of distritos(); track distrito.id) {
-              <option [ngValue]="distrito.id">{{ distrito.nombre }}</option>
-            }
-          </select>
-        </label>
-        <label class="cd-field">
-          <span class="cd-field__label">Deporte</span>
-          <select cdInput formControlName="idDeporte">
-            <option [ngValue]="null">Todos</option>
-            @for (deporte of deportes(); track deporte.id) {
-              <option [ngValue]="deporte.id">{{ deporte.nombre }}</option>
-            }
-          </select>
-        </label>
-        <label class="cd-field filtros__precio">
-          <span class="cd-field__label">Precio max. por hora (S/)</span>
-          <input cdInput type="number" min="0" step="5" formControlName="precioMax" placeholder="Sin limite" />
-        </label>
-        <div class="filtros__acciones">
-          <button cdButton type="submit">Aplicar filtros</button>
-          <button cdButton type="button" variant="ghost" (click)="limpiar()">Limpiar</button>
-        </div>
-      </form>
-
-      <div class="resultado__barra">
-        <p class="cd-small cd-muted" role="status">
-          @if (total() > 0) {
-            Mostrando {{ desde() }}–{{ hasta() }} de {{ total() }} canchas
-          } @else {
-            Sin resultados
-          }
+    <section class="hero-catalogo">
+      <div class="cd-container">
+        <p class="eyebrow">Explora · Reserva · Juega</p>
+        <h1>Tu próxima cancha<br /><em>te está esperando.</em></h1>
+        <p class="hero-catalogo__bajada">
+          Compara espacios verificados, encuentra tu horario ideal y sal a jugar.
         </p>
       </div>
+    </section>
 
-      @if (cargando()) {
-        <div class="grid" aria-busy="true" aria-label="Cargando canchas">
-          @for (i of [1, 2, 3, 4, 5, 6]; track i) {
-            <div class="cd-card">
-              <cd-skeleton height="120px" radius="12px" />
-              <cd-skeleton width="70%" height="20px" />
-              <cd-skeleton width="40%" height="16px" />
-            </div>
-          }
+    <div class="cd-container catalogo">
+      <aside class="panel-filtros" aria-label="Filtros de búsqueda">
+        <div class="panel-filtros__cabecera">
+          <h2>Filtros</h2>
+          <button cdButton variant="ghost" size="sm" type="button" (click)="limpiar()">Limpiar</button>
         </div>
-      } @else if (error()) {
-        <cd-error-state [message]="error()!" (retry)="cargar()" />
-      } @else if (canchas().length === 0) {
-        <cd-empty-state
-          title="No encontramos canchas"
-          message="Prueba con otro distrito, deporte o sin limite de precio."
-        >
-          <button cdButton variant="secondary" type="button" (click)="limpiar()">Quitar filtros</button>
-        </cd-empty-state>
-      } @else {
-        <div class="grid">
-          @for (cancha of canchas(); track cancha.id) {
-            <article class="cd-card cancha">
-              <div class="cancha__cabecera">
-                <span class="cd-badge" [class.cd-badge--success]="cancha.estado === 'ACTIVA'">
-                  {{ cancha.estado === 'ACTIVA' ? 'Disponible' : cancha.estado }}
-                </span>
-                <label class="comparar">
-                  <input
-                    type="checkbox"
-                    [checked]="comparacion.tiene(cancha.id)"
-                    (change)="comparar(cancha.id)"
-                    [attr.aria-label]="'Comparar ' + cancha.nombre"
-                  />
-                  <span class="cd-xs">Comparar</span>
-                </label>
-              </div>
-              <h2 class="cancha__nombre">{{ cancha.nombre }}</h2>
-              <p class="cd-small cd-muted">Capacidad para {{ cancha.capacidad }} personas</p>
-              <p class="precio">
-                {{ cancha.precioBase | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}
-                <span class="cd-small cd-muted">/ hora</span>
-              </p>
-              <p class="cd-xs cd-muted">4 horas: {{ cancha.precioBase * 4 | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</p>
-              <a
-                [routerLink]="['/canchas', cancha.id]"
-                class="cd-btn cd-btn--primary cd-btn--block"
-                [attr.aria-label]="'Ver detalle y horarios de ' + cancha.nombre"
-              >
-                Ver detalle
-              </a>
-            </article>
-          }
+        <form class="cd-stack" [formGroup]="filtros" (ngSubmit)="aplicar()" aria-label="Filtros de canchas">
+          <label class="cd-field">
+            <span class="cd-field__label">Buscar por nombre</span>
+            <input cdInput formControlName="q" type="search" placeholder="Nombre o zona" />
+          </label>
+          <label class="cd-field">
+            <span class="cd-field__label">Deporte</span>
+            <select cdInput formControlName="idDeporte">
+              <option [ngValue]="null">Todos</option>
+              @for (deporte of deportes(); track deporte.id) {
+                <option [ngValue]="deporte.id">{{ deporte.nombre }}</option>
+              }
+            </select>
+          </label>
+          <label class="cd-field">
+            <span class="cd-field__label">Distrito</span>
+            <select cdInput formControlName="idDistrito">
+              <option [ngValue]="null">Todos</option>
+              @for (distrito of distritos(); track distrito.id) {
+                <option [ngValue]="distrito.id">{{ distrito.nombre }}</option>
+              }
+            </select>
+          </label>
+          <label class="cd-field">
+            <span class="cd-field__label">Precio máximo por hora (S/)</span>
+            <input cdInput type="number" min="0" step="5" formControlName="precioMax" placeholder="Sin límite" />
+          </label>
+          <button cdButton type="submit" class="cd-btn--block">Aplicar filtros</button>
+        </form>
+        <div class="panel-filtros__tip">
+          <strong>Espacios verificados</strong>
+          <p>Consulta los detalles y reserva con un proceso guiado.</p>
         </div>
-      }
+      </aside>
 
-      <cd-paginator
-        [pagina]="pagina()"
-        [total]="total()"
-        [tamano]="tamanoPagina"
-        etiqueta="Paginación de canchas"
-        (paginaChange)="irPagina($event)"
-      />
-    </div>
-
-    @if (comparacion.cantidad() > 0) {
-      <div class="barra-comparar" role="region" aria-label="Canchas seleccionadas para comparar">
-        <div class="cd-container barra-comparar__inner">
-          <span class="cd-small">{{ comparacion.cantidad() }} de 4 seleccionada(s)</span>
-          <div class="cd-row">
-            <button cdButton variant="ghost" size="sm" type="button" (click)="comparacion.limpiar()">
-              Limpiar
-            </button>
-            <button
-              cdButton
-              variant="accent"
-              size="sm"
-              type="button"
-              [disabled]="!comparacion.puedeComparar()"
-              (click)="irAComparar()"
-            >
-              Comparar
-            </button>
+      <section class="resultados" aria-label="Resultados de canchas">
+        <div class="resultados__top">
+          <div>
+            <small>Resultados disponibles</small>
+            <h2>{{ total() }} espacios encontrados</h2>
           </div>
+          <p class="cd-small cd-muted" role="status">
+            @if (total() > 0) {
+              Mostrando {{ desde() }}–{{ hasta() }} de {{ total() }}
+            } @else {
+              Sin resultados
+            }
+          </p>
         </div>
-      </div>
-    }
+
+        @if (cargando()) {
+          <div class="grid-canchas" aria-busy="true" aria-label="Cargando canchas">
+            @for (i of [1, 2, 3, 4]; track i) {
+              <div class="tarjeta-cancha tarjeta-cancha--cargando" aria-hidden="true">
+                <cd-skeleton height="190px" radius="0" />
+                <div class="tarjeta-cancha__cuerpo">
+                  <cd-skeleton width="70%" height="22px" />
+                  <cd-skeleton width="45%" height="16px" />
+                </div>
+              </div>
+            }
+          </div>
+        } @else if (error()) {
+          <cd-error-state [message]="error()!" (retry)="cargar()" />
+        } @else if (canchas().length === 0) {
+          <cd-empty-state
+            title="No encontramos canchas"
+            message="Prueba con otro distrito, deporte o sin límite de precio."
+          >
+            <button cdButton variant="secondary" type="button" (click)="limpiar()">Quitar filtros</button>
+          </cd-empty-state>
+        } @else {
+          <div class="grid-canchas">
+            @for (cancha of canchas(); track cancha.id) {
+              <article class="tarjeta-cancha">
+                <div [class]="'tarjeta-cancha__arte tarjeta-cancha__arte--' + claseColor(cancha)">
+                  <span class="tarjeta-cancha__deporte">Cancha</span>
+                  <span class="tarjeta-cancha__iniciales" aria-hidden="true">{{ iniciales(cancha.nombre) }}</span>
+                  <span class="tarjeta-cancha__linea" aria-hidden="true"></span>
+                  <label class="comparar">
+                    <input
+                      type="checkbox"
+                      [checked]="comparacion.tiene(cancha.id)"
+                      (change)="comparar(cancha.id)"
+                      [attr.aria-label]="'Comparar ' + cancha.nombre"
+                    />
+                    <span>Comparar</span>
+                  </label>
+                </div>
+                <div class="tarjeta-cancha__cuerpo">
+                  <div class="tarjeta-cancha__meta">
+                    <span>Capacidad {{ cancha.capacidad }}</span>
+                    <span class="cd-badge" [class.cd-badge--success]="cancha.estado === 'ACTIVA'">
+                      {{ cancha.estado === 'ACTIVA' ? 'Disponible' : cancha.estado }}
+                    </span>
+                  </div>
+                  <h3>{{ cancha.nombre }}</h3>
+                  <p class="cd-small cd-muted">Reserva por hora y elige tu franja en el calendario semanal.</p>
+                  <div class="tarjeta-cancha__pie">
+                    <span class="precio">
+                      <small>Desde</small>
+                      <strong>{{ cancha.precioBase | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</strong>
+                      <small>/ hora</small>
+                    </span>
+                    <a
+                      [routerLink]="['/canchas', cancha.id]"
+                      class="cd-btn cd-btn--secondary cd-btn--sm"
+                      [attr.aria-label]="'Ver detalle y horarios de ' + cancha.nombre"
+                    >
+                      Ver horarios <span aria-hidden="true">→</span>
+                    </a>
+                  </div>
+                  <small class="cd-muted">4 horas: {{ cancha.precioBase * 4 | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</small>
+                </div>
+              </article>
+            }
+          </div>
+        }
+
+        <cd-paginator
+          [pagina]="pagina()"
+          [total]="total()"
+          [tamano]="tamanoPagina"
+          etiqueta="Paginación de canchas"
+          (paginaChange)="irPagina($event)"
+        />
+      </section>
+    </div>
   `,
   styles: `
-    .filtros {
+    :host {
+      display: block;
+    }
+    .hero-catalogo {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(64px, 8vw, 100px) 0 clamp(58px, 7vw, 86px);
+      background: var(--cd-color-inverse-bg);
+      color: var(--cd-color-inverse-text);
+    }
+    .hero-catalogo::after {
+      content: '';
+      position: absolute;
+      right: -6%;
+      top: -30%;
+      width: 52vw;
+      height: 52vw;
+      border: 1px solid color-mix(in srgb, var(--cd-color-inverse-text) 12%, transparent);
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 80px color-mix(in srgb, var(--cd-color-inverse-text) 4%, transparent),
+        0 0 0 160px color-mix(in srgb, var(--cd-color-inverse-text) 3%, transparent);
+      pointer-events: none;
+    }
+    .hero-catalogo .cd-container {
+      position: relative;
+      z-index: 1;
+    }
+    .eyebrow {
+      margin: 0 0 16px;
+      color: var(--cd-color-accent);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+    .hero-catalogo h1 {
+      margin: 0;
+      font-size: clamp(44px, 5.6vw, 74px);
+      line-height: 1;
+      letter-spacing: -0.05em;
+    }
+    .hero-catalogo h1 em {
+      color: var(--cd-color-accent);
+      font-style: normal;
+    }
+    .hero-catalogo__bajada {
+      max-width: 44ch;
+      margin: 22px 0 0;
+      color: var(--cd-color-inverse-muted);
+      font-size: clamp(15px, 1.4vw, 18px);
+    }
+    .catalogo {
       display: grid;
-      gap: var(--cd-space-3);
-      padding: var(--cd-space-4);
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: clamp(24px, 3vw, 38px);
+      padding-block: clamp(36px, 5vw, 54px) var(--cd-space-8);
+    }
+    .panel-filtros {
+      position: sticky;
+      top: calc(var(--cd-topbar-height) + 20px);
+      align-self: start;
+      padding: 22px;
+      border: 1px solid var(--cd-color-border);
+      border-radius: var(--cd-radius-lg);
       background: var(--cd-color-surface);
-      border: 1px solid var(--cd-color-border);
-      border-radius: var(--cd-radius-md);
-      margin-bottom: var(--cd-space-4);
+      box-shadow: var(--cd-shadow-1);
     }
-    .filtros__acciones {
+    .panel-filtros__cabecera {
       display: flex;
-      gap: var(--cd-space-2);
-      align-items: end;
-      flex-wrap: wrap;
-    }
-    .resultado__barra {
-      display: flex;
+      align-items: center;
       justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .panel-filtros h2 {
+      margin: 0;
+      font-size: 22px;
+    }
+    .panel-filtros__tip {
+      margin-top: 22px;
+      padding: 16px;
+      border-radius: var(--cd-radius-md);
+      background: var(--cd-color-surface-alt);
+    }
+    .panel-filtros__tip strong {
+      display: block;
+      font-size: 13px;
+    }
+    .panel-filtros__tip p {
+      margin: 6px 0 0;
+      color: var(--cd-color-text-muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .resultados {
+      min-width: 0;
+    }
+    .resultados__top {
+      display: flex;
       align-items: end;
-      gap: var(--cd-space-3);
-      margin-bottom: var(--cd-space-3);
+      justify-content: space-between;
+      gap: 16px;
       flex-wrap: wrap;
+      margin-bottom: 22px;
     }
-    .paginacion {
+    .resultados__top small {
+      color: var(--cd-color-text-muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .resultados__top h2 {
+      margin: 4px 0 0;
+      font-size: clamp(26px, 2.8vw, 36px);
+    }
+    .grid-canchas {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+    }
+    .tarjeta-cancha {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: var(--cd-space-2);
-      flex-wrap: wrap;
-      margin-top: var(--cd-space-5);
-    }
-    .paginas {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      flex-wrap: wrap;
-    }
-    .pagina {
-      min-width: 40px;
-      min-height: 40px;
+      flex-direction: column;
+      overflow: hidden;
       border: 1px solid var(--cd-color-border);
-      border-radius: var(--cd-radius-sm);
+      border-radius: var(--cd-radius-lg);
+      background: var(--cd-color-surface);
+      box-shadow: var(--cd-shadow-1);
+      transition:
+        transform var(--cd-duration-base),
+        box-shadow var(--cd-duration-base);
+    }
+    .tarjeta-cancha:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--cd-shadow-2);
+    }
+    .tarjeta-cancha--cargando {
+      min-height: 340px;
+    }
+    .tarjeta-cancha__arte {
+      position: relative;
+      height: 190px;
+      overflow: hidden;
+      background:
+        repeating-linear-gradient(120deg, rgba(255, 255, 255, 0.08) 0 2px, transparent 2px 16px),
+        linear-gradient(145deg, #1b6b54, #0d3d30);
+    }
+    .tarjeta-cancha__arte--azul {
+      background:
+        repeating-linear-gradient(120deg, rgba(255, 255, 255, 0.08) 0 2px, transparent 2px 16px),
+        linear-gradient(145deg, #2c5f9e, #163a63);
+    }
+    .tarjeta-cancha__arte--naranja {
+      background:
+        repeating-linear-gradient(120deg, rgba(255, 255, 255, 0.08) 0 2px, transparent 2px 16px),
+        linear-gradient(145deg, #b66a2e, #6d3a15);
+    }
+    .tarjeta-cancha__arte--rosa {
+      background:
+        repeating-linear-gradient(120deg, rgba(255, 255, 255, 0.08) 0 2px, transparent 2px 16px),
+        linear-gradient(145deg, #9b5064, #5c2938);
+    }
+    .tarjeta-cancha__deporte {
+      position: absolute;
+      left: 14px;
+      bottom: 14px;
+      z-index: 2;
+      padding: 5px 9px;
+      border-radius: 7px;
       background: var(--cd-color-surface);
       color: var(--cd-color-text);
-      font-weight: 600;
-      cursor: pointer;
+      font-size: 10px;
+      font-weight: 800;
     }
-    .pagina:hover {
-      border-color: var(--cd-color-accent);
+    .tarjeta-cancha__iniciales {
+      position: absolute;
+      right: 16px;
+      bottom: -14px;
+      color: rgba(255, 255, 255, 0.16);
+      font-family: var(--cd-font-display);
+      font-size: 108px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.08em;
     }
-    .pagina--activa {
-      background: var(--cd-color-primary);
-      border-color: var(--cd-color-primary);
-      color: var(--cd-color-on-primary);
-    }
-    .puntos {
-      padding-inline: 4px;
-      color: var(--cd-color-text-muted);
-    }
-    .grid {
-      display: grid;
-      gap: var(--cd-space-4);
-    }
-    .cancha {
-      display: grid;
-      gap: var(--cd-space-2);
-      align-content: start;
-    }
-    .cancha__cabecera {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: var(--cd-space-2);
+    .tarjeta-cancha__linea {
+      position: absolute;
+      inset: 14% 12%;
+      border: 2px solid rgba(255, 255, 255, 0.42);
+      border-radius: 50%;
+      transform: rotate(-8deg);
     }
     .comparar {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 3;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      color: var(--cd-color-text-muted);
+      padding: 6px 9px;
+      border-radius: var(--cd-radius-pill);
+      background: color-mix(in srgb, var(--cd-color-surface) 92%, transparent);
+      color: var(--cd-color-text);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
     }
     .comparar input {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--cd-color-accent-strong);
+      accent-color: var(--cd-color-teal, #167a70);
     }
-    .cancha__nombre {
-      font-size: var(--cd-text-lg);
+    .tarjeta-cancha__cuerpo {
+      display: grid;
+      gap: 8px;
+      padding: 18px;
+    }
+    .tarjeta-cancha__meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--cd-color-text-muted);
+      font-size: 11px;
+    }
+    .tarjeta-cancha h3 {
+      margin: 0;
+      font-size: 23px;
+      letter-spacing: -0.035em;
+    }
+    .tarjeta-cancha__pie {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--cd-color-border);
     }
     .precio {
-      font-size: var(--cd-text-lg);
-      font-weight: 800;
-      color: var(--cd-color-primary);
+      display: inline-flex;
+      align-items: baseline;
+      gap: 4px;
+      color: var(--cd-color-text-muted);
     }
-    .cancha .cd-btn {
-      margin-top: var(--cd-space-2);
-      text-decoration: none;
+    .precio strong {
+      color: var(--cd-color-text);
+      font-family: var(--cd-font-display);
+      font-size: 25px;
+      letter-spacing: -0.04em;
+    }
+    .precio small {
+      font-size: 10px;
     }
     .barra-comparar {
       position: sticky;
       bottom: 0;
       z-index: 50;
-      background: var(--cd-color-surface);
       border-top: 1px solid var(--cd-color-border);
-      box-shadow: var(--cd-shadow-2);
-      padding-block: var(--cd-space-2);
+      background: color-mix(in srgb, var(--cd-color-surface) 96%, transparent);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 -10px 40px rgba(18, 37, 37, 0.08);
+      padding-block: 12px;
     }
     .barra-comparar__inner {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: var(--cd-space-3);
+      gap: 16px;
       flex-wrap: wrap;
     }
-    @media (min-width: 640px) {
-      .grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      .filtros {
-        grid-template-columns: 1.4fr 1fr 1fr 1fr auto;
-        align-items: end;
-      }
-      .filtros__acciones {
-        grid-column: 1 / -1;
+    @media (max-width: 1100px) {
+      .catalogo {
+        grid-template-columns: 250px minmax(0, 1fr);
       }
     }
-    @media (min-width: 1024px) {
-      .grid {
-        grid-template-columns: repeat(3, 1fr);
+    @media (max-width: 900px) {
+      .catalogo {
+        grid-template-columns: 1fr;
       }
-      .filtros {
-        grid-template-columns: 1.6fr 1fr 1fr 1fr auto;
+      .panel-filtros {
+        position: static;
       }
-      .filtros__acciones {
-        grid-column: auto;
+      .grid-canchas {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 620px) {
+      .grid-canchas {
+        grid-template-columns: 1fr;
+      }
+      .hero-catalogo h1 {
+        font-size: clamp(38px, 12vw, 52px);
+      }
+      .tarjeta-cancha__pie {
+        align-items: start;
+        flex-direction: column;
       }
     }
   `,
@@ -338,8 +509,8 @@ export class CatalogoComponent implements OnInit {
     const params = this.route.snapshot.queryParamMap;
     this.filtros.patchValue({
       q: params.get('q') ?? '',
-      idDistrito: this.numero(params.get('distrito')),
-      idDeporte: this.numero(params.get('deporte')),
+      idDistrito: this.numero(params.get('idDistrito')) ?? this.numero(params.get('distrito')),
+      idDeporte: this.numero(params.get('idDeporte')) ?? this.numero(params.get('deporte')),
       precioMax: this.numero(params.get('precioMax')),
     });
 
@@ -427,6 +598,21 @@ export class CatalogoComponent implements OnInit {
     } catch {
       // los filtros quedan solo con texto/precio si falla el catalogo auxiliar
     }
+  }
+
+  protected claseColor(cancha: { id: number; nombre: string }): string {
+    const colores = ['verde', 'azul', 'naranja', 'rosa'];
+    const base = cancha.nombre.split('').reduce((suma, letra) => suma + letra.charCodeAt(0), cancha.id);
+    return colores[base % colores.length];
+  }
+
+  protected iniciales(nombre: string): string {
+    return nombre
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((parte) => parte.charAt(0).toUpperCase())
+      .join('');
   }
 
   private numero(valor: string | null): number | null {

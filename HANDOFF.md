@@ -29,7 +29,11 @@
   reconstruida). CI en `.github/workflows/backend.yml` (MySQL 8.4 efimero).
 - **Estado:** Fase 4 completada y cerrada. Exclusiones documentadas: F05 real, penalidad
   parcial/no-show (L-12) y excepciones de agenda por fecha (L-13).
-- **Frontend (2026-10-17):** Angular 22.2.3 standalone + CDK, tokens/paletas, shell responsive,
+- **Frontend (2026-10-17):** Angular 22.2.3 standalone + CDK. **Rediseño de fusión aplicado**
+  (ver `docs/DISENO_FUSION.md`): identidad bosque + lima, tipografías locales Outfit/DM Sans,
+  header/footer nuevos, home editorial, catálogo con filtros laterales, detalle con galería
+  carrusel y widget de reserva sticky, login a dos columnas. Se conservan carrusel de fotos,
+  calendario semanal, selección día/hora con precios y comparación. Tokens/paletas, shell responsive,
   auth completa, catalogo/detalle/disponibilidad/comparacion, reserva + pago demo, mis reservas
   con cancelacion/calificacion, perfil/solicitud de propietario, notificaciones, reclamos,
   panel del propietario (establecimiento con edicion y baja, canchas con edicion y fotos, cocheras,
@@ -332,6 +336,7 @@ Ver `docs/DECISIONES_ARQUITECTURA.md`.
 | 2026-10-17 | `npm run test:a11y` (estructura de 13 rutas + teclado) | **PASS** (un `h1` por ruta, sin saltos de encabezado, sin controles/campos sin nombre, 25 Tabs estables; capturas `a11y-*.png`) |
 | 2026-10-17 | Cierre documental | **OK** (`docs/ACTA_CIERRE.md`; E-42 registrado en `RESULTADOS_PRUEBAS.md`) |
 | 2026-10-17 | Fase 1 de mejoras: `/establecimientos/mios`, auto-login tras registro, paginador estable, vista previa con retorno y galería completa, textos de agenda | **PASS** (backend 144/144, humo 112/112, unitarios 15/15, E2E propietario/admin 28/28, a11y 13 rutas OK) |
+| 2026-10-18 | Rediseño de fusión: tokens, fuentes locales, shell, home, catálogo, detalle y login | **PASS** (build OK, 15/15 unitarios, E2E usuario 14/14, E2E propietario/admin 28/28, a11y 13 rutas OK, sin overflow a 390px) |
 
 Resto de la matriz de pruebas (?13 del prompt): **NOT RUN**.
 

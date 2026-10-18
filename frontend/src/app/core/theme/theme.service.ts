@@ -8,9 +8,9 @@ export interface PaletteOption {
 }
 
 export const PALETTES: PaletteOption[] = [
-  { id: 'cancha', nombre: 'Cancha (azul marino + turquesa)' },
-  { id: 'grafito', nombre: 'Grafito (negro + lima)' },
-  { id: 'arena', nombre: 'Arena (verde + terracota)' },
+  { id: 'cancha', nombre: 'Bosque' },
+  { id: 'grafito', nombre: 'Nocturno' },
+  { id: 'arena', nombre: 'Arena' },
 ];
 
 const STORAGE_KEY = 'cd.palette';

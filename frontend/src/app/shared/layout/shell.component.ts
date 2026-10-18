@@ -21,7 +21,7 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
       <div class="topbar__inner">
         <button
           type="button"
-          class="icono-btn"
+          class="icono-btn menu-btn"
           aria-label="Abrir menú de navegación"
           [attr.aria-expanded]="drawerOpen()"
           (click)="drawerOpen.set(true)"
@@ -30,13 +30,16 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
         </button>
 
         <a routerLink="/" class="marca" aria-label="CanchaDirecta, ir al inicio">
-          <span class="marca__icono" aria-hidden="true">CD</span>
-          <span class="marca__texto">CanchaDirecta</span>
+          <span class="marca__icono" aria-hidden="true">A</span>
+          <span class="marca__texto">
+            <strong>canchadirecta</strong>
+            <small>reserva · juega · repite</small>
+          </span>
         </a>
 
         <nav class="nav" aria-label="Navegación principal">
           <a routerLink="/" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
-          <a routerLink="/canchas" routerLinkActive="activo">Canchas</a>
+          <a routerLink="/canchas" routerLinkActive="activo">Espacios</a>
           @if (auth.isAuthenticated()) {
             <a routerLink="/mis-reservas" routerLinkActive="activo">Mis reservas</a>
             <a routerLink="/reclamos" routerLinkActive="activo">Reclamos</a>
@@ -58,10 +61,12 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
               <span class="avatar" aria-hidden="true">{{ inicial() }}</span>
               <span class="usuario__nombre">{{ auth.fullName() }}</span>
             </a>
-            <button type="button" class="cd-btn cd-btn--ghost cd-btn--sm" (click)="salir()">Salir</button>
+            <button type="button" class="cd-btn cd-btn--ghost cd-btn--sm salir" (click)="salir()">Salir</button>
           } @else {
             <a routerLink="/auth/login" class="cd-btn cd-btn--ghost cd-btn--sm">Ingresar</a>
-            <a routerLink="/auth/registro" class="cd-btn cd-btn--primary cd-btn--sm registro-top">Crear cuenta</a>
+            <a routerLink="/auth/registro" class="cd-btn cd-btn--primary cd-btn--sm cuenta-btn">
+              Mi cuenta <span aria-hidden="true">→</span>
+            </a>
           }
         </div>
       </div>
@@ -76,7 +81,7 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
         </div>
         <nav class="drawer__nav" aria-label="Navegación móvil" (click)="drawerOpen.set(false)">
           <a routerLink="/">Inicio</a>
-          <a routerLink="/canchas">Canchas</a>
+          <a routerLink="/canchas">Espacios</a>
           @if (auth.isAuthenticated()) {
             <a routerLink="/mis-reservas">Mis reservas</a>
             <a routerLink="/reclamos">Reclamos</a>
@@ -91,12 +96,12 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
           }
           @if (!auth.isAuthenticated()) {
             <a routerLink="/auth/login">Ingresar</a>
-            <a routerLink="/auth/registro">Crear cuenta</a>
+            <a routerLink="/auth/registro">Mi cuenta</a>
           }
         </nav>
         <div class="drawer__paleta">
           <label class="cd-field">
-            <span class="cd-field__label">Paleta de color</span>
+            <span class="cd-field__label">Tema</span>
             <select cdInput [value]="theme.palette()" (change)="cambiarPaleta($event)">
               @for (paleta of palettes; track paleta.id) {
                 <option [value]="paleta.id">{{ paleta.nombre }}</option>
@@ -112,11 +117,51 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
     </main>
 
     <footer class="pie">
-      <div class="cd-container pie__inner">
-        <p class="cd-xs cd-muted">CanchaDirecta · Pagos y liquidaciones son simulados.</p>
+      <div class="cd-container pie__grid">
+        <div class="pie__marca">
+          <a routerLink="/" class="marca marca--pie" aria-label="CanchaDirecta, ir al inicio">
+            <span class="marca__icono" aria-hidden="true">A</span>
+            <span class="marca__texto">
+              <strong>canchadirecta</strong>
+              <small>reserva · juega · repite</small>
+            </span>
+          </a>
+          <p>La plataforma donde tus ganas de jugar encuentran su lugar.</p>
+        </div>
+        <div class="pie__col">
+          <strong>Explora</strong>
+          <a routerLink="/canchas">Buscar espacios</a>
+          <a routerLink="/canchas">Comparar canchas</a>
+          <a routerLink="/">Cómo funciona</a>
+        </div>
+        <div class="pie__col">
+          <strong>Plataforma</strong>
+          @if (auth.isAuthenticated()) {
+            <a routerLink="/perfil">Mi cuenta</a>
+          } @else {
+            <a routerLink="/auth/login">Mi cuenta</a>
+          }
+          @if (auth.isOwner() || auth.isAdmin()) {
+            <a routerLink="/panel">Para propietarios</a>
+          } @else {
+            <a routerLink="/perfil">Para propietarios</a>
+          }
+          @if (auth.isAdmin()) {
+            <a routerLink="/admin">Administración</a>
+          }
+        </div>
+        <div class="pie__col">
+          <strong>Ayuda</strong>
+          <span>soporte&#64;canchadirecta.demo</span>
+          <span>Lima, Perú</span>
+          <span>Pagos simulados</span>
+        </div>
+      </div>
+      <div class="cd-container pie__bottom">
+        <span>© {{ year }} CanchaDirecta · Pagos y liquidaciones son simulados.</span>
         <label class="pie__paleta">
-          <span class="cd-xs cd-muted">Paleta</span>
-          <select class="pie__select" [value]="theme.palette()" (change)="cambiarPaleta($event)" aria-label="Paleta de color">
+          <span class="cd-xs">Tema</span>
+          <select class="pie__select" [value]="theme.palette()" (change)="cambiarPaleta($event)" aria-label="Tema visual">
             @for (paleta of palettes; track paleta.id) {
               <option [value]="paleta.id">{{ paleta.nombre }}</option>
             }
@@ -341,9 +386,185 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
         display: none;
       }
     }
+    /* Fusion skin */
+    .topbar {
+      background: color-mix(in srgb, var(--cd-color-surface) 94%, transparent);
+      backdrop-filter: blur(14px);
+    }
+    .topbar__inner {
+      max-width: var(--cd-container-max);
+      min-height: var(--cd-topbar-height);
+      padding-inline: var(--cd-space-5);
+      gap: var(--cd-space-5);
+    }
+    .marca {
+      gap: 10px;
+    }
+    .marca__icono {
+      width: 42px;
+      height: 42px;
+      border-radius: 13px;
+      background: var(--cd-color-accent);
+      color: var(--cd-color-primary);
+      font-family: var(--cd-font-display);
+      font-size: 22px;
+      font-weight: 900;
+      transform: rotate(-6deg);
+    }
+    .marca__texto {
+      display: grid;
+      line-height: 1;
+    }
+    .marca__texto strong {
+      font-family: var(--cd-font-display);
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+    .marca__texto small {
+      margin-top: 4px;
+      color: var(--cd-color-text-muted);
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    .nav {
+      height: var(--cd-topbar-height);
+      gap: clamp(14px, 2.2vw, 32px);
+      align-items: center;
+    }
+    .nav a {
+      position: relative;
+      padding: 0;
+      border-radius: 0;
+      color: var(--cd-color-text);
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .nav a:hover {
+      background: transparent;
+      color: var(--cd-color-primary);
+    }
+    .nav a.activo {
+      background: transparent;
+      font-weight: 700;
+    }
+    .nav a::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 3px;
+      background: transparent;
+    }
+    .nav a.activo::after {
+      background: var(--cd-color-accent-strong);
+    }
+    .cuenta {
+      gap: var(--cd-space-3);
+    }
+    .usuario {
+      padding: 6px 12px 6px 6px;
+      border-radius: var(--cd-radius-pill);
+      background: var(--cd-color-primary);
+      color: var(--cd-color-on-primary);
+    }
+    .usuario:hover {
+      color: var(--cd-color-on-primary);
+    }
+    .avatar {
+      width: 30px;
+      height: 30px;
+      background: var(--cd-color-accent);
+      color: var(--cd-color-primary);
+    }
+    .cuenta-btn {
+      padding-inline: 18px;
+      border-radius: var(--cd-radius-pill);
+    }
+    .pie {
+      border-top: 0;
+      background: var(--cd-color-inverse-bg);
+      color: var(--cd-color-inverse-text);
+      padding: var(--cd-space-7) 0 var(--cd-space-4);
+    }
+    .pie__grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      gap: var(--cd-space-6);
+    }
+    .pie__marca p {
+      max-width: 34ch;
+      margin-top: var(--cd-space-4);
+      color: var(--cd-color-inverse-muted);
+      font-size: var(--cd-text-sm);
+    }
+    .marca--pie .marca__texto strong {
+      color: var(--cd-color-inverse-text);
+    }
+    .marca--pie .marca__texto small {
+      color: var(--cd-color-inverse-muted);
+    }
+    .pie__col {
+      display: grid;
+      align-content: start;
+      gap: 10px;
+    }
+    .pie__col strong {
+      font-family: var(--cd-font-display);
+      font-size: var(--cd-text-xs);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .pie__col a,
+    .pie__col span {
+      color: var(--cd-color-inverse-muted);
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .pie__col a:hover {
+      color: var(--cd-color-accent);
+    }
+    .pie__bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--cd-space-3);
+      flex-wrap: wrap;
+      margin-top: var(--cd-space-7);
+      padding-top: var(--cd-space-4);
+      border-top: 1px solid color-mix(in srgb, var(--cd-color-inverse-text) 16%, transparent);
+      color: var(--cd-color-inverse-muted);
+      font-size: var(--cd-text-xs);
+    }
+    .pie__paleta {
+      color: var(--cd-color-inverse-muted);
+    }
+    .pie__select {
+      border-color: color-mix(in srgb, var(--cd-color-inverse-text) 22%, transparent);
+      background: transparent;
+      color: var(--cd-color-inverse-text);
+    }
+    @media (max-width: 900px) {
+      .pie__grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
     @media (max-width: 640px) {
-      .registro-top {
+      .marca__texto {
         display: none;
+      }
+      .cuenta .cd-btn--ghost,
+      .salir {
+        display: none;
+      }
+      .cuenta-btn span {
+        display: none;
+      }
+      .pie__grid {
+        grid-template-columns: 1fr;
       }
       .topbar__inner {
         padding-inline: var(--cd-space-3);
@@ -359,6 +580,7 @@ export class ShellComponent {
   private readonly router = inject(Router);
 
   protected readonly palettes = PALETTES;
+  protected readonly year = new Date().getFullYear();
   protected readonly drawerOpen = signal(false);
   protected readonly inicial = computed(() => this.auth.fullName().charAt(0).toUpperCase() || '?');
 

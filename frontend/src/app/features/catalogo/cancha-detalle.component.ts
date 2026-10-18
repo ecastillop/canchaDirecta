@@ -179,6 +179,14 @@ function etiquetaDeSemana(inicio: string): string {
                 </button>
               }
             </div>
+            @if (c.fotos.length > 1) {
+              <button class="galeria__flecha galeria__flecha--prev" type="button" aria-label="Foto anterior" (click)="anteriorFoto($event)">
+                ‹
+              </button>
+              <button class="galeria__flecha galeria__flecha--next" type="button" aria-label="Foto siguiente" (click)="siguienteFoto($event)">
+                ›
+              </button>
+            }
           } @else {
             <div class="galeria__vacia" role="img" [attr.aria-label]="'Sin fotos de ' + c.nombre">
               <svg viewBox="0 0 120 80" aria-hidden="true">
@@ -335,7 +343,7 @@ function etiquetaDeSemana(inicio: string): string {
 
             @if (horarios().length) {
               <section class="bloque">
-                <h2 class="seccion">Horarios habituales</h2>
+                <h2 class="seccion">Horario semanal</h2>
                 <ul class="horarios">
                   @for (horario of horarios(); track horario.id) {
                     <li>
@@ -1311,6 +1319,33 @@ function etiquetaDeSemana(inicio: string): string {
       outline: 3px solid var(--cd-color-focus);
       outline-offset: 2px;
     }
+    .galeria__flecha {
+      position: absolute;
+      top: clamp(90px, 15vw, 160px);
+      z-index: 4;
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 52px;
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      border-radius: var(--cd-radius-sm);
+      background: rgba(15, 25, 30, 0.55);
+      color: #fff;
+      font-size: 32px;
+      line-height: 1;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+    }
+    .galeria__flecha--prev {
+      left: 12px;
+    }
+    .galeria__flecha--next {
+      right: 12px;
+    }
+    .galeria__flecha:hover {
+      background: var(--cd-color-inverse-bg);
+      border-color: var(--cd-color-accent);
+    }
     .visor {
       position: fixed;
       inset: 0;
@@ -1375,6 +1410,191 @@ function etiquetaDeSemana(inicio: string): string {
       .preview-bar {
         position: static;
       }
+    }
+
+    /* Fusion skin: detalle editorial */
+    .cd-page {
+      padding-top: var(--cd-space-4);
+    }
+    .migas {
+      margin-bottom: var(--cd-space-4);
+      color: var(--cd-color-text-muted);
+      font-size: 11px;
+    }
+    .migas a {
+      color: var(--cd-color-text-muted);
+      text-decoration: none;
+    }
+    .cabecera {
+      margin-bottom: var(--cd-space-5);
+    }
+    .cabecera__texto h1 {
+      font-size: clamp(36px, 4.6vw, 58px);
+      letter-spacing: -0.05em;
+    }
+    .ubicacion {
+      font-size: 14px;
+    }
+    .puntuacion {
+      border-radius: var(--cd-radius-md);
+    }
+    .galeria {
+      box-shadow: var(--cd-shadow-2);
+    }
+    .columnas {
+      gap: clamp(26px, 4vw, 48px);
+    }
+    .bloque {
+      padding: 26px 0;
+      border: 0;
+      border-bottom: 1px solid var(--cd-color-border);
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .bloque:first-child {
+      padding-top: 0;
+    }
+    .bloque:last-child {
+      border-bottom: 0;
+    }
+    .bloque h2.seccion {
+      margin-bottom: 14px;
+      font-size: clamp(24px, 2.5vw, 31px);
+    }
+    .bloque h2.seccion::before {
+      display: none;
+    }
+    .reserva {
+      position: sticky;
+      top: calc(var(--cd-topbar-height) + var(--cd-space-4));
+      padding: 24px;
+      border: 1px solid var(--cd-color-border);
+      border-radius: var(--cd-radius-lg);
+      background: var(--cd-color-surface);
+      box-shadow: var(--cd-shadow-2);
+    }
+    .reserva__eyebrow {
+      color: var(--cd-color-teal, #167a70);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .reserva .precio {
+      margin: 4px 0 0;
+      font-family: var(--cd-font-display);
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+    .reserva__titulo {
+      margin: 18px 0 14px;
+      font-size: 24px;
+    }
+    .semana__nav {
+      padding: 8px 10px;
+      border: 1px solid var(--cd-color-border);
+      border-radius: var(--cd-radius-md);
+      background: var(--cd-color-surface-alt);
+    }
+    .semana__titulo {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .semana__dias {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 5px;
+      margin-top: 10px;
+    }
+    .dia {
+      display: grid;
+      gap: 2px;
+      padding: 8px 2px;
+      border: 1px solid var(--cd-color-border);
+      border-radius: 10px;
+      background: var(--cd-color-surface);
+      color: var(--cd-color-text);
+      text-align: center;
+      cursor: pointer;
+    }
+    .dia__nombre {
+      color: var(--cd-color-text-muted);
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .dia__numero {
+      font-family: var(--cd-font-display);
+      font-size: 17px;
+    }
+    .dia__cupos {
+      color: var(--cd-color-text-muted);
+      font-size: 8px;
+    }
+    .dia--activo {
+      border-color: var(--cd-color-primary);
+      background: var(--cd-color-primary);
+      color: var(--cd-color-on-primary);
+    }
+    .dia--activo .dia__nombre,
+    .dia--activo .dia__cupos {
+      color: color-mix(in srgb, var(--cd-color-on-primary) 75%, transparent);
+    }
+    .dia--hoy {
+      box-shadow: inset 0 0 0 2px var(--cd-color-accent);
+    }
+    .dia--pasado {
+      opacity: 0.4;
+    }
+    .franjas {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+      max-height: 270px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+    .franja {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 11px;
+      border: 1px solid var(--cd-color-border);
+      border-radius: 10px;
+      background: var(--cd-color-surface);
+      color: var(--cd-color-text);
+      font-size: 11px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .franja strong {
+      color: var(--cd-color-teal, #167a70);
+      font-size: 12px;
+    }
+    .franja:hover {
+      border-color: var(--cd-color-primary);
+    }
+    .franja--activa {
+      border-color: var(--cd-color-primary);
+      background: var(--cd-color-accent);
+      color: var(--cd-color-primary);
+    }
+    .franja--activa strong {
+      color: var(--cd-color-primary);
+    }
+    .resumen {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: var(--cd-radius-sm);
+      background: var(--cd-color-surface-alt);
+    }
+    .reserva .cd-btn--block {
+      margin-top: 12px;
     }
   `,
 })

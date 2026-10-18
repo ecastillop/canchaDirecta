@@ -83,7 +83,7 @@ page.on('console', (m) => {
 try {
   // 1. Home
   await page.goto(BASE, { waitUntil: 'networkidle' });
-  await page.getByRole('heading', { name: /Encuentra tu cancha/ }).waitFor();
+  await page.getByRole('heading', { name: /El espacio ideal/ }).waitFor();
   ok('home renderiza');
 
   // 2. Registro por UI: parte de una ruta protegida y debe volver a ella
@@ -119,25 +119,25 @@ try {
 
   // 4. Catalogo y detalle
   await page.goto(`${BASE}/canchas`, { waitUntil: 'networkidle' });
-  await page.getByRole('heading', { name: 'Canchas disponibles' }).waitFor();
-  const tarjetas = await page.locator('article.cancha').count();
+  await page.getByRole('heading', { name: /Tu próxima cancha/ }).waitFor();
+  const tarjetas = await page.locator('article.tarjeta-cancha').count();
   if (tarjetas > 0) ok(`catalogo lista ${tarjetas} canchas`);
   else fallo('catalogo sin tarjetas');
 
-  const resumenPagina = page.getByText(/Mostrando \d+–\d+ de \d+ canchas/);
+  const resumenPagina = page.locator('.resultados__top [role="status"]');
   await resumenPagina.waitFor();
   const totalTexto = await resumenPagina.textContent();
   await page.getByRole('button', { name: 'Página 2', exact: true }).click();
-  await page.getByText(/Mostrando 13–24 de \d+ canchas/).waitFor({ timeout: 20000 });
+  await page.locator('.resultados__top [role="status"]', { hasText: 'Mostrando 13–24' }).waitFor({ timeout: 20000 });
   ok(`paginacion del catalogo OK (${totalTexto?.trim()})`);
   await page.locator('nav.paginacion').screenshot({ path: `${EVID}/catalogo-paginacion.png` });
   await page.getByRole('button', { name: 'Página 1', exact: true }).click();
-  await page.getByText(/Mostrando 1–12 de \d+ canchas/).waitFor();
+  await page.locator('.resultados__top [role="status"]', { hasText: 'Mostrando 1–12' }).waitFor();
   await page.screenshot({ path: `${EVID}/catalogo-1440.png`, fullPage: false });
 
   await page.goto(`${BASE}/canchas/${franja.cancha.id}`, { waitUntil: 'networkidle' });
   await page.getByRole('heading', { name: franja.cancha.nombre }).waitFor({ timeout: 20000 });
-  await page.getByText('Reserva tu hora').waitFor();
+  await page.getByText('Reserva tu horario').waitFor();
   await page.getByRole('heading', { name: 'Disponibilidad semanal' }).waitFor({ timeout: 20000 });
   const celdas = await page.locator('.celda--libre').count();
   if (celdas > 0) {
