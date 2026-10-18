@@ -514,6 +514,24 @@ Invoke-Api -Method POST -Path ("/reservas/{0}/confirmar" -f [long]$reservaConfir
   -Token $propietario.token | Out-Null
 Write-Host "      reservas: #$($reservaPendiente.id) pendiente pagada y #$($reservaConfirmada.id) confirmada pagada"
 
+# 3.7 Bloqueo de mantenimiento: la ficha y la agenda muestran tambien "Bloqueada" (ADR-0047)
+$inicioBloqueo = $hoyLima.Date.AddDays(2).AddHours(10)
+$finBloqueo = $inicioBloqueo.AddHours(2)
+Invoke-Api -Method POST -Path ("/canchas/{0}/bloqueos" -f $canchaReserva1.id) -Token $propietario.token -Body @{
+  inicio = (& $iso $inicioBloqueo)
+  fin    = (& $iso $finBloqueo)
+  motivo = 'Mantenimiento de la cancha'
+} | Out-Null
+Write-Host "      bloqueo de mantenimiento en '$($canchaReserva1.nombre)'"
+
+# 3.8 Reclamo del cliente: la mesa de ayuda del administrador tiene un caso para revisar
+Invoke-Api -Method POST -Path '/reclamos' -Token $cliente.token -Body @{
+  idReserva   = [long]$reservaConfirmada.id
+  asunto      = 'No encuentro el comprobante de pago'
+  descripcion = 'Pague con Yape y no veo el comprobante en mis reservas. Pueden revisarlo?'
+} | Out-Null
+Write-Host "      reclamo de soporte creado"
+
 # --------------------------------------------------------------- 4. resumen
 
 Write-Host "[4/4] Verificando ..." -ForegroundColor Cyan
@@ -524,6 +542,8 @@ SELECT CONCAT('usuarios=', (SELECT COUNT(*) FROM usuario),
   ' horarios=', (SELECT COUNT(*) FROM horario_cancha),
   ' fotos=', (SELECT COUNT(*) FROM foto_cancha),
   ' reservas=', (SELECT COUNT(*) FROM reserva),
+  ' bloqueos=', (SELECT COUNT(*) FROM bloqueo_cancha),
+  ' reclamos=', (SELECT COUNT(*) FROM reclamo),
   ' actividades=', (SELECT COUNT(*) FROM actividad));
 "@
 Write-Host ("      " + $conteo.Trim()) -ForegroundColor Gray

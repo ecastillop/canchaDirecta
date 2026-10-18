@@ -289,8 +289,9 @@ try {
     method: 'POST',
     body: { correo: cliente.correo, password: cliente.password },
   });
+  const lunes = proximoLunesLima();
   const disponibilidad = await api(
-    `/canchas/${idCancha}/disponibilidad?fecha=${proximoLunesLima()}&duracionMinutos=60`,
+    `/canchas/${idCancha}/disponibilidad?fecha=${lunes}&duracionMinutos=60`,
   );
   const franja = disponibilidad.franjas[0];
   if (!franja) throw new Error('La cancha no ofrece franjas el lunes siguiente.');
@@ -306,11 +307,36 @@ try {
   });
   ok('un cliente reserva y paga la franja del lunes siguiente');
 
+  // El propietario bloquea la franja siguiente desde el panel: la ficha debe distinguir
+  // ambos motivos (ADR-0047).
+  const bloqueos = page.locator('section', {
+    has: page.getByRole('heading', { name: 'Bloqueos y excepciones' }),
+  });
+  await bloqueos.locator('label:has-text("Motivo") input').fill('Mantenimiento E2E');
+  await bloqueos.locator('label:has-text("Inicio (hora de Lima)") input').fill(`${lunes}T19:00`);
+  await bloqueos.locator('label:has-text("Fin (hora de Lima)") input').fill(`${lunes}T20:00`);
+  await bloqueos.getByRole('button', { name: 'Agregar bloqueo' }).click();
+  await bloqueos.getByText('Mantenimiento E2E').first().waitFor({ timeout: 20000 });
+  ok('el propietario bloquea la franja siguiente desde el panel');
+
   await page.getByRole('button', { name: 'Semana siguiente' }).click();
   await page.getByRole('cell', { name: /18:00: reservada/ }).first().waitFor({ timeout: 20000 });
-  ok('la rejilla semanal marca la franja reservada');
+  await page.getByRole('cell', { name: /19:00: bloqueada/ }).first().waitFor({ timeout: 20000 });
+  ok('la rejilla semanal marca la franja reservada y la bloqueada');
   await page.screenshot({ path: `${EVID}/panel-agenda-1440.png`, fullPage: false });
   await page.getByRole('button', { name: 'Hoy', exact: true }).click();
+
+  // Ficha publica: el cliente ve el motivo de cada hora ocupada (ADR-0047)
+  const ficha = await context.newPage();
+  await ficha.goto(`${BASE}/canchas/${idCancha}`, { waitUntil: 'networkidle' });
+  await ficha.getByRole('heading', { name: 'Disponibilidad semanal' }).waitFor({ timeout: 20000 });
+  await ficha.getByRole('button', { name: 'Semana siguiente', exact: true }).click();
+  await ficha.getByLabel(/a las 18:00, reservada/).first().waitFor({ timeout: 20000 });
+  await ficha.getByLabel(/a las 19:00, bloqueada/).first().waitFor({ timeout: 20000 });
+  ok('la ficha publica distingue la hora reservada de la bloqueada');
+  await ficha.locator('section.calendario').scrollIntoViewIfNeeded();
+  await ficha.locator('section.calendario').screenshot({ path: `${EVID}/ficha-motivos-1440.png` });
+  await ficha.close();
 
   // Promociones del propietario
   await navPanel.getByRole('link', { name: 'Promociones' }).click();

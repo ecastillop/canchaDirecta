@@ -221,7 +221,17 @@ t_disponibilidad2() { api GET "/api/v1/canchas/$CANCHA_ID/disponibilidad?fecha=$
 # La disponibilidad es publica; se comprueba que la franja de prueba este libre o no.
 disponibilidad() { api GET "/api/v1/canchas/$CANCHA_ID/disponibilidad?fecha=$FECHA&duracionMinutos=60" - - 200; }
 t_disponibilidad()         { disponibilidad && printf '%s' "$CUERPO_RESP" | grep -q "\"inicio\":\"$INICIO\""; }
-t_disponibilidad_ocupada() { disponibilidad && ! printf '%s' "$CUERPO_RESP" | grep -q "\"inicio\":\"$INICIO\""; }
+# La franja ocupada no debe ofrecerse y debe figurar en `ocupadas` con el motivo esperado
+# (ADR-0047). El cuerpo es un JSON de una linea: `franjas` va antes de `ocupadas`.
+verifica_ocupada() {
+  local esperado="$1" franjas
+  franjas=$(printf '%s' "$CUERPO_RESP" | sed 's/,"ocupadas".*//')
+  printf '%s' "$franjas" | grep -q "\"inicio\":\"$INICIO\"" && return 1
+  printf '%s' "$CUERPO_RESP" | grep -q "\"inicio\":\"$INICIO\"[^}]*\"estado\":\"$esperado\"" || return 1
+  return 0
+}
+t_disponibilidad_reservada() { disponibilidad && verifica_ocupada RESERVADA; }
+t_disponibilidad_bloqueada() { disponibilidad && verifica_ocupada BLOQUEADA; }
 t_cancelar()     { api POST "/api/v1/reservas/$RESERVA_ID/cancelar" - "$ACCESS" 200 && printf '%s' "$CUERPO_RESP" | grep -q '"estado":"CANCELADA"'; }
 t_cancelar_dup() { api POST "/api/v1/reservas/$RESERVA_ID/cancelar" - "$ACCESS" 409 && printf '%s' "$CUERPO_RESP" | grep -q '"code":"CONFLICT"'; }
 
@@ -776,7 +786,7 @@ paso 'POST /api/v1/reservas (201)'        t_reserva
 paso 'POST /api/v1/reservas duplicada'    t_reserva_dup
 paso 'POST promociones del propietario'   t_promo_propietario
 paso 'POST /api/v1/reservas con promo'    t_reserva_promo
-paso 'GET  disponibilidad ocupada'        t_disponibilidad_ocupada
+paso 'GET  disponibilidad ocupada (RESERVADA)' t_disponibilidad_reservada
 paso 'GET  /api/v1/reservas/mias'         t_reservas_mias
 paso 'GET  reservas/recibidas (PENDIENTE)' t_reservas_recibidas
 paso 'POST reservas/{id}/confirmar'       t_confirmar
@@ -793,7 +803,7 @@ paso 'GET  canchas/{id}/horarios'         t_horarios_lista
 paso 'POST canchas/{id}/horarios solapado' t_horario_solapado
 paso 'GET  disponibilidad con horario'    t_disponibilidad
 paso 'POST canchas/{id}/bloqueos (201)'   t_bloqueo
-paso 'GET  disponibilidad bloqueada'      t_disponibilidad_ocupada
+paso 'GET  disponibilidad bloqueada (BLOQUEADA)' t_disponibilidad_bloqueada
 paso 'POST reservas en franja bloqueada'  t_bloqueo_reserva
 paso 'DELETE canchas/{id}/bloqueos/{id}'  t_bloqueo_levanta
 paso 'GET  disponibilidad sin bloqueo'    t_disponibilidad

@@ -489,6 +489,9 @@ Paso 'GET disponibilidad excluye la franja reservada (200)' {
   if ($d.franjas | Where-Object { $_.inicio -eq $script:inicioIso }) {
     throw 'la franja reservada sigue apareciendo como libre'
   }
+  if (-not ($d.ocupadas | Where-Object { $_.inicio -eq $script:inicioIso -and $_.estado -eq 'RESERVADA' })) {
+    throw 'la franja reservada no figura como RESERVADA en ocupadas'
+  }
 }
 
 Paso 'GET /api/v1/reservas/mias (200, una reserva)' {
@@ -600,6 +603,9 @@ Paso 'GET disponibilidad excluye la franja bloqueada (200)' {
   $d = Invoke-Api -Method GET -Path "/api/v1/canchas/$script:canchaId/disponibilidad?fecha=$fechaIso&duracionMinutos=60"
   if ($d.franjas | Where-Object { $_.inicio -eq $script:inicioIso }) {
     throw 'la franja bloqueada sigue apareciendo como libre'
+  }
+  if (-not ($d.ocupadas | Where-Object { $_.inicio -eq $script:inicioIso -and $_.estado -eq 'BLOQUEADA' })) {
+    throw 'la franja bloqueada no figura como BLOQUEADA en ocupadas'
   }
 }
 

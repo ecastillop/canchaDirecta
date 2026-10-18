@@ -37,7 +37,7 @@ public class DisponibilidadResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Lista las franjas libres de una cancha en una fecha (AAAA-MM-DD)")
+    @Operation(summary = "Lista las franjas libres y los tramos ocupados con su motivo (AAAA-MM-DD)")
     public DisponibilidadResponse consultar(
             @PathParam("idCancha") Long idCancha,
             @QueryParam("fecha") String fecha,
@@ -62,6 +62,10 @@ public class DisponibilidadResource {
                 resultado.franjas().stream()
                         .map(franja -> new DisponibilidadResponse.Franja(
                                 franja.franja().inicio(), franja.franja().fin(), franja.precio()))
+                        .toList(),
+                resultado.ocupadas().stream()
+                        .map(ocupada -> new DisponibilidadResponse.FranjaOcupada(
+                                ocupada.franja().inicio(), ocupada.franja().fin(), ocupada.motivo().name()))
                         .toList());
     }
 }

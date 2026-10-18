@@ -8,6 +8,7 @@ import jakarta.transaction.Transactional;
 import pe.com.canchadirecta.bookings.application.dto.CanchaInfo;
 import pe.com.canchadirecta.bookings.application.dto.CocheraInfo;
 import pe.com.canchadirecta.bookings.application.dto.HorarioSemanal;
+import pe.com.canchadirecta.bookings.application.dto.OcupacionFranja;
 import pe.com.canchadirecta.bookings.application.dto.ReservaRecibida;
 import pe.com.canchadirecta.bookings.application.port.out.ReservaRepositorio;
 import pe.com.canchadirecta.bookings.domain.model.FranjaHoraria;
@@ -100,24 +101,26 @@ public class ReservaPersistenciaAdapter implements ReservaRepositorio {
     }
 
     @Override
-    public List<FranjaHoraria> ocupacionEn(Long idCancha, Instant desde, Instant hasta) {
-        // Una sola consulta: reservas que retienen cupo + bloqueos operativos.
+    public List<OcupacionFranja> ocupacionEn(Long idCancha, Instant desde, Instant hasta) {
+        // Una sola consulta: reservas que retienen cupo + bloqueos operativos, con su motivo.
         List<?> filas = em.createNativeQuery(
-                        "SELECT CAST(inicio AS CHAR), CAST(fin AS CHAR) FROM reserva "
+                        "SELECT CAST(inicio AS CHAR), CAST(fin AS CHAR), 'RESERVADA' FROM reserva "
                                 + "WHERE id_cancha = :idCancha AND estado IN ('PENDIENTE','CONFIRMADA') "
                                 + "AND inicio < :hasta AND fin > :desde "
                                 + "UNION ALL "
-                                + "SELECT CAST(inicio AS CHAR), CAST(fin AS CHAR) FROM bloqueo_cancha "
+                                + "SELECT CAST(inicio AS CHAR), CAST(fin AS CHAR), 'BLOQUEADA' FROM bloqueo_cancha "
                                 + "WHERE id_cancha = :idCancha AND inicio < :hasta AND fin > :desde")
                 .setParameter("idCancha", idCancha.intValue())
                 .setParameter("desde", SqlUtc.aLiteral(desde))
                 .setParameter("hasta", SqlUtc.aLiteral(hasta))
                 .getResultList();
 
-        List<FranjaHoraria> ocupadas = new ArrayList<>(filas.size());
+        List<OcupacionFranja> ocupadas = new ArrayList<>(filas.size());
         for (Object fila : filas) {
             Object[] f = (Object[]) fila;
-            ocupadas.add(new FranjaHoraria(SqlUtc.aInstant(f[0]), SqlUtc.aInstant(f[1])));
+            ocupadas.add(new OcupacionFranja(
+                    new FranjaHoraria(SqlUtc.aInstant(f[0]), SqlUtc.aInstant(f[1])),
+                    OcupacionFranja.Motivo.valueOf(String.valueOf(f[2]))));
         }
         return ocupadas;
     }

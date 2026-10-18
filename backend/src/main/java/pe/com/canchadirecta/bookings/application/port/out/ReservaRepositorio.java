@@ -3,6 +3,7 @@ package pe.com.canchadirecta.bookings.application.port.out;
 import pe.com.canchadirecta.bookings.application.dto.CanchaInfo;
 import pe.com.canchadirecta.bookings.application.dto.CocheraInfo;
 import pe.com.canchadirecta.bookings.application.dto.HorarioSemanal;
+import pe.com.canchadirecta.bookings.application.dto.OcupacionFranja;
 import pe.com.canchadirecta.bookings.application.dto.ReservaRecibida;
 import pe.com.canchadirecta.bookings.domain.model.FranjaHoraria;
 import pe.com.canchadirecta.bookings.domain.model.Reserva;
@@ -39,8 +40,11 @@ public interface ReservaRepositorio {
      */
     List<HorarioSemanal> horariosDe(Long idCancha);
 
-    /** Reservas vigentes y bloqueos operativos que intersectan `[desde, hasta)`. */
-    List<FranjaHoraria> ocupacionEn(Long idCancha, Instant desde, Instant hasta);
+    /**
+     * Reservas vigentes y bloqueos operativos que intersectan `[desde, hasta)`, con el motivo de
+     * cada tramo (ADR-0047). Alimenta el calculo de disponibilidad y el motivo que ve el cliente.
+     */
+    List<OcupacionFranja> ocupacionEn(Long idCancha, Instant desde, Instant hasta);
 
     /** ?Existe una reserva vigente (PENDIENTE/CONFIRMADA) que se solape? */
     boolean existeReservaVigenteSolapada(Long idCancha, Instant inicio, Instant fin);

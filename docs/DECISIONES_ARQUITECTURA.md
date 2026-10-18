@@ -1229,3 +1229,38 @@ persiste tras recargar y vuelve a claro, captura `docs/evidencias/ui/panel-oscur
 `contraste-modos.mjs` OK en los cuatro portales y ambos modos; build OK, 24/24 unitarios, E2E usuario
 OK, E2E propietario/admin OK, a11y 34 rutas OK, humo 153/153 PS y 134/134 Bash (2026-10-18).
 
+## ADR-0047 - La disponibilidad publica informa el motivo de cada tramo ocupado
+
+**Contexto:** la rejilla de la ficha se deriva del horario configurado (ADR-0041), pero toda hora no
+libre se rotulaba "Sin cupo": el cliente no sabia si estaba reservada (podria liberarse) o bloqueada
+por mantenimiento. `GET /canchas/{id}/disponibilidad` solo devolvia `franjas` libres y la regla de
+ocupacion vivia en el SQL de `ocupacionEn`, sin el motivo. Era la limitacion L-26.
+
+**Decision:**
+1. `ReservaRepositorio.ocupacionEn` devuelve `List<OcupacionFranja>` (franja + `RESERVADA`/`BLOQUEADA`);
+   la consulta nativa agrega una columna constante por rama del `UNION` (reservas vigentes y bloqueos).
+   Hay un solo llamador (la disponibilidad), asi que no se mantienen dos firmas.
+2. `DisponibilidadDia` y `DisponibilidadResponse` agregan `ocupadas[]` con `{inicio, fin, estado}`. El
+   contrato es aditivo: `franjas` sigue igual y el calculo de cupo usa las mismas reglas
+   (`PENDIENTE`/`CONFIRMADA` + bloqueos).
+3. Solo se expone el motivo: ni el titular, ni el identificador de la reserva, ni la nota del bloqueo.
+4. La ficha rotula la celda con "Reservada" (gris) o "Bloqueada" (ambar) y `aria-label` "dia a las
+   HH:MM, reservada/bloqueada"; el fallback "Sin cupo" queda para horas fuera del horario. La leyenda
+   pasa a Libre/Reservada/Bloqueada/Cerrado y los chips de dia sin agenda dicen "Cerrado" en lugar de
+   "0". El emparejamiento es por solape del tramo con la hora de la fila, no por hora de inicio
+   exacta, para bloqueos de 90/120 min o desalineados.
+5. `demo-reset.ps1` siembra una reserva y un bloqueo para que la demo muestre ambos estados.
+
+**Consecuencias:** el cliente entiende por que no puede reservar y si conviene volver a mirar (reserva)
+o buscar otra hora (bloqueo), sin abrir datos personales ni la operacion interna. El coste es una lista
+mas por dia consultado (como maximo las reservas y bloqueos de esa cancha) y ningun cambio en el
+calculo de cupo. "Cerrado" sigue siendo del frontend: el backend no modela el cierre como ocupacion.
+
+**Evidencia:** `ReservasTest` (`laDisponibilidadDistingueReservaYBloqueo`: la reserva y el bloqueo no se
+ofrecen y figuran como `RESERVADA`/`BLOQUEADA`, la hora libre sigue disponible y la nota del bloqueo no
+se filtra); humo PS y Bash (la franja reservada/bloqueada no esta en `franjas` y si en `ocupadas` con su
+estado); E2E propietario/admin (rejilla del panel con ambas celdas y ficha publica con `aria-label`
+"reservada"/"bloqueada", captura `docs/evidencias/ui/ficha-motivos-1440.png`); backend 163/163, build
+OK, 24/24 unitarios, E2E usuario OK, a11y 34 rutas OK, contraste OK y humo 153/153 PS y 134/134 Bash
+(2026-10-18).
+

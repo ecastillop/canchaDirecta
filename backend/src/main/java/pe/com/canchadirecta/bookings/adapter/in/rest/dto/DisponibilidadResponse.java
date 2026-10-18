@@ -13,10 +13,18 @@ public record DisponibilidadResponse(
         String fecha,
         String zonaHoraria,
         long duracionMinutos,
-        List<Franja> franjas
+        List<Franja> franjas,
+        List<FranjaOcupada> ocupadas
 ) {
 
     /** Bloque libre reservable junto con el precio aplicable. */
     public record Franja(Instant inicio, Instant fin, BigDecimal precio) {
+    }
+
+    /**
+     * Tramo que no se ofrece y su motivo (`RESERVADA` o `BLOQUEADA`). Solo se expone el motivo:
+     * ni el titular ni la nota del bloqueo salen al cliente (ADR-0047).
+     */
+    public record FranjaOcupada(Instant inicio, Instant fin, String estado) {
     }
 }

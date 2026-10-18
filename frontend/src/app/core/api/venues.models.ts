@@ -102,12 +102,23 @@ export interface FranjaDisponible {
   precio: number;
 }
 
+/**
+ * Tramo que no se ofrece y por que: una reserva que retiene cupo (`RESERVADA`) o un bloqueo
+ * operativo (`BLOQUEADA`). Es todo lo que la API expone de una franja ocupada (ADR-0047).
+ */
+export interface FranjaOcupada {
+  inicio: string;
+  fin: string;
+  estado: 'RESERVADA' | 'BLOQUEADA';
+}
+
 export interface Disponibilidad {
   canchaId: number;
   fecha: string;
   zonaHoraria: string;
   duracionMinutos: number;
   franjas: FranjaDisponible[];
+  ocupadas: FranjaOcupada[];
 }
 
 export interface CocheraDisponible {

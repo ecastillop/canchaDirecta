@@ -223,7 +223,7 @@ devuelve metadatos de paginación.
 
 | Método y ruta | Roles | Request | Response | Notas |
 |---|---|---|---|---|
-| `GET /api/v1/canchas/{idCancha}/disponibilidad` | público | Query: `fecha*` (`AAAA-MM-DD`), `duracionMinutos` (def. 60) | `200 DisponibilidadResponse`: `canchaId`, `fecha`, `zonaHoraria`, `duracionMinutos`, `franjas[]` con `{inicio,fin,precio}` | 400 si falta `fecha` o el formato es inválido; 404 si la cancha no existe. Fecha en zona `America/Lima`. Ventana máxima: 365 días de anticipación. |
+| `GET /api/v1/canchas/{idCancha}/disponibilidad` | público | Query: `fecha*` (`AAAA-MM-DD`), `duracionMinutos` (def. 60) | `200 DisponibilidadResponse`: `canchaId`, `fecha`, `zonaHoraria`, `duracionMinutos`, `franjas[]` con `{inicio,fin,precio}` y `ocupadas[]` con `{inicio,fin,estado}` | 400 si falta `fecha` o el formato es inválido; 404 si la cancha no existe. Fecha en zona `America/Lima`. Ventana máxima: 365 días de anticipación. `ocupadas` informa el motivo de cada tramo no ofrecido (`RESERVADA` o `BLOQUEADA`, ADR-0047) y nunca el titular ni la nota del bloqueo; ver L-26 resuelta. |
 
 ### CocheraResource — público
 

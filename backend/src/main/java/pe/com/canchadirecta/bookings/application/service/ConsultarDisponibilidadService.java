@@ -7,6 +7,7 @@ import pe.com.canchadirecta.bookings.application.dto.CanchaInfo;
 import pe.com.canchadirecta.bookings.application.dto.DisponibilidadDia;
 import pe.com.canchadirecta.bookings.application.dto.FranjaDisponible;
 import pe.com.canchadirecta.bookings.application.dto.HorarioSemanal;
+import pe.com.canchadirecta.bookings.application.dto.OcupacionFranja;
 import pe.com.canchadirecta.bookings.application.port.in.ConsultarDisponibilidadUseCase;
 import pe.com.canchadirecta.bookings.application.port.out.ReservaRepositorio;
 import pe.com.canchadirecta.bookings.domain.model.FranjaHoraria;
@@ -86,7 +87,7 @@ public class ConsultarDisponibilidadService implements ConsultarDisponibilidadUs
         CanchaInfo cancha = reservas.buscarCancha(idCancha)
                 .orElseThrow(() -> new DomainException(ErrorCodes.NO_ENCONTRADO, "La cancha no existe."));
         if (!cancha.reservable()) {
-            return new DisponibilidadDia(idCancha, fecha, zona.getId(), duracionMinutos, List.of());
+            return new DisponibilidadDia(idCancha, fecha, zona.getId(), duracionMinutos, List.of(), List.of());
         }
 
         // Regla de agenda: mientras la cancha no tenga ningun horario activo se usa la
@@ -100,7 +101,8 @@ public class ConsultarDisponibilidadService implements ConsultarDisponibilidadUs
 
         // La ocupacion se lee para el dia local completo: las reservas pueden cruzar
         // la medianoche UTC aunque la fecha sea local.
-        List<FranjaHoraria> ocupadas = reservas.ocupacionEn(idCancha, inicioDelDia(fecha), inicioDelDia(fecha.plusDays(1)));
+        List<OcupacionFranja> ocupacion = reservas.ocupacionEn(idCancha, inicioDelDia(fecha), inicioDelDia(fecha.plusDays(1)));
+        List<FranjaHoraria> ocupadas = ocupacion.stream().map(OcupacionFranja::franja).toList();
 
         List<FranjaDisponible> franjas = new ArrayList<>();
         for (HorarioSemanal horario : horarios) {
@@ -116,7 +118,7 @@ public class ConsultarDisponibilidadService implements ConsultarDisponibilidadUs
         }
         franjas.sort(Comparator.comparing(franja -> franja.franja().inicio()));
 
-        return new DisponibilidadDia(idCancha, fecha, zona.getId(), duracionMinutos, franjas);
+        return new DisponibilidadDia(idCancha, fecha, zona.getId(), duracionMinutos, franjas, ocupacion);
     }
 
     private Instant inicioDelDia(LocalDate fecha) {

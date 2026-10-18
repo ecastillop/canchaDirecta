@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { ComparacionService } from '../../core/api/comparacion.service';
 import { EngagementApi, CalificacionesCancha } from '../../core/api/engagement.api';
 import { VenuesApi } from '../../core/api/venues.api';
-import { CanchaDetalle, FranjaDisponible, HorarioCancha } from '../../core/api/venues.models';
+import { CanchaDetalle, FranjaDisponible, FranjaOcupada, HorarioCancha } from '../../core/api/venues.models';
 import { APP_CONFIG } from '../../core/config/app-config';
 import { toApiError } from '../../core/http/api-error';
 import { CdButtonDirective } from '../../shared/ui/button/cd-button.directive';
@@ -15,6 +15,7 @@ import { CdIconComponent } from '../../shared/ui/icon/cd-icon.component';
 import { CdInputDirective } from '../../shared/ui/input/cd-input.directive';
 import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.component';
 import {
+  DESFASE_LIMA,
   DIAS,
   DIAS_CORTOS,
   MESES_LARGOS,
@@ -44,6 +45,8 @@ interface DiaSemana {
   /** La cancha tiene agenda configurada y ese dia de la semana no esta en ella. */
   cerrado: boolean;
   franjas: FranjaDisponible[];
+  /** Tramos que no se ofrecen ese dia, con su motivo (reserva o bloqueo). */
+  ocupadas: FranjaOcupada[];
 }
 
 @Component({
@@ -243,12 +246,13 @@ interface DiaSemana {
                   <h2 id="calendario-titulo" class="seccion">Disponibilidad semanal</h2>
                   <p class="cd-small cd-muted">
                     Estas son las franjas del horario configurado: elige una libre para reservar. Las
-                    franjas ocupadas o bloqueadas no tienen cupo.
+                    ocupadas indican si están reservadas o bloqueadas.
                   </p>
                 </div>
                 <div class="leyenda cd-xs cd-muted">
                   <span><i class="punto punto--libre" aria-hidden="true"></i> Libre</span>
-                  <span><i class="punto punto--ocupado" aria-hidden="true"></i> Sin cupo</span>
+                  <span><i class="punto punto--reservada" aria-hidden="true"></i> Reservada</span>
+                  <span><i class="punto punto--bloqueada" aria-hidden="true"></i> Bloqueada</span>
                   <span><i class="punto punto--cerrado" aria-hidden="true"></i> Cerrado</span>
                 </div>
               </div>
@@ -308,6 +312,14 @@ interface DiaSemana {
                               <td>
                                 @if (dia.cerrado) {
                                   <span class="celda celda--cerrada" aria-label="Cerrado">—</span>
+                                } @else if (ocupacionDe(dia, hora); as motivo) {
+                                  <span
+                                    class="celda"
+                                    [class.celda--reservada]="motivo === 'Reservada'"
+                                    [class.celda--bloqueada]="motivo === 'Bloqueada'"
+                                    [attr.aria-label]="dia.larga + ' a las ' + hora + ', ' + motivo.toLowerCase()"
+                                    >{{ motivo }}</span
+                                  >
                                 } @else {
                                   <span class="celda celda--ocupada" aria-label="Sin cupo">—</span>
                                 }
@@ -398,7 +410,7 @@ interface DiaSemana {
                   >
                     <span class="dia__nombre">{{ dia.corta }}</span>
                     <strong class="dia__numero">{{ dia.numero }}</strong>
-                    <span class="dia__cupos" aria-hidden="true">{{ dia.franjas.length }}</span>
+                    <span class="dia__cupos" aria-hidden="true">{{ dia.cerrado ? 'Cerrado' : dia.franjas.length }}</span>
                   </button>
                 }
               </div>
@@ -741,6 +753,14 @@ interface DiaSemana {
       border: 1px solid var(--cd-color-border);
       background: var(--cd-color-surface);
     }
+    .punto--reservada {
+      border: 1px solid var(--cd-color-border);
+      background: var(--cd-color-surface-alt);
+    }
+    .punto--bloqueada {
+      border: 1px solid var(--cd-color-warning);
+      background: var(--cd-color-warning-soft);
+    }
     .punto--cerrado {
       border: 1px dashed var(--cd-color-border);
       background: var(--cd-color-bg);
@@ -850,6 +870,14 @@ interface DiaSemana {
     .celda--ocupada {
       color: var(--cd-color-text-muted);
       background: var(--cd-color-bg);
+    }
+    .celda--reservada {
+      color: var(--cd-color-text);
+      background: var(--cd-color-surface-alt);
+    }
+    .celda--bloqueada {
+      color: var(--cd-color-warning);
+      background: var(--cd-color-warning-soft);
     }
     .celda--cerrada {
       color: var(--cd-color-border);
@@ -1752,6 +1780,30 @@ export class CanchaDetalleComponent implements OnInit {
     return dia.franjas.find((franja) => this.hora(franja.inicio) === hora) ?? null;
   }
 
+  /**
+   * Motivo por el que una hora no se ofrece, cuando el backend lo informo: `Reservada`
+   * (alguien tomo la franja) o `Bloqueada` (mantenimiento). Sin dato queda "Sin cupo",
+   * que es lo que se ve en las horas fuera del horario configurado.
+   */
+  protected ocupacionDe(dia: DiaSemana, hora: string): 'Reservada' | 'Bloqueada' | null {
+    if (dia.esPasado || dia.ocupadas.length === 0) {
+      return null;
+    }
+    const inicio = this.instanteDe(dia.fecha, hora);
+    const fin = new Date(inicio.getTime() + this.duracion() * 60_000);
+    const ocupada = dia.ocupadas.find(
+      (tramo) => new Date(tramo.inicio) < fin && new Date(tramo.fin) > inicio,
+    );
+    if (!ocupada) {
+      return null;
+    }
+    return ocupada.estado === 'RESERVADA' ? 'Reservada' : 'Bloqueada';
+  }
+
+  private instanteDe(fecha: string, hora: string): Date {
+    return new Date(`${fecha}T${hora}:00${DESFASE_LIMA}`);
+  }
+
   protected seleccionarFoto(indice: number): void {
     this.indiceFoto.set(indice);
   }
@@ -1849,7 +1901,7 @@ export class CanchaDetalleComponent implements OnInit {
     const resultados = await Promise.allSettled(
       fechas.map((fecha) =>
         fecha < hoy || fecha > fechaMaxima
-          ? Promise.resolve({ franjas: [] as FranjaDisponible[] })
+          ? Promise.resolve({ franjas: [] as FranjaDisponible[], ocupadas: [] as FranjaOcupada[] })
           : firstValueFrom(this.api.disponibilidad(id, fecha, this.duracion())),
       ),
     );
@@ -1857,7 +1909,8 @@ export class CanchaDetalleComponent implements OnInit {
     const dias = fechas.map((fecha, i) => {
       const resultado = resultados[i];
       const franjas = resultado.status === 'fulfilled' ? resultado.value.franjas : [];
-      return this.crearDia(fecha, franjas);
+      const ocupadas = resultado.status === 'fulfilled' ? (resultado.value.ocupadas ?? []) : [];
+      return this.crearDia(fecha, franjas, ocupadas);
     });
     this.diasSemana.set(dias);
 
@@ -1886,7 +1939,7 @@ export class CanchaDetalleComponent implements OnInit {
     this.cargandoSemana.set(false);
   }
 
-  private crearDia(fecha: string, franjas: FranjaDisponible[]): DiaSemana {
+  private crearDia(fecha: string, franjas: FranjaDisponible[], ocupadas: FranjaOcupada[]): DiaSemana {
     const partes = partesDeFecha(fecha);
     const hoy = hoyLima();
     const agenda = this.horarios();
@@ -1901,6 +1954,7 @@ export class CanchaDetalleComponent implements OnInit {
       // ofrece la ventana por defecto y el dia nunca esta "cerrado" por configuracion.
       cerrado: agenda.length > 0 && !agenda.some((horario) => horario.diaSemana === partes.indice + 1),
       franjas,
+      ocupadas,
     };
   }
 }

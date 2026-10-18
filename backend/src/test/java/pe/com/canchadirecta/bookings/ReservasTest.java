@@ -219,6 +219,43 @@ class ReservasTest {
                 .body("[0].montoCancha", equalTo(80.00f));
     }
 
+    @Test
+    void laDisponibilidadDistingueReservaYBloqueo() {
+        Long cancha = crearCancha("Cancha con motivos");
+        LocalDate fecha = LocalDate.ofInstant(base, ZONA);
+        Instant reservado = fecha.atTime(9, 0).atZone(ZONA).toInstant();
+        Instant bloqueado = fecha.atTime(12, 0).atZone(ZONA).toInstant();
+        Instant libre = fecha.atTime(15, 0).atZone(ZONA).toInstant();
+
+        crearEnComo(tokenReservante, cancha, reservado, reservado.plus(1, ChronoUnit.HOURS))
+                .then().statusCode(201);
+        given().auth().oauth2(token).contentType(ContentType.JSON)
+                .body(Map.of(
+                        "inicio", bloqueado.toString(),
+                        "fin", bloqueado.plus(1, ChronoUnit.HOURS).toString(),
+                        "motivo", "Mantenimiento de la cancha"))
+                .when().post("/api/v1/canchas/" + cancha + "/bloqueos")
+                .then().statusCode(201);
+
+        Map<String, Object> dia = disponibilidadCruda(cancha, fecha);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> ocupadas = (List<Map<String, Object>>) dia.get("ocupadas");
+        assertEquals(2, ocupadas.size(), "Debe informar la reserva y el bloqueo: " + ocupadas);
+        assertEquals("RESERVADA", estadoOcupada(ocupadas, reservado), "La reserva ocupa cupo.");
+        assertEquals("BLOQUEADA", estadoOcupada(ocupadas, bloqueado), "El bloqueo ocupa cupo.");
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> franjas = (List<Map<String, Object>>) dia.get("franjas");
+        List<String> inicios = inicios(franjas);
+        assertFalse(inicios.contains(reservado.toString()), "La reserva no debe ofrecerse.");
+        assertFalse(inicios.contains(bloqueado.toString()), "El bloqueo no debe ofrecerse.");
+        assertTrue(inicios.contains(libre.toString()), "La hora libre debe seguir disponible.");
+
+        // La disponibilidad publica informa el motivo, nunca la nota interna del bloqueo (ADR-0047).
+        assertFalse(String.valueOf(dia.get("ocupadas")).contains("Mantenimiento"),
+                "No debe filtrarse la nota del bloqueo.");
+    }
+
     // ------------------------------------------------------- disponibilidad
 
     @Test
@@ -770,8 +807,7 @@ class ReservasTest {
     }
 
     /** Consulta la disponibilidad publica y devuelve las franjas como mapas JSON. */
-    private List<Map<String, Object>> franjasCrudas(Long cancha, LocalDate fecha, int duracionMinutos) {
-        return given()
+    private List<Map<String, Object>> franjasCrudas(Long cancha, LocalDate fecha, int duracionMinutos) {        return given()
                 .queryParam("fecha", fecha.toString())
                 .queryParam("duracionMinutos", duracionMinutos)
                 .when().get("/api/v1/canchas/" + cancha + "/disponibilidad")
@@ -786,6 +822,24 @@ class ReservasTest {
 
     private static List<String> inicios(List<Map<String, Object>> franjas) {
         return franjas.stream().map(franja -> String.valueOf(franja.get("inicio"))).toList();
+    }
+
+    /** Respuesta cruda de disponibilidad: franjas libres y tramos ocupados con su motivo. */
+    private Map<String, Object> disponibilidadCruda(Long cancha, LocalDate fecha) {
+        return given()
+                .queryParam("fecha", fecha.toString())
+                .queryParam("duracionMinutos", 60)
+                .when().get("/api/v1/canchas/" + cancha + "/disponibilidad")
+                .then().statusCode(200)
+                .extract().jsonPath().getMap("$");
+    }
+
+    /** Motivo reportado para el tramo ocupado que empieza en `inicio`, o null si no figura. */
+    private static String estadoOcupada(List<Map<String, Object>> ocupadas, Instant inicio) {
+        return ocupadas.stream()
+                .filter(ocupada -> String.valueOf(ocupada.get("inicio")).equals(inicio.toString()))
+                .map(ocupada -> String.valueOf(ocupada.get("estado")))
+                .findFirst().orElse(null);
     }
 
     private static Long idDe(Response respuesta) {

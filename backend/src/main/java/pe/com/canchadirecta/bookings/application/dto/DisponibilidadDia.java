@@ -13,6 +13,7 @@ public record DisponibilidadDia(
         LocalDate fecha,
         String zonaHoraria,
         long duracionMinutos,
-        List<FranjaDisponible> franjas
+        List<FranjaDisponible> franjas,
+        List<OcupacionFranja> ocupadas
 ) {
 }
