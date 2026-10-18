@@ -68,8 +68,15 @@ public interface VenuesRepositorio {
 
     List<Cancha> listarCanchas(Long idDistrito, int limite);
 
+    // --- Favoritos del cliente -------------------------------------------------
+    List<Long> listarIdsFavoritos(Long idUsuario);
+
+    void agregarFavorito(Long idUsuario, Long idCancha);
+
+    void quitarFavorito(Long idUsuario, Long idCancha);
+
     /** Listado publico con filtros por distrito, deporte, precio maximo y texto. */
-    List<Cancha> buscarCanchas(CatalogoCancha.Filtro filtro);
+    List<CatalogoCancha.Resumen> buscarCanchas(CatalogoCancha.Filtro filtro);
 
     long contarCanchas(CatalogoCancha.Filtro filtro);
 

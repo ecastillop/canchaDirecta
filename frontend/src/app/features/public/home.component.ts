@@ -4,9 +4,11 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '../../core/auth/auth.store';
+import { FavoritosService } from '../../core/api/favoritos.service';
 import { VenuesApi } from '../../core/api/venues.api';
-import { CanchaDetalle, Distrito, Item } from '../../core/api/venues.models';
+import { Cancha, Distrito, Item } from '../../core/api/venues.models';
 import { CdButtonDirective } from '../../shared/ui/button/cd-button.directive';
+import { CdIconComponent } from '../../shared/ui/icon/cd-icon.component';
 import { CdInputDirective } from '../../shared/ui/input/cd-input.directive';
 
 interface DeporteTile {
@@ -30,7 +32,7 @@ const EMOJIS: Record<string, string> = {
 
 @Component({
   selector: 'app-home',
-  imports: [ReactiveFormsModule, RouterLink, CurrencyPipe, DecimalPipe, CdButtonDirective, CdInputDirective],
+  imports: [ReactiveFormsModule, RouterLink, CurrencyPipe, DecimalPipe, CdButtonDirective, CdIconComponent, CdInputDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="hero">
@@ -152,18 +154,39 @@ const EMOJIS: Record<string, string> = {
         } @else {
           <div class="destacadas">
             @for (cancha of destacadas(); track cancha.id) {
-              <a [routerLink]="['/canchas', cancha.id]" class="tarjeta-espacio">
+              <article class="tarjeta-espacio">
                 <div [class]="'tarjeta-espacio__media tarjeta-espacio__media--' + claseDeporte(cancha)">
-                  @if (cancha.fotos.length) {
-                    <img [src]="cancha.fotos[0].url" [alt]="'Foto de ' + cancha.nombre" (error)="ocultarImagen($event)" />
-                  }
-                  <span class="tarjeta-espacio__deporte">{{ cancha.deportes[0]?.nombre ?? 'Deporte' }}</span>
-                  <span class="tarjeta-espacio__corazon" aria-hidden="true">♡</span>
+                  <a
+                    class="tarjeta-espacio__media-link"
+                    [routerLink]="['/canchas', cancha.id]"
+                    [attr.aria-label]="'Ver ' + cancha.nombre"
+                  >
+                    @if (cancha.fotoPrincipal) {
+                      <img [src]="cancha.fotoPrincipal" [alt]="'Foto de ' + cancha.nombre" (error)="ocultarImagen($event)" />
+                    }
+                    <span class="tarjeta-espacio__deporte">{{ cancha.deportes[0] ?? 'Cancha' }}</span>
+                  </a>
+                  <button
+                    type="button"
+                    class="tarjeta-espacio__corazon"
+                    [class.activo]="favoritos.tiene(cancha.id)"
+                    (click)="alternarFavorito(cancha, $event)"
+                    [attr.aria-label]="favoritos.tiene(cancha.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+                    [attr.aria-pressed]="favoritos.tiene(cancha.id)"
+                  >
+                    {{ favoritos.tiene(cancha.id) ? '♥' : '♡' }}
+                  </button>
                 </div>
-                <div class="tarjeta-espacio__cuerpo">
+                <a class="tarjeta-espacio__cuerpo" [routerLink]="['/canchas', cancha.id]">
                   <div class="tarjeta-espacio__meta">
-                    <span>⌖ {{ cancha.distrito.nombre }}</span>
-                    <span class="rating">★ {{ cancha.reputacion.total ? (cancha.reputacion.promedio | number: '1.1-1') : 'Nuevo' }}</span>
+                    <span><cd-icon name="pin" [size]="13" /> {{ cancha.distrito }}</span>
+                    <span class="rating">
+                      <cd-icon name="star" [size]="13" />
+                      {{ cancha.totalCalificaciones ? (cancha.promedioCalificacion | number: '1.1-1') : 'Nuevo' }}
+                      @if (cancha.totalCalificaciones) {
+                        <small>({{ cancha.totalCalificaciones }})</small>
+                      }
+                    </span>
                   </div>
                   <h3>{{ cancha.nombre }}</h3>
                   <p class="cd-small cd-muted">{{ cancha.establecimiento }}</p>
@@ -171,8 +194,8 @@ const EMOJIS: Record<string, string> = {
                     <span>Desde <strong>{{ cancha.precioBase | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</strong> <small>/ hora</small></span>
                     <span class="flecha" aria-hidden="true">→</span>
                   </div>
-                </div>
-              </a>
+                </a>
+              </article>
             }
           </div>
         }
@@ -638,6 +661,10 @@ const EMOJIS: Record<string, string> = {
       height: 100%;
       object-fit: cover;
     }
+    .tarjeta-espacio__media-link {
+      display: block;
+      height: 100%;
+    }
     .tarjeta-espacio__deporte {
       position: absolute;
       left: 12px;
@@ -657,15 +684,23 @@ const EMOJIS: Record<string, string> = {
       place-items: center;
       width: 32px;
       height: 32px;
+      border: 0;
       border-radius: 8px;
       background: color-mix(in srgb, var(--cd-color-surface) 90%, transparent);
       color: var(--cd-color-danger);
       font-size: 17px;
+      cursor: pointer;
+    }
+    .tarjeta-espacio__corazon.activo {
+      background: var(--cd-color-danger);
+      color: #fff;
     }
     .tarjeta-espacio__cuerpo {
       display: grid;
       gap: 7px;
       padding: 16px 18px 18px;
+      color: inherit;
+      text-decoration: none;
     }
     .tarjeta-espacio__meta {
       display: flex;
@@ -674,6 +709,11 @@ const EMOJIS: Record<string, string> = {
       gap: 8px;
       color: var(--cd-color-text-muted);
       font-size: 11px;
+    }
+    .tarjeta-espacio__meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
     .rating {
       color: var(--cd-color-warning);
@@ -882,10 +922,11 @@ export class HomeComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   protected readonly auth = inject(AuthStore);
+  protected readonly favoritos = inject(FavoritosService);
 
   protected readonly distritos = signal<Distrito[]>([]);
   protected readonly deportes = signal<Item[]>([]);
-  protected readonly destacadas = signal<CanchaDetalle[]>([]);
+  protected readonly destacadas = signal<Cancha[]>([]);
   protected readonly cargandoDestacadas = signal(true);
   protected readonly hoy = new Date().toISOString().slice(0, 10);
 
@@ -922,8 +963,18 @@ export class HomeComponent implements OnInit {
     void this.router.navigate(['/canchas'], { queryParams: { idDeporte } });
   }
 
-  protected claseDeporte(cancha: CanchaDetalle): string {
-    return this.claseDeporteNombre(cancha.deportes[0]?.nombre ?? '');
+  protected claseDeporte(cancha: Cancha): string {
+    return this.claseDeporteNombre(cancha.deportes[0] ?? '');
+  }
+
+  protected async alternarFavorito(cancha: Cancha, event: Event): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this.auth.isAuthenticated()) {
+      void this.router.navigate(['/auth/login'], { queryParams: { redirect: this.router.url } });
+      return;
+    }
+    await this.favoritos.alternar(cancha.id);
   }
 
   protected ocultarImagen(event: Event): void {
@@ -957,11 +1008,14 @@ export class HomeComponent implements OnInit {
     }
 
     try {
-      const pagina = await firstValueFrom(this.venues.canchasPaginadas({ limite: 6 }));
-      const detalles = await Promise.all(
-        pagina.items.slice(0, 3).map((cancha) => firstValueFrom(this.venues.detalle(cancha.id)).catch(() => null)),
+      const pagina = await firstValueFrom(this.venues.canchasPaginadas({ limite: 12 }));
+      const ordenadas = [...pagina.items].sort(
+        (a, b) =>
+          b.promedioCalificacion - a.promedioCalificacion ||
+          b.totalCalificaciones - a.totalCalificaciones ||
+          a.precioBase - b.precioBase,
       );
-      this.destacadas.set(detalles.filter((detalle): detalle is CanchaDetalle => detalle !== null));
+      this.destacadas.set(ordenadas.slice(0, 3));
     } catch {
       this.destacadas.set([]);
     } finally {

@@ -104,4 +104,16 @@ export class VenuesApi {
       params: new HttpParams().set('inicio', inicio).set('fin', fin),
     });
   }
+
+  favoritos(): Observable<number[]> {
+    return this.http.get<number[]>(apiUrl('/favoritos'));
+  }
+
+  agregarFavorito(idCancha: number): Observable<void> {
+    return this.http.post<void>(apiUrl(`/favoritos/${idCancha}`), {});
+  }
+
+  quitarFavorito(idCancha: number): Observable<void> {
+    return this.http.delete<void>(apiUrl(`/favoritos/${idCancha}`));
+  }
 }

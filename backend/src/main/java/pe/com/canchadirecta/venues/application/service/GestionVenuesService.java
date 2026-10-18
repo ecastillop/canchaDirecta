@@ -152,6 +152,27 @@ public class GestionVenuesService implements GestionVenuesUseCase {
         }
     }
 
+    @Override
+    public List<Long> listarFavoritos(Long idUsuario) {
+        return repositorio.listarIdsFavoritos(idUsuario);
+    }
+
+    @Override
+    @Transactional
+    public void agregarFavorito(Long idUsuario, Long idCancha) {
+        Cancha cancha = exigirCancha(idCancha);
+        if (!cancha.esReservable()) {
+            throw new DomainException(ErrorCodes.CONFLICTO, "La cancha no esta disponible.");
+        }
+        repositorio.agregarFavorito(idUsuario, idCancha);
+    }
+
+    @Override
+    @Transactional
+    public void quitarFavorito(Long idUsuario, Long idCancha) {
+        repositorio.quitarFavorito(idUsuario, idCancha);
+    }
+
     private Establecimiento exigirEstablecimiento(Long idEstablecimiento) {
         if (idEstablecimiento == null) {
             throw new DomainException(ErrorCodes.DATOS_INVALIDOS, "El establecimiento es obligatorio.");

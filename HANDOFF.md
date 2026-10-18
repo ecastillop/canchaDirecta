@@ -43,7 +43,10 @@
   pagina; catalogo 12) con ancho fijo para evitar saltos. El panel **descubre los establecimientos
   con `GET /establecimientos/mios`** (sin depender del ID manual ni de localStorage), permite cambiar entre varios
   y la vista publica se abre en la misma pestaña, con boton “Volver a configurar” y galeria
-  completa (todas las miniaturas, visor y fallback para URLs rotas). El registro **auto-inicia sesion y vuelve a la ruta
+  completa (todas las miniaturas, visor y fallback para URLs rotas). El catalogo muestra
+  **distrito, foto, reputacion con numero de opiniones, servicios y favoritos persistidos**
+  (`GET/POST/DELETE /favoritos`) y una pagina `/favoritos`; comparar es un boton por tarjeta.
+  Los paneles de propietario y administracion usan **sidebar lateral**. El registro **auto-inicia sesion y vuelve a la ruta
   original** (reserva/mis reservas). Un `PLATFORM_ADMIN` sin rol `OWNER` ya no ve el flujo de
   solicitud: se le indica que asigne `OWNER` desde Usuarios → Roles o use Supervision. El perfil
   permite **reenviar la verificacion de correo**.
@@ -337,6 +340,7 @@ Ver `docs/DECISIONES_ARQUITECTURA.md`.
 | 2026-10-17 | Cierre documental | **OK** (`docs/ACTA_CIERRE.md`; E-42 registrado en `RESULTADOS_PRUEBAS.md`) |
 | 2026-10-17 | Fase 1 de mejoras: `/establecimientos/mios`, auto-login tras registro, paginador estable, vista previa con retorno y galería completa, textos de agenda | **PASS** (backend 144/144, humo 112/112, unitarios 15/15, E2E propietario/admin 28/28, a11y 13 rutas OK) |
 | 2026-10-18 | Rediseño de fusión: tokens, fuentes locales, shell, home, catálogo, detalle y login | **PASS** (build OK, 15/15 unitarios, E2E usuario 14/14, E2E propietario/admin 28/28, a11y 13 rutas OK, sin overflow a 390px) |
+| 2026-10-18 | Favoritos + catálogo enriquecido + paneles con sidebar | **PASS** (backend 146/146, humo 112/112, build OK, E2E usuario 15/15, E2E propietario/admin 28/28, a11y 14 rutas OK) |
 
 Resto de la matriz de pruebas (?13 del prompt): **NOT RUN**.
 

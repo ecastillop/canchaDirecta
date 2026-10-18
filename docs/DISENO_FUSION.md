@@ -33,8 +33,17 @@
 - Comparación de hasta 4 canchas.
 - Reserva, pago demo, panel y administración existentes.
 
+## Integrado después de la primera iteración
+
+- Favoritos persistidos por usuario (`/favoritos`) con corazón en las tarjetas.
+- Catálogo con distrito, foto principal, reputación y número de opiniones.
+- Comparar como botón por tarjeta, manteniendo la barra de comparación.
+- Iconos SVG propios (ubicación, estrella, corazón, calendario, servicios).
+- Sidebar lateral en los paneles de propietario y administración.
+- `Servicios incluidos` visible en el detalle de la cancha.
+
 ## Fuera de alcance de esta fase
 
-- Portar las pantallas de cliente/propietario/administrador del standalone.
+- Portar las pantallas completas de cliente/propietario/administrador del standalone.
 - Sustituir la fuente de datos real por el almacenamiento local del prototipo.
 - Modo oscuro dedicado (la paleta "Nocturno" es un primer acercamiento).

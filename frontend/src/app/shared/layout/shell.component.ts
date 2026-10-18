@@ -42,6 +42,7 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
           <a routerLink="/canchas" routerLinkActive="activo">Espacios</a>
           @if (auth.isAuthenticated()) {
             <a routerLink="/mis-reservas" routerLinkActive="activo">Mis reservas</a>
+            <a routerLink="/favoritos" routerLinkActive="activo">Favoritos</a>
             <a routerLink="/reclamos" routerLinkActive="activo">Reclamos</a>
           }
           @if (auth.isOwner() || auth.isAdmin()) {
@@ -84,6 +85,7 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
           <a routerLink="/canchas">Espacios</a>
           @if (auth.isAuthenticated()) {
             <a routerLink="/mis-reservas">Mis reservas</a>
+            <a routerLink="/favoritos">Favoritos</a>
             <a routerLink="/reclamos">Reclamos</a>
             <a routerLink="/notificaciones">Notificaciones</a>
             <a routerLink="/perfil">Mi perfil</a>

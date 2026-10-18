@@ -1,15 +1,18 @@
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ComparacionService } from '../../core/api/comparacion.service';
+import { FavoritosService } from '../../core/api/favoritos.service';
 import { VenuesApi } from '../../core/api/venues.api';
+import { AuthStore } from '../../core/auth/auth.store';
 import { Cancha, Distrito, Item } from '../../core/api/venues.models';
 import { toApiError } from '../../core/http/api-error';
 import { CdButtonDirective } from '../../shared/ui/button/cd-button.directive';
 import { CdEmptyStateComponent } from '../../shared/ui/states/cd-empty-state.component';
 import { CdErrorStateComponent } from '../../shared/ui/states/cd-error-state.component';
+import { CdIconComponent } from '../../shared/ui/icon/cd-icon.component';
 import { CdInputDirective } from '../../shared/ui/input/cd-input.directive';
 import { CdPaginatorComponent } from '../../shared/ui/pagination/cd-paginator.component';
 import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.component';
@@ -20,11 +23,13 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
     ReactiveFormsModule,
     RouterLink,
     CurrencyPipe,
+    DecimalPipe,
     CdButtonDirective,
     CdInputDirective,
     CdSkeletonComponent,
     CdEmptyStateComponent,
     CdErrorStateComponent,
+    CdIconComponent,
     CdPaginatorComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -121,41 +126,60 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
             @for (cancha of canchas(); track cancha.id) {
               <article class="tarjeta-cancha">
                 <div [class]="'tarjeta-cancha__arte tarjeta-cancha__arte--' + claseColor(cancha)">
-                  <span class="tarjeta-cancha__deporte">Cancha</span>
+                  @if (cancha.fotoPrincipal) {
+                    <img class="tarjeta-cancha__foto" [src]="cancha.fotoPrincipal" [alt]="'Foto de ' + cancha.nombre" loading="lazy" />
+                  }
+                  <span class="tarjeta-cancha__deporte">{{ cancha.deportes[0] ?? 'Cancha' }}</span>
                   <span class="tarjeta-cancha__iniciales" aria-hidden="true">{{ iniciales(cancha.nombre) }}</span>
                   <span class="tarjeta-cancha__linea" aria-hidden="true"></span>
-                  <label class="comparar">
-                    <input
-                      type="checkbox"
-                      [checked]="comparacion.tiene(cancha.id)"
-                      (change)="comparar(cancha.id)"
-                      [attr.aria-label]="'Comparar ' + cancha.nombre"
-                    />
-                    <span>Comparar</span>
-                  </label>
+                  <button
+                    type="button"
+                    class="tarjeta-cancha__corazon"
+                    [class.activo]="favoritos.tiene(cancha.id)"
+                    (click)="alternarFavorito(cancha, $event)"
+                    [attr.aria-label]="favoritos.tiene(cancha.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+                    [attr.aria-pressed]="favoritos.tiene(cancha.id)"
+                  >
+                    {{ favoritos.tiene(cancha.id) ? '♥' : '♡' }}
+                  </button>
                 </div>
                 <div class="tarjeta-cancha__cuerpo">
                   <div class="tarjeta-cancha__meta">
-                    <span>Capacidad {{ cancha.capacidad }}</span>
-                    <span class="cd-badge" [class.cd-badge--success]="cancha.estado === 'ACTIVA'">
-                      {{ cancha.estado === 'ACTIVA' ? 'Disponible' : cancha.estado }}
+                    <span><cd-icon name="pin" [size]="13" /> {{ cancha.distrito }}</span>
+                    <span class="rating">
+                      <cd-icon name="star" [size]="13" />
+                      {{ cancha.totalCalificaciones ? (cancha.promedioCalificacion | number: '1.1-1') : 'Nuevo' }}
+                      @if (cancha.totalCalificaciones) {
+                        <small>({{ cancha.totalCalificaciones }})</small>
+                      }
                     </span>
                   </div>
                   <h3>{{ cancha.nombre }}</h3>
-                  <p class="cd-small cd-muted">Reserva por hora y elige tu franja en el calendario semanal.</p>
+                  <p class="cd-small cd-muted">Capacidad {{ cancha.capacidad }} · {{ cancha.establecimiento }}</p>
                   <div class="tarjeta-cancha__pie">
                     <span class="precio">
                       <small>Desde</small>
                       <strong>{{ cancha.precioBase | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</strong>
                       <small>/ hora</small>
                     </span>
-                    <a
-                      [routerLink]="['/canchas', cancha.id]"
-                      class="cd-btn cd-btn--secondary cd-btn--sm"
-                      [attr.aria-label]="'Ver detalle y horarios de ' + cancha.nombre"
-                    >
-                      Ver horarios <span aria-hidden="true">→</span>
-                    </a>
+                    <div class="tarjeta-cancha__acciones">
+                      <button
+                        type="button"
+                        class="comparar-btn"
+                        [class.activo]="comparacion.tiene(cancha.id)"
+                        (click)="comparar(cancha.id)"
+                        [attr.aria-pressed]="comparacion.tiene(cancha.id)"
+                      >
+                        {{ comparacion.tiene(cancha.id) ? 'Comparando' : 'Comparar' }}
+                      </button>
+                      <a
+                        [routerLink]="['/canchas', cancha.id]"
+                        class="cd-btn cd-btn--secondary cd-btn--sm"
+                        [attr.aria-label]="'Ver detalle y horarios de ' + cancha.nombre"
+                      >
+                        Ver horarios <span aria-hidden="true">→</span>
+                      </a>
+                    </div>
                   </div>
                   <small class="cd-muted">4 horas: {{ cancha.precioBase * 4 | currency: 'PEN' : 'symbol-narrow' : '1.0-0' }}</small>
                 </div>
@@ -362,6 +386,14 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       line-height: 1;
       letter-spacing: -0.08em;
     }
+    .tarjeta-cancha__foto {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
     .tarjeta-cancha__linea {
       position: absolute;
       inset: 14% 12%;
@@ -369,24 +401,49 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       border-radius: 50%;
       transform: rotate(-8deg);
     }
-    .comparar {
+    .tarjeta-cancha__corazon {
       position: absolute;
       top: 12px;
       right: 12px;
       z-index: 3;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 9px;
-      border-radius: var(--cd-radius-pill);
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 9px;
       background: color-mix(in srgb, var(--cd-color-surface) 92%, transparent);
-      color: var(--cd-color-text);
-      font-size: 10px;
-      font-weight: 700;
+      color: var(--cd-color-danger);
+      font-size: 18px;
       cursor: pointer;
     }
-    .comparar input {
-      accent-color: var(--cd-color-teal, #167a70);
+    .tarjeta-cancha__corazon.activo {
+      background: var(--cd-color-danger);
+      color: #fff;
+    }
+    .tarjeta-cancha__acciones {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .comparar-btn {
+      padding: 6px 9px;
+      border: 1px solid var(--cd-color-border);
+      border-radius: var(--cd-radius-pill);
+      background: var(--cd-color-surface);
+      color: var(--cd-color-text-muted);
+      font-size: 10px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .comparar-btn.activo {
+      border-color: var(--cd-color-teal, #167a70);
+      color: var(--cd-color-teal, #167a70);
+      background: color-mix(in srgb, var(--cd-color-teal, #167a70) 10%, transparent);
+    }
+    .rating small {
+      font-size: 9px;
     }
     .tarjeta-cancha__cuerpo {
       display: grid;
@@ -400,6 +457,11 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       gap: 8px;
       color: var(--cd-color-text-muted);
       font-size: 11px;
+    }
+    .tarjeta-cancha__meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
     .tarjeta-cancha h3 {
       margin: 0;
@@ -482,6 +544,8 @@ export class CatalogoComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly comparacion = inject(ComparacionService);
+  protected readonly favoritos = inject(FavoritosService);
+  protected readonly auth = inject(AuthStore);
 
   protected readonly canchas = signal<Cancha[]>([]);
   protected readonly distritos = signal<Distrito[]>([]);
@@ -579,6 +643,16 @@ export class CatalogoComponent implements OnInit {
       return;
     }
     this.comparacion.toggle(id);
+  }
+
+  protected async alternarFavorito(cancha: Cancha, event: Event): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this.auth.isAuthenticated()) {
+      void this.router.navigate(['/auth/login'], { queryParams: { redirect: this.router.url } });
+      return;
+    }
+    await this.favoritos.alternar(cancha.id);
   }
 
   protected irAComparar(): void {

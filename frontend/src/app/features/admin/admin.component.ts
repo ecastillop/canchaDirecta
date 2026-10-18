@@ -748,6 +748,100 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
         grid-template-columns: 1fr 1fr 1fr 1fr;
       }
     }
+
+    /* Panel de administración con sidebar */
+    .cd-page {
+      display: grid;
+      grid-template-columns: 232px minmax(0, 1fr);
+      align-items: start;
+      max-width: none;
+      width: 100%;
+      padding: 0;
+      background: var(--cd-color-bg);
+    }
+    .cd-page__header {
+      grid-column: 1 / -1;
+      margin: 0;
+      padding: 30px clamp(20px, 3vw, 42px) 14px;
+      background: var(--cd-color-surface);
+      border-bottom: 1px solid var(--cd-color-border);
+    }
+    .cd-page__title {
+      font-size: clamp(28px, 3vw, 40px);
+    }
+    .cd-page > :not(header):not(.tabs) {
+      grid-column: 2;
+      min-width: 0;
+      margin: 0;
+      padding: 20px clamp(20px, 3vw, 42px);
+    }
+    .cd-page > :not(header):not(.tabs):last-child {
+      padding-bottom: 50px;
+    }
+    .tabs {
+      grid-column: 1;
+      grid-row: 2 / span 30;
+      position: sticky;
+      top: var(--cd-topbar-height);
+      align-self: start;
+      display: grid;
+      gap: 4px;
+      min-height: calc(100dvh - var(--cd-topbar-height));
+      margin: 0;
+      padding: 18px 12px;
+      border: 0;
+      border-right: 1px solid var(--cd-color-border);
+      border-radius: 0;
+      background: var(--cd-color-surface);
+    }
+    .tabs button {
+      width: 100%;
+      padding: 11px 12px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--cd-color-text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+    }
+    .tabs button:hover {
+      background: var(--cd-color-surface-alt);
+      color: var(--cd-color-text);
+    }
+    .tabs button.activo {
+      background: var(--cd-color-primary);
+      color: var(--cd-color-on-primary);
+    }
+    @media (max-width: 900px) {
+      .cd-page {
+        grid-template-columns: 1fr;
+      }
+      .cd-page__header {
+        padding-bottom: 12px;
+      }
+      .tabs {
+        position: static;
+        grid-column: 1;
+        grid-row: auto;
+        display: flex;
+        gap: 6px;
+        min-height: 0;
+        overflow-x: auto;
+        padding: 10px 14px;
+        border-right: 0;
+        border-bottom: 1px solid var(--cd-color-border);
+      }
+      .tabs button {
+        width: auto;
+        flex: 0 0 auto;
+        white-space: nowrap;
+      }
+      .cd-page > :not(header):not(.tabs) {
+        grid-column: 1;
+      }
+    }
   `,
 })
 export class AdminComponent implements OnInit {

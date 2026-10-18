@@ -431,10 +431,53 @@ public class VenuesPersistenciaAdapter implements VenuesRepositorio {
     }
 
     @Override
-    public List<Cancha> buscarCanchas(CatalogoCancha.Filtro filtro) {
+    public List<Long> listarIdsFavoritos(Long idUsuario) {
+        List<?> filas = em.createNativeQuery("SELECT id_cancha FROM favorito WHERE id_usuario = :idUsuario "
+                        + "ORDER BY fecha_registro DESC")
+                .setParameter("idUsuario", idUsuario.intValue())
+                .getResultList();
+        List<Long> ids = new ArrayList<>(filas.size());
+        for (Object fila : filas) {
+            ids.add(((Number) fila).longValue());
+        }
+        return ids;
+    }
+
+    @Override
+    @Transactional
+    public void agregarFavorito(Long idUsuario, Long idCancha) {
+        em.createNativeQuery("INSERT IGNORE INTO favorito (id_usuario, id_cancha) "
+                        + "VALUES (:idUsuario, :idCancha)")
+                .setParameter("idUsuario", idUsuario.intValue())
+                .setParameter("idCancha", idCancha.intValue())
+                .executeUpdate();
+    }
+
+    @Override
+    @Transactional
+    public void quitarFavorito(Long idUsuario, Long idCancha) {
+        em.createNativeQuery("DELETE FROM favorito WHERE id_usuario = :idUsuario AND id_cancha = :idCancha")
+                .setParameter("idUsuario", idUsuario.intValue())
+                .setParameter("idCancha", idCancha.intValue())
+                .executeUpdate();
+    }
+
+    @Override
+    public List<CatalogoCancha.Resumen> buscarCanchas(CatalogoCancha.Filtro filtro) {
         StringBuilder sql = new StringBuilder(
-                "SELECT c.id_cancha, c.id_establecimiento, c.nombre, c.capacidad, c.precio_base, c.estado "
-                        + "FROM cancha c JOIN establecimiento e ON e.id_establecimiento = c.id_establecimiento "
+                "SELECT c.id_cancha, c.id_establecimiento, c.nombre, c.capacidad, c.precio_base, c.estado, "
+                        + "e.id_distrito, d.nombre, e.nombre, "
+                        + "(SELECT f.url FROM foto_cancha f WHERE f.id_cancha = c.id_cancha "
+                        + "ORDER BY f.principal DESC, f.orden ASC LIMIT 1), "
+                        + "COALESCE((SELECT AVG(cal.puntaje) FROM calificacion cal "
+                        + "JOIN reserva r ON r.id_reserva = cal.id_reserva WHERE r.id_cancha = c.id_cancha), 0), "
+                        + "(SELECT COUNT(*) FROM calificacion cal "
+                        + "JOIN reserva r ON r.id_reserva = cal.id_reserva WHERE r.id_cancha = c.id_cancha), "
+                        + "(SELECT GROUP_CONCAT(dep.nombre ORDER BY dep.nombre SEPARATOR ',') FROM cancha_deporte cd "
+                        + "JOIN deporte dep ON dep.id_deporte = cd.id_deporte WHERE cd.id_cancha = c.id_cancha) "
+                        + "FROM cancha c "
+                        + "JOIN establecimiento e ON e.id_establecimiento = c.id_establecimiento "
+                        + "JOIN distrito d ON d.id_distrito = e.id_distrito "
                         + "WHERE c.estado = 'ACTIVA' AND e.estado = 'ACTIVO'");
         if (filtro.idDistrito() != null) {
             sql.append(" AND e.id_distrito = :idDistrito");
@@ -473,9 +516,9 @@ public class VenuesPersistenciaAdapter implements VenuesRepositorio {
         query.setMaxResults(Math.max(1, Math.min(filtro.limite(), 100)));
         query.setFirstResult(filtro.desplazamiento());
 
-        List<Cancha> canchas = new ArrayList<>();
+        List<CatalogoCancha.Resumen> canchas = new ArrayList<>();
         for (Object fila : query.getResultList()) {
-            canchas.add(aCancha((Object[]) fila));
+            canchas.add(aResumen((Object[]) fila));
         }
         return canchas;
     }
@@ -529,6 +572,27 @@ public class VenuesPersistenciaAdapter implements VenuesRepositorio {
                 ((Number) f[3]).intValue(),
                 (BigDecimal) f[4],
                 Cancha.Estado.valueOf((String) f[5]));
+    }
+
+    private static CatalogoCancha.Resumen aResumen(Object[] f) {
+        String deportes = (String) f[12];
+        List<String> nombresDeporte = deportes == null || deportes.isBlank()
+                ? List.of()
+                : java.util.Arrays.stream(deportes.split(",")).map(String::trim).toList();
+        return new CatalogoCancha.Resumen(
+                ((Number) f[0]).longValue(),
+                ((Number) f[1]).longValue(),
+                (String) f[2],
+                ((Number) f[3]).intValue(),
+                (BigDecimal) f[4],
+                (String) f[5],
+                ((Number) f[6]).longValue(),
+                (String) f[7],
+                (String) f[8],
+                (String) f[9],
+                new BigDecimal(((Number) f[10]).toString()),
+                ((Number) f[11]).intValue(),
+                nombresDeporte);
     }
 
     @Override

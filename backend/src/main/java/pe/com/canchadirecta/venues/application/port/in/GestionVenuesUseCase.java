@@ -26,6 +26,13 @@ public interface GestionVenuesUseCase {
     /** Establecimientos del usuario autenticado, para que el panel no dependa del ID manual. */
     List<Establecimiento> listarEstablecimientosPropios(Long idUsuario);
 
+    /** IDs de canchas favoritas del usuario. */
+    List<Long> listarFavoritos(Long idUsuario);
+
+    void agregarFavorito(Long idUsuario, Long idCancha);
+
+    void quitarFavorito(Long idUsuario, Long idCancha);
+
     /** Edita los datos de un establecimiento propio (CU04.1). */
     Establecimiento actualizarEstablecimiento(Long idUsuario, Long idEstablecimiento,
                                               ActualizarEstablecimientoCommand command);

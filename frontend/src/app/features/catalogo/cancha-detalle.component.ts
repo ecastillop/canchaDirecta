@@ -11,6 +11,7 @@ import { toApiError } from '../../core/http/api-error';
 import { CdButtonDirective } from '../../shared/ui/button/cd-button.directive';
 import { CdEmptyStateComponent } from '../../shared/ui/states/cd-empty-state.component';
 import { CdErrorStateComponent } from '../../shared/ui/states/cd-error-state.component';
+import { CdIconComponent } from '../../shared/ui/icon/cd-icon.component';
 import { CdInputDirective } from '../../shared/ui/input/cd-input.directive';
 import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.component';
 
@@ -87,6 +88,7 @@ function etiquetaDeSemana(inicio: string): string {
     DatePipe,
     DecimalPipe,
     CdButtonDirective,
+    CdIconComponent,
     CdInputDirective,
     CdSkeletonComponent,
     CdEmptyStateComponent,
@@ -135,12 +137,13 @@ function etiquetaDeSemana(inicio: string): string {
             </div>
             <h1 class="cd-page__title">{{ c.nombre }}</h1>
             <p class="ubicacion">
+              <cd-icon name="pin" [size]="15" />
               {{ c.establecimiento }} · {{ c.distrito.nombre }}, {{ c.distrito.provincia }}
             </p>
             <p class="cd-small cd-muted">{{ c.direccion }}@if (c.referencia) { · {{ c.referencia }} }</p>
           </div>
           <div class="puntuacion" [attr.aria-label]="'Reputación ' + c.reputacion.promedio + ' de 5'">
-            <span class="puntuacion__valor"><span class="estrella" aria-hidden="true">★</span> {{ c.reputacion.promedio | number: '1.1-1' }}</span>
+            <span class="puntuacion__valor"><cd-icon name="star" [size]="17" /> {{ c.reputacion.promedio | number: '1.1-1' }}</span>
             <span class="cd-xs cd-muted">
               {{ c.reputacion.total ? c.reputacion.total + ' calificaciones' : 'Nuevo en CanchaDirecta' }}
             </span>
@@ -253,10 +256,10 @@ function etiquetaDeSemana(inicio: string): string {
 
             @if (c.caracteristicas.length) {
               <section class="bloque">
-                <h2 class="seccion">Características</h2>
+                <h2 class="seccion">Servicios incluidos</h2>
                 <ul class="caracteristicas">
                   @for (car of c.caracteristicas; track car.nombre) {
-                    <li><strong>{{ car.nombre }}:</strong> {{ car.valor }}</li>
+                    <li><span class="check" aria-hidden="true"><cd-icon name="check" [size]="12" /></span><span><strong>{{ car.nombre }}</strong>@if (car.valor) { · {{ car.valor }}}</span></li>
                   }
                 </ul>
               </section>
@@ -930,6 +933,9 @@ function etiquetaDeSemana(inicio: string): string {
       margin-bottom: 2px;
     }
     .ubicacion {
+      display: flex;
+      align-items: center;
+      gap: 5px;
       color: var(--cd-color-text);
       font-weight: 600;
       font-size: var(--cd-text-sm);
@@ -1464,6 +1470,36 @@ function etiquetaDeSemana(inicio: string): string {
     }
     .bloque h2.seccion::before {
       display: none;
+    }
+    .caracteristicas {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .caracteristicas li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border: 1px solid var(--cd-color-border);
+      border-radius: var(--cd-radius-sm);
+      background: var(--cd-color-surface-alt);
+      font-size: 13px;
+    }
+    .check {
+      display: grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--cd-color-success-soft);
+      color: var(--cd-color-success);
+      font-size: 11px;
+      font-weight: 900;
     }
     .reserva {
       position: sticky;

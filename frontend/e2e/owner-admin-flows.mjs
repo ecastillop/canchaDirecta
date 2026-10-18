@@ -122,7 +122,7 @@ try {
   await page.getByRole('button', { name: 'Salir' }).click();
   await login(owner.correo, owner.password);
   await page.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
-  await page.getByRole('heading', { name: 'Panel del propietario' }).waitFor({ timeout: 20000 });
+  await page.getByRole('heading', { name: 'Gestiona tus espacios' }).waitFor({ timeout: 20000 });
   ok('panel del propietario accesible tras validacion');
 
   const nombreEst = `Establecimiento E2E ${stamp}`;
@@ -226,7 +226,7 @@ try {
   ok('cochera creada desde el panel');
 
   // Agenda
-  const navPanel = page.getByRole('navigation', { name: 'Secciones del panel' });
+  const navPanel = page.getByRole('navigation', { name: 'Menú del panel del propietario' });
   await navPanel.getByRole('link', { name: 'Agenda' }).click();
   await page.getByRole('heading', { name: 'Horario semanal recurrente' }).waitFor();
   await page.getByRole('textbox', { name: 'Inicio', exact: true }).fill('18:00');

@@ -51,6 +51,7 @@ const rutas = [
   '/canchas',
   '/canchas/1',
   '/mis-reservas',
+  '/favoritos',
   '/perfil',
   '/notificaciones',
   '/reclamos',

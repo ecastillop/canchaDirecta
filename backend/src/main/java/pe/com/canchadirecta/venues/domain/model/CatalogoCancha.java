@@ -52,6 +52,24 @@ public final class CatalogoCancha {
     }
 
     /** Pagina de canchas con el total que cumple el filtro (para paginacion numerica). */
-    public record Pagina(List<Cancha> contenido, long total) {
+    public record Pagina(List<Resumen> contenido, long total) {
+    }
+
+    /** Fila enriquecida del catalogo: incluye distrito, foto, servicios y reputacion. */
+    public record Resumen(
+            Long id,
+            Long idEstablecimiento,
+            String nombre,
+            int capacidad,
+            BigDecimal precioBase,
+            String estado,
+            Long idDistrito,
+            String distrito,
+            String establecimiento,
+            String fotoPrincipal,
+            BigDecimal promedioCalificacion,
+            int totalCalificaciones,
+            List<String> deportes
+    ) {
     }
 }

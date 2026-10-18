@@ -73,6 +73,33 @@ public class VenuesResource {
     }
 
     @GET
+    @Path("/favoritos")
+    @Authenticated
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "IDs de canchas favoritas del usuario")
+    public List<Long> listarFavoritos() {
+        return gestion.listarFavoritos(idUsuarioAutenticado());
+    }
+
+    @POST
+    @Path("/favoritos/{idCancha}")
+    @Authenticated
+    @Operation(summary = "Agrega una cancha a favoritos")
+    public Response agregarFavorito(@PathParam("idCancha") Long idCancha) {
+        gestion.agregarFavorito(idUsuarioAutenticado(), idCancha);
+        return Response.noContent().build();
+    }
+
+    @DELETE
+    @Path("/favoritos/{idCancha}")
+    @Authenticated
+    @Operation(summary = "Quita una cancha de favoritos")
+    public Response quitarFavorito(@PathParam("idCancha") Long idCancha) {
+        gestion.quitarFavorito(idUsuarioAutenticado(), idCancha);
+        return Response.noContent().build();
+    }
+
+    @GET
     @Path("/establecimientos/mios")
     @Authenticated
     @Produces(MediaType.APPLICATION_JSON)

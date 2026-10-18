@@ -90,6 +90,12 @@ export const routes: Routes = [
           import('./features/cuenta/notificaciones.component').then((m) => m.NotificacionesComponent),
       },
       {
+        path: 'favoritos',
+        title: 'Favoritos · CanchaDirecta',
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/cuenta/favoritos.component').then((m) => m.FavoritosComponent),
+      },
+      {
         path: 'reclamos',
         title: 'Reclamos · CanchaDirecta',
         canActivate: [authGuard],

@@ -17,6 +17,13 @@ export interface Cancha {
   capacidad: number;
   precioBase: number;
   estado: 'ACTIVA' | 'INACTIVA' | 'MANTENIMIENTO';
+  idDistrito: number;
+  distrito: string;
+  establecimiento: string;
+  fotoPrincipal: string | null;
+  promedioCalificacion: number;
+  totalCalificaciones: number;
+  deportes: string[];
 }
 
 export interface Foto {

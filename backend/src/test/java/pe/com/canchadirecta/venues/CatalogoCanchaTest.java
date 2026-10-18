@@ -46,6 +46,50 @@ class CatalogoCanchaTest {
     }
 
     @Test
+    void elListadoPublicoIncluyeDistritoFotoServiciosYReputacion() {
+        String dueno = nuevoUsuario("dueno.listado");
+        Long idEstablecimiento = crearEstablecimiento(dueno);
+        String nombre = "Cancha listado " + System.nanoTime();
+        Long idCancha = crearCancha(dueno, idEstablecimiento, nombre, new BigDecimal("55.00"));
+        Long idDeporte = primerId("/api/v1/deportes");
+        given().auth().oauth2(dueno).contentType(ContentType.JSON)
+                .body(Map.of("ids", List.of(idDeporte)))
+                .when().put("/api/v1/canchas/" + idCancha + "/deportes")
+                .then().statusCode(200);
+        given().auth().oauth2(dueno).contentType(ContentType.JSON)
+                .body(Map.of("url", "https://picsum.photos/seed/listado/800/600", "orden", 1, "principal", true))
+                .when().post("/api/v1/canchas/" + idCancha + "/fotos")
+                .then().statusCode(201);
+
+        given().when().get("/api/v1/canchas?q=" + nombre + "&limite=1")
+                .then().statusCode(200)
+                .body("[0].id", equalTo(idCancha.intValue()))
+                .body("[0].distrito", equalTo("Lima"))
+                .body("[0].fotoPrincipal", org.hamcrest.Matchers.containsString("picsum"))
+                .body("[0].totalCalificaciones", equalTo(0))
+                .body("[0].promedioCalificacion", equalTo(0.0f))
+                .body("[0].deportes", hasSize(1));
+    }
+
+    @Test
+    void elClienteGestionaSusFavoritos() {
+        String cliente = nuevoUsuario("cliente.favoritos");
+        String dueno = nuevoUsuario("dueno.favoritos");
+        Long idCancha = crearCancha(dueno, crearEstablecimiento(dueno),
+                "Cancha favorita " + System.nanoTime(), new BigDecimal("60.00"));
+
+        given().auth().oauth2(cliente).when().post("/api/v1/favoritos/" + idCancha)
+                .then().statusCode(204);
+        given().auth().oauth2(cliente).when().get("/api/v1/favoritos")
+                .then().statusCode(200).body("$", hasItem(idCancha.intValue()));
+        given().auth().oauth2(cliente).when().delete("/api/v1/favoritos/" + idCancha)
+                .then().statusCode(204);
+        given().auth().oauth2(cliente).when().get("/api/v1/favoritos")
+                .then().statusCode(200).body("$", org.hamcrest.Matchers.not(hasItem(idCancha.intValue())));
+        given().when().get("/api/v1/favoritos").then().statusCode(401);
+    }
+
+    @Test
     void elPropietarioCompletaLaFichaYSeVeEnElDetalle() {
         String dueno = nuevoUsuario("dueno.ficha");
         Long idEstablecimiento = crearEstablecimiento(dueno);

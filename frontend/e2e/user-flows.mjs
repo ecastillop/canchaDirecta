@@ -135,6 +135,14 @@ try {
   await page.locator('.resultados__top [role="status"]', { hasText: 'Mostrando 1–12' }).waitFor();
   await page.screenshot({ path: `${EVID}/catalogo-1440.png`, fullPage: false });
 
+  // Favoritos: guardar desde el catalogo y verlo en la pagina de favoritos
+  const primeraTarjeta = page.locator('article.tarjeta-cancha').first();
+  const nombreFavorito = (await primeraTarjeta.locator('h3').textContent())?.trim() ?? '';
+  await primeraTarjeta.getByRole('button', { name: 'Agregar a favoritos' }).click();
+  await page.goto(`${BASE}/favoritos`, { waitUntil: 'networkidle' });
+  await page.getByRole('heading', { name: nombreFavorito }).waitFor({ timeout: 20000 });
+  ok('favoritos guarda y muestra la cancha');
+
   await page.goto(`${BASE}/canchas/${franja.cancha.id}`, { waitUntil: 'networkidle' });
   await page.getByRole('heading', { name: franja.cancha.nombre }).waitFor({ timeout: 20000 });
   await page.getByText('Reserva tu horario').waitFor();
