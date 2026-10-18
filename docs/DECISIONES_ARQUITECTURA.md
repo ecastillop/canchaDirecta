@@ -1192,3 +1192,40 @@ E2E usuario OK (catalogo con 16 canchas y dos paginas), E2E propietario/admin OK
 humo 153/153 PS y 134/134 Bash. Capturas `docs/evidencias/ui/demo-catalogo-1440.png` y
 `demo-ficha-1440.png` (2026-10-18).
 
+## ADR-0046 - El tema se controla tambien dentro de los portales
+
+**Contexto:** desde ADR-0040 el modo claro/oscuro se guarda en `cd.modo` y se aplica a toda la
+aplicacion, pero el unico control vivia en la topbar publica y en el pie del sitio. Dentro de
+`/panel`, `/admin`, `/recepcion` y `/cuenta` (chrome propio, sin topbar publica) no habia forma de
+cambiarlo sin salir del portal.
+
+**Decision:**
+1. Nuevo componente compartido `CdThemeToggleComponent` (`shared/ui/theme-toggle`): boton de 36 px con
+   icono de sol/luna, `aria-pressed` y `aria-label` que anuncia la accion ("Cambiar a modo oscuro" /
+   "Cambiar a modo claro"), igual que la topbar publica. Usa el mismo `ThemeService`, asi que la
+   preferencia es una sola para el sitio y los portales.
+2. Se agrega a la cabecera de los cuatro portales, junto al aviso de notificaciones, sin tocar la
+   navegacion ni anadir menus.
+3. `PortalIconComponent` gana los iconos `sun` y `moon` con el mismo trazo de linea del resto.
+4. Se corrigen los pares de color que el modo oscuro dejaba por debajo de 4.5:1 y que el nuevo control
+   volvia alcanzables: `--cd-color-on-danger` para los botones de peligro (antes blanco fijo sobre un
+   rojo claro), `--cd-color-on-accent` para el distintivo de acento, el texto neutro de `.cd-badge`, el
+   verde de exito y el ambar de aviso de la paleta clara, y las iniciales del avatar (usaban un hex
+   fijo que desaparecia en oscuro).
+5. Nuevo `frontend/e2e/contraste-modos.mjs`: recorre los cuatro portales en claro y oscuro y falla si
+   algun boton, distintivo o accion de cabecera baja de 4.5:1 (mide el color calculado sobre el fondo
+   efectivo).
+
+**Consecuencias:** el usuario cambia el tema donde esta trabajando y la preferencia se mantiene al
+volver al sitio publico; el estado del boton es perceptible por lector de pantalla sin depender del
+icono. El contraste queda verificado de forma automatica en ambos modos, lo que cubre el pendiente de
+a11y de contraste para los portales (L-23). El control expone solo el modo claro/oscuro: la paleta
+sigue eligiendose desde el menu del sitio publico para no duplicar selectores en cuatro cabeceras.
+
+**Evidencia:** `CdThemeToggleComponent` 2/2 unitarios (alterna, aplica `data-theme` y comparte la
+preferencia con `ThemeService`); E2E usuario (la cuenta del cliente cambia a oscuro y vuelve, captura
+`docs/evidencias/ui/cuenta-oscuro-1440.png`) y E2E propietario/admin (el panel cambia a oscuro,
+persiste tras recargar y vuelve a claro, captura `docs/evidencias/ui/panel-oscuro-1440.png`);
+`contraste-modos.mjs` OK en los cuatro portales y ambos modos; build OK, 24/24 unitarios, E2E usuario
+OK, E2E propietario/admin OK, a11y 34 rutas OK, humo 153/153 PS y 134/134 Bash (2026-10-18).
+

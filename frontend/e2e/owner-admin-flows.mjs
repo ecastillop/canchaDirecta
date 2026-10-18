@@ -134,6 +134,18 @@ try {
   await page.getByRole('heading', { name: 'Tu operación, bajo control.' }).waitFor({ timeout: 20000 });
   ok('panel del propietario accesible tras validacion');
 
+  // El modo claro/oscuro se cambia desde el propio panel y persiste (ADR-0046).
+  await page.getByRole('button', { name: 'Cambiar a modo oscuro' }).click();
+  await page.waitForFunction(() => document.documentElement.getAttribute('data-theme') === 'dark');
+  await page.screenshot({ path: `${EVID}/panel-oscuro-1440.png`, fullPage: false });
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Cambiar a modo claro' }).waitFor({ timeout: 20000 });
+  await page.waitForFunction(() => document.documentElement.getAttribute('data-theme') === 'dark');
+  ok('el modo oscuro se cambia desde el panel y persiste al recargar');
+  await page.getByRole('button', { name: 'Cambiar a modo claro' }).click();
+  await page.waitForFunction(() => !document.documentElement.hasAttribute('data-theme'));
+  ok('el panel vuelve a modo claro');
+
   const nombreEst = `Establecimiento E2E ${stamp}`;
   await page.locator('label:has-text("Nombre") input').first().fill(nombreEst);
   await page.locator('label:has-text("Documento de identidad") input').fill(documento);

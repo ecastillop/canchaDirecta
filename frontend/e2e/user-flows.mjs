@@ -207,11 +207,11 @@ try {
   await resumenPagina.waitFor();
   const totalTexto = await resumenPagina.textContent();
   await page.getByRole('button', { name: 'Página 2', exact: true }).click();
-  await page.locator('.resultados__top [role="status"]', { hasText: 'Mostrando 13–24' }).waitFor({ timeout: 20000 });
+  await page.locator('.resultados__top [role="status"]', { hasText: /Mostrando 13\s*[–-]\s*\d+/ }).waitFor({ timeout: 20000 });
   ok(`paginacion del catalogo OK (${totalTexto?.trim()})`);
   await page.locator('nav.paginacion').screenshot({ path: `${EVID}/catalogo-paginacion.png` });
   await page.getByRole('button', { name: 'Página 1', exact: true }).click();
-  await page.locator('.resultados__top [role="status"]', { hasText: 'Mostrando 1–12' }).waitFor();
+  await page.locator('.resultados__top [role="status"]', { hasText: /Mostrando 1\s*[–-]\s*12/ }).waitFor();
   await page.screenshot({ path: `${EVID}/catalogo-1440.png`, fullPage: false });
 
   // Favoritos: guardar desde el catalogo y verlo en la pagina de favoritos
@@ -287,6 +287,15 @@ try {
   await page.getByText(franja.cancha.nombre).first().waitFor({ timeout: 20000 });
   ok('dashboard del cliente con próxima reserva y pendientes');
   await page.screenshot({ path: `${EVID}/mi-resumen-1440.png`, fullPage: true });
+
+  // El tema se controla desde la cabecera de la cuenta, sin salir al sitio (ADR-0046).
+  await page.getByRole('button', { name: 'Cambiar a modo oscuro' }).click();
+  await page.waitForFunction(() => document.documentElement.getAttribute('data-theme') === 'dark');
+  await page.screenshot({ path: `${EVID}/cuenta-oscuro-1440.png`, fullPage: false });
+  ok('la cuenta del cliente cambia a modo oscuro');
+  await page.getByRole('button', { name: 'Cambiar a modo claro' }).click();
+  await page.waitForFunction(() => !document.documentElement.hasAttribute('data-theme'));
+  ok('la cuenta vuelve a modo claro');
 
   // 7. Perfil
   await page.goto(`${BASE}/perfil`, { waitUntil: 'networkidle' });

@@ -5,6 +5,7 @@ import { filter, map, startWith } from 'rxjs';
 import { AuthStore } from '../../core/auth/auth.store';
 import { RecepcionStore } from '../../core/api/recepcion.store';
 import { PortalIconComponent } from '../../shared/ui/portal-icon/portal-icon.component';
+import { CdThemeToggleComponent } from '../../shared/ui/theme-toggle/cd-theme-toggle.component';
 
 const TITULOS: Record<string, string> = {
   '/recepcion': 'Turno actual',
@@ -18,7 +19,7 @@ const TITULOS: Record<string, string> = {
 /** Portal de recepcion: turno, agenda, reserva presencial, cobros e incidencias (ADR-0038). */
 @Component({
   selector: 'app-recepcion-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, PortalIconComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, PortalIconComponent, CdThemeToggleComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="admin-shell">
@@ -71,6 +72,7 @@ const TITULOS: Record<string, string> = {
             <h1 class="portal-title">{{ titulo() }}</h1>
           </div>
           <div class="portal-actions">
+            <cd-theme-toggle />
             <a routerLink="/notificaciones" class="icono-mini" aria-label="Notificaciones">
               <cd-portal-icon name="bell" [size]="19" />
             </a>
@@ -311,7 +313,7 @@ const TITULOS: Record<string, string> = {
       height: 36px;
       border-radius: 10px;
       background: var(--cd-color-success-soft);
-      color: #235336;
+      color: var(--cd-color-success);
       font-family: var(--cd-font-display);
       font-size: 12px;
       font-weight: 900;

@@ -93,6 +93,10 @@
   cliente con dos reservas pagadas (una pendiente y una confirmada) y una actividad pública
   (ADR-0045). Cuentas demo: `propietario@`, `operador@` y `cliente@canchadirecta.pe` (clave
   `DemoCancha2026`, ajustable con `-DemoPassword`).
+- Tema dentro de los portales (2026-10-18): el botón de modo claro/oscuro (`CdThemeToggleComponent`)
+  está en la cabecera de `panel`, `admin`, `recepcion` y `cuenta`, comparte `ThemeService`/`cd.modo`
+  con el sitio y anuncia la acción por `aria-label`; se corrigieron los pares de color que el modo
+  oscuro dejaba bajo 4.5:1 y `contraste-modos.mjs` lo verifica en los cuatro portales (ADR-0046).
 
 ### Ya integrado del standalone
 
@@ -120,8 +124,8 @@
 4. ~~**Modo oscuro** con toggle explícito y persistencia~~ (hecho 2026-10-18, ADR-0040).
 5. ~~**Seed/reset de demo**~~ (hecho 2026-10-18, ADR-0045): `scripts/demo-reset.ps1` deja la base con
    un escenario controlado (4 sedes, 16 canchas, operador asignado a una sede, cliente y reservas).
-6. **Enlace de tema en los portales**: hoy el toggle vive en la topbar pública y en el pie; los
-   portales (`panel`, `admin`, `recepcion`, `cuenta`) no exponen su propio control de tema.
+6. ~~**Enlace de tema en los portales**~~ (hecho 2026-10-18, ADR-0046): botón de modo claro/oscuro en
+   la cabecera de `panel`, `admin`, `recepcion` y `cuenta`, con contraste verificado en ambos modos.
 7. **Cara pública de la agenda** (menor): distinguir "Reservada"/"Bloqueada" en la rejilla del
    cliente (L-26; exige ampliar el contrato de disponibilidad) y rotular "Cerrado" en los chips de
    día sin franjas.
@@ -147,6 +151,7 @@ npm test -- --watch=false
 $env:BASE='http://localhost:8083'; npm run test:e2e
 $env:BASE='http://localhost:8083'; $env:ADMIN_CORREO=...; $env:ADMIN_PASSWORD=...; npm run test:e2e:owner
 npm run test:a11y
+node e2e/contraste-modos.mjs          # contraste en los 4 portales, claro y oscuro
 ```
 
 ## 0.1 Estado global
@@ -157,8 +162,9 @@ npm run test:a11y
   propietario/admin) contra backend, tanto en dev como en el contenedor Nginx (`8083`). Rediseño
   de fusión aplicado. Fase 0 y Fase 2 completadas. Modo claro/oscuro, badge de notificaciones,
   calendario fiel a la agenda, bloqueos desde recepción y ocupación semanal del propietario
-  añadidos (ADR-0039, ADR-0040, ADR-0041, ADR-0042, ADR-0043, ADR-0044) y la base de demostración
-  se prepara con `scripts/demo-reset.ps1` (ADR-0045).
+  añadidos (ADR-0039, ADR-0040, ADR-0041, ADR-0042, ADR-0043, ADR-0044), la base de demostración
+  se prepara con `scripts/demo-reset.ps1` (ADR-0045) y el tema se controla dentro de los cuatro
+  portales (ADR-0046).
 - **Backend completado y verificado** (modulos `shared`, `identity`, `venues`, `bookings`,
   `payments`, `settlements`, `engagement`, `platform`): identidad completa (registro, verificacion
   de correo, login con limite de intentos, refresh, logout, recuperacion, perfil editable y
@@ -377,6 +383,10 @@ canchadirecta/
   base pasaron backend 162/162, E2E usuario (pagina 2 del catalogo con 16 canchas), E2E
   propietario/admin, a11y 34 rutas y humo 153/153 PS y 134/134 Bash. Capturas del escenario limpio
   (`docs/evidencias/ui/demo-catalogo-1440.png` y `demo-ficha-1440.png`).
+- Tema dentro de los portales (ADR-0046): 2/2 unitarios del componente, E2E usuario (cuenta a oscuro
+  y de vuelta) y E2E propietario/admin (panel a oscuro, persiste al recargar y vuelve a claro),
+  `contraste-modos.mjs` OK en 4 portales x 2 modos, a11y 34 rutas OK y humo 153/153 PS y 134/134 Bash;
+  capturas `docs/evidencias/ui/panel-oscuro-1440.png` y `cuenta-oscuro-1440.png`.
 - `smoke.ps1` -> **153/153 PASS** (contenedor en 8089 con la imagen reconstruida y `-DbPort 3306`;
   incluye ficha, actividades, cupones, ayuda, reportes, operadores de recepción y el modulo de
   recepcion).
@@ -405,7 +415,7 @@ canchadirecta/
 5. **Docker**: `compose.yml`, `compose.mysql.yml` y Dockerfiles de backend **y frontend**
    verificados (`frontend` en 8083 con proxy `/api`).
 6. **Docs**: base completa (requisitos, arquitectura, modelo, seguridad, pruebas, limitaciones,
-   ADR-0001..**0045**, contratos API del frontend). Faltan diagramas finales y limpiar filas
+   ADR-0001..**0046**, contratos API del frontend). Faltan diagramas finales y limpiar filas
    obsoletas de `TRAZABILIDAD.md`; evidencia E2E ya existe.
 7. **Testcontainers**: pruebas de integracion con MySQL real en CI (Docker requerido).
 
@@ -469,7 +479,9 @@ propietario muestra al titular y su ultimo pago (`GET /reservas/recibidas` agreg
 titular; el puerto devuelve el read model `ReservaRecibida`) - ADR-0045 la base de demostracion se
 prepara con `scripts/demo-reset.ps1` (respaldo, recreacion de la base, Flyway y siembra por la API de
 4 sedes/16 canchas, operador asignado, cliente con reservas y una actividad; las cuentas demo se
-documentan en el encabezado del script).
+documentan en el encabezado del script) - ADR-0046 el tema se controla tambien dentro de los portales
+(`CdThemeToggleComponent` en las cuatro cabeceras, mismo `ThemeService`/`cd.modo`, y contraste
+verificado en claro y oscuro por `frontend/e2e/contraste-modos.mjs`).
 Ver `docs/DECISIONES_ARQUITECTURA.md`.
 
 ## 8. PRUEBAS EJECUTADAS
@@ -543,6 +555,8 @@ Ver `docs/DECISIONES_ARQUITECTURA.md`.
 
 | 2026-10-18 | Reset de demo (`scripts/demo-reset.ps1`: respaldo, base recreada + Flyway y siembra por API de admin/propietario/operador/cliente, 4 sedes, 16 canchas, reservas y actividad) | **PASS** (dos ejecuciones seguidas; `usuarios=4 establecimientos=4 canchas=16 horarios=112 fotos=32 reservas=2 actividades=1`; sobre esa base: backend **162/162**, E2E usuario OK (catálogo con 16 canchas y 2 páginas), E2E propietario/admin OK, a11y **34 rutas OK**, humo **153/153** PS y **134/134** Bash; ADR-0045; capturas `demo-catalogo-1440.png` y `demo-ficha-1440.png`) |
 
+| 2026-10-18 | Tema dentro de los portales (`CdThemeToggleComponent` en panel/admin/recepción/cuenta, iconos `sun`/`moon`, `--cd-color-on-danger`/`on-accent` y ajustes de contraste) | **PASS** (24/24 unitarios, 2 nuevos; E2E usuario OK con cambio de tema en la cuenta; E2E propietario/admin OK con persistencia al recargar; `contraste-modos.mjs` OK en **4 portales × 2 modos**; a11y **34 rutas OK**; humo **153/153** PS y **134/134** Bash; ADR-0046; capturas `panel-oscuro-1440.png` y `cuenta-oscuro-1440.png`) |
+
 Resto de la matriz de pruebas (?13 del prompt): **NOT RUN**.
 
 ## 9. PROBLEMAS ABIERTOS
@@ -597,16 +611,15 @@ Valores reales unicamente en `canchadirecta/.env` (gitignored). Nunca en Git.
 La hoja de ruta vigente esta en **`## 0. Mirada hacia adelante`** al inicio de este documento.
 Prioridad inmediata:
 
-1. Control de tema dentro de los portales (hoy el toggle está en la topbar pública y el pie).
-2. Ficha publica: distinguir "Reservada"/"Bloqueada" en la rejilla del cliente (L-26) y rotular
+1. Ficha publica: distinguir "Reservada"/"Bloqueada" en la rejilla del cliente (L-26) y rotular
    "Cerrado" en los chips de dia sin franjas.
-3. Pulido de a11y manual (teclado/contraste, L-23) y diagramas finales.
+2. Pulido de a11y manual (teclado/contraste, L-23) y diagramas finales.
 
 **Estado:** entrega base cerrada el 2026-10-17; rediseno de fusion, integraciones del standalone y
 bloques A/B/C/D del delta completados el 2026-10-18, más badge de notificaciones, modo claro/oscuro,
-calendario fiel a la agenda, bloqueos desde recepción, ocupación semanal del propietario y la bandeja
-del propietario con titular y pago. La base de demostración se regenera con
-`.\scripts\demo-reset.ps1 -Force`.
+calendario fiel a la agenda, bloqueos desde recepción, ocupación semanal del propietario, la bandeja
+del propietario con titular y pago, el tema dentro de los cuatro portales y la base de demostración
+regenerable con `.\scripts\demo-reset.ps1 -Force`.
 Acta: `docs/ACTA_CIERRE.md`.
 
 Cuenta superadministrador local (roles `USER`, `OWNER`, `PLATFORM_ADMIN`):

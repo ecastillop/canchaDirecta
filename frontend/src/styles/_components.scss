@@ -70,10 +70,11 @@
 
 .cd-btn--danger {
   background: var(--cd-color-danger);
-  color: #ffffff;
+  color: var(--cd-color-on-danger);
 }
 .cd-btn--danger:hover:not(:disabled) {
   background: color-mix(in srgb, var(--cd-color-danger) 85%, #000000);
+  color: var(--cd-color-on-danger);
 }
 
 .cd-btn--sm {

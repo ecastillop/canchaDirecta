@@ -4,10 +4,11 @@ import { OwnerStore } from '../../core/api/owner.store';
 import { AuthStore } from '../../core/auth/auth.store';
 import { PortalIconComponent } from '../../shared/ui/portal-icon/portal-icon.component';
 import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.component';
+import { CdThemeToggleComponent } from '../../shared/ui/theme-toggle/cd-theme-toggle.component';
 
 @Component({
   selector: 'app-panel-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CdSkeletonComponent, PortalIconComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CdSkeletonComponent, PortalIconComponent, CdThemeToggleComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="panel-shell">
@@ -51,6 +52,7 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
             <h1 class="portal-title">Gestión de espacios</h1>
           </div>
           <div class="portal-actions">
+            <cd-theme-toggle />
             <a routerLink="/notificaciones" class="icono-mini" aria-label="Notificaciones">
               <cd-portal-icon name="bell" [size]="19" />
             </a>
@@ -329,7 +331,7 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       height: 36px;
       border-radius: 10px;
       background: var(--cd-color-success-soft);
-      color: #235336;
+      color: var(--cd-color-success);
       font-family: var(--cd-font-display);
       font-size: 12px;
       font-weight: 900;

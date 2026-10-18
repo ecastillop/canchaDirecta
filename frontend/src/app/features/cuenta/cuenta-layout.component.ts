@@ -3,10 +3,11 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { AuthStore } from '../../core/auth/auth.store';
 import { NotificacionesStore } from '../../core/api/notificaciones.store';
 import { PortalIconComponent } from '../../shared/ui/portal-icon/portal-icon.component';
+import { CdThemeToggleComponent } from '../../shared/ui/theme-toggle/cd-theme-toggle.component';
 
 @Component({
   selector: 'app-cuenta-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, PortalIconComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, PortalIconComponent, CdThemeToggleComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="cuenta-shell">
@@ -49,6 +50,7 @@ import { PortalIconComponent } from '../../shared/ui/portal-icon/portal-icon.com
             <strong>Mi cuenta</strong>
           </div>
           <div class="portal-actions">
+            <cd-theme-toggle />
             <a
               routerLink="/notificaciones"
               class="icono-mini"
@@ -313,7 +315,7 @@ import { PortalIconComponent } from '../../shared/ui/portal-icon/portal-icon.com
       height: 36px;
       border-radius: 10px;
       background: var(--cd-color-success-soft);
-      color: #235336;
+      color: var(--cd-color-success);
       font-family: var(--cd-font-display);
       font-size: 12px;
       font-weight: 900;

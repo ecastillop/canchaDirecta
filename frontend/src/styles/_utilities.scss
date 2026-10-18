@@ -126,7 +126,7 @@
   font-size: var(--cd-text-xs);
   font-weight: 700;
   background: var(--cd-color-surface-alt);
-  color: var(--cd-color-text-muted);
+  color: var(--cd-color-text);
   white-space: nowrap;
 }
 
@@ -148,5 +148,5 @@
 }
 .cd-badge--accent {
   background: var(--cd-color-accent);
-  color: var(--cd-color-primary);
+  color: var(--cd-color-on-accent);
 }
