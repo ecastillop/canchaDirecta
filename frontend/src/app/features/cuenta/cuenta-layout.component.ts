@@ -16,6 +16,7 @@ import { AuthStore } from '../../core/auth/auth.store';
             <small>{{ auth.user()?.correo }}</small>
           </div>
         </div>
+        <div class="workspace-label">Espacio de trabajo <span>Cliente</span></div>
         <nav class="cuenta-side__nav" aria-label="Menú de mi cuenta">
           <a routerLink="/mis-reservas" routerLinkActive="activo"><span aria-hidden="true">▤</span> Mis reservas</a>
           <a routerLink="/favoritos" routerLinkActive="activo"><span aria-hidden="true">♡</span> Favoritos</a>
@@ -23,7 +24,14 @@ import { AuthStore } from '../../core/auth/auth.store';
           <a routerLink="/reclamos" routerLinkActive="activo"><span aria-hidden="true">◇</span> Reclamos</a>
           <a routerLink="/perfil" routerLinkActive="activo"><span aria-hidden="true">◎</span> Mi perfil</a>
         </nav>
-        <button type="button" class="cuenta-side__salir" (click)="salir()">Cerrar sesión</button>
+        <div class="cuenta-side__end">
+          <div class="cuenta-side__help">
+            <strong>Entorno de prueba</strong>
+            <p>Reservas y pagos simulados.</p>
+          </div>
+          <a routerLink="/" class="cuenta-side__volver">← Volver al sitio</a>
+          <button type="button" class="cuenta-side__salir" (click)="salir()">Cerrar sesión</button>
+        </div>
       </aside>
       <div class="cuenta-main">
         <router-outlet />
@@ -84,6 +92,19 @@ import { AuthStore } from '../../core/auth/auth.store';
       display: grid;
       gap: 4px;
     }
+    .workspace-label {
+      padding: 0 8px;
+      color: var(--cd-color-text-muted);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .workspace-label span {
+      display: block;
+      margin-top: 3px;
+      color: var(--cd-color-teal, #167a70);
+    }
     .cuenta-side__nav a {
       display: flex;
       align-items: center;
@@ -103,9 +124,33 @@ import { AuthStore } from '../../core/auth/auth.store';
       background: var(--cd-color-primary);
       color: var(--cd-color-on-primary);
     }
-    .cuenta-side__salir {
+    .cuenta-side__end {
       margin-top: auto;
-      padding: 10px 12px;
+      display: grid;
+      gap: 8px;
+    }
+    .cuenta-side__help {
+      padding: 12px;
+      border: 1px dashed var(--cd-color-border);
+      border-radius: 10px;
+      background: var(--cd-color-surface-alt);
+    }
+    .cuenta-side__help strong {
+      font-size: 11px;
+    }
+    .cuenta-side__help p {
+      margin: 3px 0 0;
+      color: var(--cd-color-text-muted);
+      font-size: 10px;
+    }
+    .cuenta-side__volver {
+      padding: 8px 12px;
+      color: var(--cd-color-text-muted);
+      font-size: 12px;
+      text-decoration: none;
+    }
+    .cuenta-side__salir {
+      padding: 8px 12px;
       border: 0;
       border-radius: 10px;
       background: transparent;
@@ -134,7 +179,8 @@ import { AuthStore } from '../../core/auth/auth.store';
         border-bottom: 1px solid var(--cd-color-border);
       }
       .cuenta-side__perfil,
-      .cuenta-side__salir {
+      .workspace-label,
+      .cuenta-side__end {
         display: none;
       }
       .cuenta-side__nav {

@@ -41,6 +41,8 @@
 - Iconos SVG propios (ubicación, estrella, corazón, calendario, servicios).
 - Sidebar lateral en los paneles de cliente, propietario y administración.
 - `Servicios incluidos` visible en el detalle de la cancha.
+- Topbar con Inicio, Espacios, Actividades y Cómo funciona; el resto de accesos vive en el menú
+  “Mi cuenta”. Se añadieron las páginas públicas de Actividades y Cómo funciona.
 
 ## Fuera de alcance de esta fase
 

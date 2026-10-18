@@ -254,16 +254,18 @@ function etiquetaDeSemana(inicio: string): string {
               </dl>
             </section>
 
-            @if (c.caracteristicas.length) {
-              <section class="bloque">
-                <h2 class="seccion">Servicios incluidos</h2>
+            <section class="bloque">
+              <h2 class="seccion">Servicios incluidos</h2>
+              @if (c.caracteristicas.length) {
                 <ul class="caracteristicas">
                   @for (car of c.caracteristicas; track car.nombre) {
                     <li><span class="check" aria-hidden="true"><cd-icon name="check" [size]="12" /></span><span><strong>{{ car.nombre }}</strong>@if (car.valor) { · {{ car.valor }}}</span></li>
                   }
                 </ul>
-              </section>
-            }
+              } @else {
+                <p class="cd-small cd-muted">El propietario todavía no registró servicios para esta cancha.</p>
+              }
+            </section>
 
             <section class="bloque calendario" aria-labelledby="calendario-titulo">
               <div class="calendario__cabecera">

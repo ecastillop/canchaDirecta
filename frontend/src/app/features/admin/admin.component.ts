@@ -2,6 +2,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal, computed } from '@angular/core';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Dialog } from '@angular/cdk/dialog';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
   AdminApi,
@@ -36,6 +37,7 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
     ReactiveFormsModule,
     CurrencyPipe,
     DatePipe,
+    RouterLink,
     CdButtonDirective,
     CdInputDirective,
     CdSkeletonComponent,
@@ -52,6 +54,13 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
       </header>
 
       <nav class="tabs" aria-label="Secciones de administración">
+        <div class="tabs__brand">
+          <span class="tabs__logo" aria-hidden="true">A</span>
+          <div>
+            <strong>Administración</strong>
+            <small>Espacio de trabajo</small>
+          </div>
+        </div>
         @for (item of tabs; track item.id) {
           <button
             type="button"
@@ -62,6 +71,7 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
             {{ item.etiqueta }}
           </button>
         }
+        <a routerLink="/" class="tabs__back">← Volver al sitio</a>
       </nav>
 
       @if (cargando()) {
@@ -813,6 +823,54 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
     .tabs button.activo {
       background: var(--cd-color-primary);
       color: var(--cd-color-on-primary);
+    }
+    .tabs__brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 2px 8px 14px;
+      margin-bottom: 6px;
+      border-bottom: 1px solid var(--cd-color-border);
+    }
+    .tabs__logo {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: var(--cd-color-accent);
+      color: var(--cd-color-primary);
+      font-family: var(--cd-font-display);
+      font-size: 17px;
+      font-weight: 900;
+      transform: rotate(-6deg);
+    }
+    .tabs__brand strong,
+    .tabs__brand small {
+      display: block;
+    }
+    .tabs__brand strong {
+      font-family: var(--cd-font-display);
+      font-size: 15px;
+    }
+    .tabs__brand small {
+      color: var(--cd-color-text-muted);
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .tabs__back {
+      margin-top: auto;
+      padding: 11px 12px;
+      color: var(--cd-color-text-muted);
+      font-size: 12px;
+      text-decoration: none;
+    }
+    @media (max-width: 900px) {
+      .tabs__brand,
+      .tabs__back {
+        display: none;
+      }
     }
     @media (max-width: 900px) {
       .cd-page {

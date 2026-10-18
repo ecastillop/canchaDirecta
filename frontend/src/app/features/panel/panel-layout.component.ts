@@ -18,6 +18,7 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
             <small>canchadirecta</small>
           </div>
         </div>
+        <div class="workspace-label">Espacio de trabajo <span>Propietario</span></div>
         <nav class="panel-side__nav" aria-label="Menú del panel del propietario">
           <a routerLink="/panel" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }">
             <span aria-hidden="true">▦</span> Resumen
@@ -27,7 +28,13 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
           <a routerLink="/panel/promociones" routerLinkActive="activo"><span aria-hidden="true">◇</span> Promociones</a>
           <a routerLink="/panel/liquidaciones" routerLinkActive="activo"><span aria-hidden="true">◫</span> Liquidaciones</a>
         </nav>
-        <a routerLink="/" class="panel-side__site">← Volver al sitio</a>
+        <div class="panel-side__end">
+          <div class="panel-side__help">
+            <strong>Entorno de prueba</strong>
+            <p>Datos reales del backend. Pagos simulados.</p>
+          </div>
+          <a routerLink="/" class="panel-side__site">← Volver al sitio</a>
+        </div>
       </aside>
 
       <div class="panel-main">
@@ -131,6 +138,19 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       display: grid;
       gap: 4px;
     }
+    .workspace-label {
+      padding: 0 8px;
+      color: var(--cd-color-text-muted);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .workspace-label span {
+      display: block;
+      margin-top: 3px;
+      color: var(--cd-color-teal, #167a70);
+    }
     .panel-side__nav a {
       display: flex;
       align-items: center;
@@ -150,8 +170,27 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       background: var(--cd-color-primary);
       color: var(--cd-color-on-primary);
     }
-    .panel-side__site {
+    .panel-side__end {
       margin-top: auto;
+      display: grid;
+      gap: 8px;
+    }
+    .panel-side__help {
+      padding: 12px;
+      border: 1px dashed var(--cd-color-border);
+      border-radius: 10px;
+      background: var(--cd-color-surface-alt);
+    }
+    .panel-side__help strong {
+      font-size: 11px;
+    }
+    .panel-side__help p {
+      margin: 3px 0 0;
+      color: var(--cd-color-text-muted);
+      font-size: 10px;
+      line-height: 1.4;
+    }
+    .panel-side__site {
       padding: 11px 12px;
       color: var(--cd-color-text-muted);
       font-size: 12px;
@@ -198,7 +237,8 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
         padding: 12px 14px;
       }
       .panel-side__brand,
-      .panel-side__site {
+      .workspace-label,
+      .panel-side__end {
         display: none;
       }
       .panel-side__nav {

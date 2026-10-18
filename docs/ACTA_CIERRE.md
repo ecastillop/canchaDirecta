@@ -35,7 +35,7 @@
 | Pruebas unitarias frontend | `npm test -- --watch=false` | 15/15 PASS |
 | Flujo de usuario en navegador | `npm run test:e2e` (Docker 8083) | 15/15 PASS |
 | Flujo propietario/admin en navegador | `npm run test:e2e:owner` | 28/28 PASS |
-| Accesibilidad de teclado y estructura | `npm run test:a11y` (E-42) + E-41 | 14 rutas y teclado PASS; modal/paginador PASS en E-41 |
+| Accesibilidad de teclado y estructura | `npm run test:a11y` (E-42) + E-41 | 16 rutas y teclado PASS; modal/paginador PASS en E-41 |
 | Stack Docker operativo | `/q/health/ready`, frontend 8083 | 200 / 200 |
 
 ## 3. Evidencias

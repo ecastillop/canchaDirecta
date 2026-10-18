@@ -119,7 +119,8 @@ try {
   else fallo(`OWNER ausente en roles: ${meOwner.roles.join(',')}`);
 
   // 2. Panel del propietario
-  await page.getByRole('button', { name: 'Salir' }).click();
+  await page.locator('summary.cuenta-btn').click();
+  await page.getByRole('button', { name: 'Cerrar sesión' }).click();
   await login(owner.correo, owner.password);
   await page.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
   await page.getByRole('heading', { name: 'Gestiona tus espacios' }).waitFor({ timeout: 20000 });
@@ -254,7 +255,8 @@ try {
   ok('reservas recibidas consulta OK');
 
   // 3. Administracion: tabs nuevas
-  await page.getByRole('button', { name: 'Salir' }).click();
+  await page.locator('summary.cuenta-btn').click();
+  await page.getByRole('button', { name: 'Cerrar sesión' }).click();
   await login(ADMIN.correo, ADMIN.password);
   await page.goto(`${BASE}/admin`, { waitUntil: 'networkidle' });
   await page.getByRole('heading', { name: 'Administración de plataforma' }).waitFor();

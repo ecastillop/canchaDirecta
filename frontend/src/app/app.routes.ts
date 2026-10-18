@@ -42,6 +42,18 @@ export const routes: Routes = [
         loadComponent: () => import('./features/public/home.component').then((m) => m.HomeComponent),
       },
       {
+        path: 'actividades',
+        title: 'Actividades · CanchaDirecta',
+        loadComponent: () =>
+          import('./features/public/actividades.component').then((m) => m.ActividadesComponent),
+      },
+      {
+        path: 'como-funciona',
+        title: 'Cómo funciona · CanchaDirecta',
+        loadComponent: () =>
+          import('./features/public/como-funciona.component').then((m) => m.ComoFuncionaComponent),
+      },
+      {
         path: 'canchas',
         title: 'Canchas · CanchaDirecta',
         loadComponent: () => import('./features/catalogo/catalogo.component').then((m) => m.CatalogoComponent),

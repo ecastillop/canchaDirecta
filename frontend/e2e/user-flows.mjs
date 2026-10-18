@@ -99,11 +99,12 @@ try {
   await page.locator('label:has-text("Confirmar contraseña") input').first().fill(user.password);
   await page.getByRole('button', { name: 'Crear cuenta' }).click();
   await page.waitForURL(`${BASE}/mis-reservas`, { timeout: 20000 });
-  await page.getByText(user.nombres, { exact: false }).first().waitFor({ timeout: 20000 });
+  await page.locator('summary.cuenta-btn').waitFor({ timeout: 20000 });
   ok('registro por UI con auto-login y retorno a la ruta original');
 
   // 3. Login por UI
-  await page.getByRole('button', { name: 'Salir' }).click();
+  await page.locator('summary.cuenta-btn').click();
+  await page.locator('.cuenta-menu__panel').getByRole('button', { name: 'Cerrar sesión' }).click();
   await page.waitForURL(`${BASE}/`, { timeout: 20000 });
   await page.goto(`${BASE}/auth/login`, { waitUntil: 'networkidle' });
   await page.getByRole('heading', { name: 'Iniciar sesión' }).waitFor();
@@ -114,7 +115,7 @@ try {
   await page.locator('input[type="password"]').fill(user.password);
   await page.getByRole('button', { name: 'Ingresar' }).click();
   await page.waitForURL(`${BASE}/`, { timeout: 20000 });
-  await page.getByText(user.nombres, { exact: false }).first().waitFor({ timeout: 20000 });
+  await page.locator('summary.cuenta-btn').waitFor({ timeout: 20000 });
   ok('login por UI y topbar con usuario');
 
   // 4. Catalogo y detalle

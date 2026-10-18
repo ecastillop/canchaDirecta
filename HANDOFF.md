@@ -341,6 +341,7 @@ Ver `docs/DECISIONES_ARQUITECTURA.md`.
 | 2026-10-17 | Fase 1 de mejoras: `/establecimientos/mios`, auto-login tras registro, paginador estable, vista previa con retorno y galería completa, textos de agenda | **PASS** (backend 144/144, humo 112/112, unitarios 15/15, E2E propietario/admin 28/28, a11y 13 rutas OK) |
 | 2026-10-18 | Rediseño de fusión: tokens, fuentes locales, shell, home, catálogo, detalle y login | **PASS** (build OK, 15/15 unitarios, E2E usuario 14/14, E2E propietario/admin 28/28, a11y 13 rutas OK, sin overflow a 390px) |
 | 2026-10-18 | Favoritos + catálogo enriquecido + paneles con sidebar | **PASS** (backend 146/146, humo 112/112, build OK, E2E usuario 15/15, E2E propietario/admin 28/28, a11y 14 rutas OK) |
+| 2026-10-18 | Topbar standalone, Actividades/Cómo funciona, servicios demo y sidebars de panel | **PASS** (backend 146/146, humo 112/112, build OK, E2E usuario 15/15, E2E propietario/admin 28/28, a11y 16 rutas OK) |
 
 Resto de la matriz de pruebas (?13 del prompt): **NOT RUN**.
 

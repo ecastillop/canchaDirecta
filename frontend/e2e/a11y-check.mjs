@@ -49,6 +49,8 @@ await page.waitForURL('**/', { timeout: 20000 });
 const rutas = [
   '/',
   '/canchas',
+  '/actividades',
+  '/como-funciona',
   '/canchas/1',
   '/mis-reservas',
   '/favoritos',

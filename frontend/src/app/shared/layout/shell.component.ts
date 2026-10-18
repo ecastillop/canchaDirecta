@@ -40,17 +40,8 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
         <nav class="nav" aria-label="Navegación principal">
           <a routerLink="/" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
           <a routerLink="/canchas" routerLinkActive="activo">Espacios</a>
-          @if (auth.isAuthenticated()) {
-            <a routerLink="/mis-reservas" routerLinkActive="activo">Mis reservas</a>
-            <a routerLink="/favoritos" routerLinkActive="activo">Favoritos</a>
-            <a routerLink="/reclamos" routerLinkActive="activo">Reclamos</a>
-          }
-          @if (auth.isOwner() || auth.isAdmin()) {
-            <a routerLink="/panel" routerLinkActive="activo">Panel</a>
-          }
-          @if (auth.isAdmin()) {
-            <a routerLink="/admin" routerLinkActive="activo">Admin</a>
-          }
+          <a routerLink="/actividades" routerLinkActive="activo">Actividades</a>
+          <a routerLink="/como-funciona" routerLinkActive="activo">Cómo funciona</a>
         </nav>
 
         <div class="cuenta">
@@ -58,17 +49,39 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
             <a routerLink="/notificaciones" class="icono-btn" aria-label="Notificaciones">
               <span aria-hidden="true">◔</span>
             </a>
-            <a routerLink="/perfil" class="usuario" [attr.aria-label]="'Perfil de ' + auth.fullName()">
-              <span class="avatar" aria-hidden="true">{{ inicial() }}</span>
-              <span class="usuario__nombre">{{ auth.fullName() }}</span>
-            </a>
-            <button type="button" class="cd-btn cd-btn--ghost cd-btn--sm salir" (click)="salir()">Salir</button>
-          } @else {
-            <a routerLink="/auth/login" class="cd-btn cd-btn--ghost cd-btn--sm">Ingresar</a>
-            <a routerLink="/auth/registro" class="cd-btn cd-btn--primary cd-btn--sm cuenta-btn">
-              Mi cuenta <span aria-hidden="true">→</span>
-            </a>
           }
+          <details #menuCuenta class="cuenta-menu">
+            <summary class="cd-btn cd-btn--primary cd-btn--sm cuenta-btn">
+              Mi cuenta <span aria-hidden="true">→</span>
+            </summary>
+            <div class="cuenta-menu__panel" (click)="menuCuenta.open = false">
+              @if (auth.isAuthenticated()) {
+                <div class="cuenta-menu__perfil">
+                  <span class="avatar" aria-hidden="true">{{ inicial() }}</span>
+                  <div>
+                    <strong>{{ auth.fullName() }}</strong>
+                    <small>{{ auth.user()?.correo }}</small>
+                  </div>
+                </div>
+                <a routerLink="/mis-reservas">Mis reservas</a>
+                <a routerLink="/favoritos">Favoritos</a>
+                <a routerLink="/notificaciones">Notificaciones</a>
+                <a routerLink="/reclamos">Reclamos</a>
+                <a routerLink="/perfil">Mi perfil</a>
+                @if (auth.isOwner() || auth.isAdmin()) {
+                  <a routerLink="/panel">Panel del propietario</a>
+                }
+                @if (auth.isAdmin()) {
+                  <a routerLink="/admin">Administración</a>
+                }
+                <button type="button" class="cuenta-menu__salir" (click)="salir()">Cerrar sesión</button>
+              } @else {
+                <p class="cd-small cd-muted">Ingresa para reservar y guardar tus canchas favoritas.</p>
+                <a routerLink="/auth/login" class="cd-btn cd-btn--primary cd-btn--sm cd-btn--block">Ingresar</a>
+                <a routerLink="/auth/registro" class="cd-btn cd-btn--secondary cd-btn--sm cd-btn--block">Crear cuenta</a>
+              }
+            </div>
+          </details>
         </div>
       </div>
     </header>
@@ -83,6 +96,8 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
         <nav class="drawer__nav" aria-label="Navegación móvil" (click)="drawerOpen.set(false)">
           <a routerLink="/">Inicio</a>
           <a routerLink="/canchas">Espacios</a>
+          <a routerLink="/actividades">Actividades</a>
+          <a routerLink="/como-funciona">Cómo funciona</a>
           @if (auth.isAuthenticated()) {
             <a routerLink="/mis-reservas">Mis reservas</a>
             <a routerLink="/favoritos">Favoritos</a>
@@ -134,7 +149,8 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
           <strong>Explora</strong>
           <a routerLink="/canchas">Buscar espacios</a>
           <a routerLink="/canchas">Comparar canchas</a>
-          <a routerLink="/">Cómo funciona</a>
+          <a routerLink="/actividades">Actividades</a>
+          <a routerLink="/como-funciona">Cómo funciona</a>
         </div>
         <div class="pie__col">
           <strong>Plataforma</strong>
@@ -485,6 +501,79 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
     .cuenta-btn {
       padding-inline: 18px;
       border-radius: var(--cd-radius-pill);
+      list-style: none;
+      cursor: pointer;
+    }
+    .cuenta-btn::-webkit-details-marker {
+      display: none;
+    }
+    .cuenta-menu {
+      position: relative;
+    }
+    .cuenta-menu__panel {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 10px);
+      z-index: 250;
+      display: grid;
+      gap: 3px;
+      width: min(270px, calc(100vw - 24px));
+      padding: 10px;
+      border: 1px solid var(--cd-color-border);
+      border-radius: var(--cd-radius-md);
+      background: var(--cd-color-surface);
+      box-shadow: var(--cd-shadow-3);
+    }
+    .cuenta-menu__perfil {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 8px 12px;
+      border-bottom: 1px solid var(--cd-color-border);
+      margin-bottom: 4px;
+    }
+    .cuenta-menu__perfil strong,
+    .cuenta-menu__perfil small {
+      display: block;
+    }
+    .cuenta-menu__perfil strong {
+      font-size: 13px;
+    }
+    .cuenta-menu__perfil small {
+      max-width: 180px;
+      overflow: hidden;
+      color: var(--cd-color-text-muted);
+      font-size: 10px;
+      text-overflow: ellipsis;
+    }
+    .cuenta-menu__panel > a {
+      padding: 9px 10px;
+      border-radius: 8px;
+      color: var(--cd-color-text);
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .cuenta-menu__panel > a:hover {
+      background: var(--cd-color-surface-alt);
+    }
+    .cuenta-menu__panel .cd-btn {
+      margin-top: 4px;
+      text-decoration: none;
+    }
+    .cuenta-menu__salir {
+      margin-top: 4px;
+      padding: 9px 10px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--cd-color-danger);
+      font-size: 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .cuenta-menu__salir:hover {
+      background: var(--cd-color-danger-soft);
     }
     .pie {
       border-top: 0;
