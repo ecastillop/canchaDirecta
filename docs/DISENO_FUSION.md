@@ -39,7 +39,7 @@
 - Catálogo con distrito, foto principal, reputación y número de opiniones.
 - Comparar como botón por tarjeta, manteniendo la barra de comparación.
 - Iconos SVG propios (ubicación, estrella, corazón, calendario, servicios).
-- Sidebar lateral en los paneles de propietario y administración.
+- Sidebar lateral en los paneles de cliente, propietario y administración.
 - `Servicios incluidos` visible en el detalle de la cancha.
 
 ## Fuera de alcance de esta fase

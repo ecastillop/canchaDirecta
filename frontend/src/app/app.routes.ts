@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { guestGuard, authGuard, roleGuard } from './core/auth/auth.guards';
+import { CuentaLayoutComponent } from './features/cuenta/cuenta-layout.component';
 import { ShellComponent } from './shared/layout/shell.component';
 
 export const routes: Routes = [
@@ -63,50 +64,50 @@ export const routes: Routes = [
         loadComponent: () => import('./features/reservas/reservar.component').then((m) => m.ReservarComponent),
       },
       {
-        path: 'mis-reservas',
-        title: 'Mis reservas · CanchaDirecta',
+        path: '',
+        component: CuentaLayoutComponent,
         canActivate: [authGuard],
-        loadComponent: () =>
-          import('./features/reservas/mis-reservas.component').then((m) => m.MisReservasComponent),
-      },
-      {
-        path: 'mis-reservas/:id',
-        title: 'Detalle de reserva · CanchaDirecta',
-        canActivate: [authGuard],
-        loadComponent: () =>
-          import('./features/reservas/reserva-detalle.component').then((m) => m.ReservaDetalleComponent),
-      },
-      {
-        path: 'perfil',
-        title: 'Mi perfil · CanchaDirecta',
-        canActivate: [authGuard],
-        loadComponent: () => import('./features/cuenta/perfil.component').then((m) => m.PerfilComponent),
-      },
-      {
-        path: 'notificaciones',
-        title: 'Notificaciones · CanchaDirecta',
-        canActivate: [authGuard],
-        loadComponent: () =>
-          import('./features/cuenta/notificaciones.component').then((m) => m.NotificacionesComponent),
-      },
-      {
-        path: 'favoritos',
-        title: 'Favoritos · CanchaDirecta',
-        canActivate: [authGuard],
-        loadComponent: () => import('./features/cuenta/favoritos.component').then((m) => m.FavoritosComponent),
-      },
-      {
-        path: 'reclamos',
-        title: 'Reclamos · CanchaDirecta',
-        canActivate: [authGuard],
-        loadComponent: () => import('./features/cuenta/reclamos.component').then((m) => m.ReclamosComponent),
-      },
-      {
-        path: 'reclamos/:id',
-        title: 'Detalle de reclamo · CanchaDirecta',
-        canActivate: [authGuard],
-        loadComponent: () =>
-          import('./features/cuenta/reclamo-detalle.component').then((m) => m.ReclamoDetalleComponent),
+        children: [
+          {
+            path: 'mis-reservas',
+            title: 'Mis reservas · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/reservas/mis-reservas.component').then((m) => m.MisReservasComponent),
+          },
+          {
+            path: 'mis-reservas/:id',
+            title: 'Detalle de reserva · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/reservas/reserva-detalle.component').then((m) => m.ReservaDetalleComponent),
+          },
+          {
+            path: 'perfil',
+            title: 'Mi perfil · CanchaDirecta',
+            loadComponent: () => import('./features/cuenta/perfil.component').then((m) => m.PerfilComponent),
+          },
+          {
+            path: 'notificaciones',
+            title: 'Notificaciones · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/cuenta/notificaciones.component').then((m) => m.NotificacionesComponent),
+          },
+          {
+            path: 'favoritos',
+            title: 'Favoritos · CanchaDirecta',
+            loadComponent: () => import('./features/cuenta/favoritos.component').then((m) => m.FavoritosComponent),
+          },
+          {
+            path: 'reclamos',
+            title: 'Reclamos · CanchaDirecta',
+            loadComponent: () => import('./features/cuenta/reclamos.component').then((m) => m.ReclamosComponent),
+          },
+          {
+            path: 'reclamos/:id',
+            title: 'Detalle de reclamo · CanchaDirecta',
+            loadComponent: () =>
+              import('./features/cuenta/reclamo-detalle.component').then((m) => m.ReclamoDetalleComponent),
+          },
+        ],
       },
       {
         path: 'panel',

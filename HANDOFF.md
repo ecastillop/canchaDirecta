@@ -46,7 +46,7 @@
   completa (todas las miniaturas, visor y fallback para URLs rotas). El catalogo muestra
   **distrito, foto, reputacion con numero de opiniones, servicios y favoritos persistidos**
   (`GET/POST/DELETE /favoritos`) y una pagina `/favoritos`; comparar es un boton por tarjeta.
-  Los paneles de propietario y administracion usan **sidebar lateral**. El registro **auto-inicia sesion y vuelve a la ruta
+  Los paneles de cliente, propietario y administración usan **sidebar lateral**. El registro **auto-inicia sesion y vuelve a la ruta
   original** (reserva/mis reservas). Un `PLATFORM_ADMIN` sin rol `OWNER` ya no ve el flujo de
   solicitud: se le indica que asigne `OWNER` desde Usuarios → Roles o use Supervision. El perfil
   permite **reenviar la verificacion de correo**.
