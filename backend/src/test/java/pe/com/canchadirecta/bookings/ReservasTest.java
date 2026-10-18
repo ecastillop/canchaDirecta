@@ -471,6 +471,28 @@ class ReservasTest {
     }
 
     @Test
+    void laBandejaDelPropietarioMuestraAlTitularYSuUltimoPago() {
+        Long cancha = crearCancha("Cancha con titular visible");
+        LocalDate fecha = LocalDate.ofInstant(base, ZONA);
+        Instant inicio = fecha.atTime(16, 0).atZone(ZONA).toInstant();
+        Long idReserva = idDe(crearEnComo(tokenReservante, cancha, inicio, inicio.plus(1, ChronoUnit.HOURS))
+                .then().statusCode(201).extract().response());
+
+        // El propietario sabe a quien atiende antes de decidir sobre la solicitud (ADR-0044).
+        Map<String, Object> solicitada = recibida(recibidas(token, null), idReserva);
+        assertEquals("Mario Rios", solicitada.get("cliente"));
+        assertEquals("966444333", solicitada.get("telefono"));
+        assertNull(solicitada.get("pagoEstado"), "Sin pagos registrados todavia.");
+
+        // Cuando el titular paga, el propietario ve el estado de ese ultimo pago.
+        given().auth().oauth2(tokenReservante).contentType(ContentType.JSON)
+                .body(Map.of("medioPago", "TARJETA"))
+                .when().post("/api/v1/reservas/" + idReserva + "/pago")
+                .then().statusCode(201).body("estado", equalTo("APROBADO"));
+        assertEquals("APROBADO", recibida(recibidas(token, null), idReserva).get("pagoEstado"));
+    }
+
+    @Test
     void atenderReservaConDatosInvalidosFallaCon400o404() {
         given().when().get("/api/v1/reservas/recibidas").then().statusCode(401);
         given().when().post("/api/v1/reservas/1/confirmar").then().statusCode(401);
@@ -680,6 +702,13 @@ class ReservasTest {
                 .filter(reserva -> ((Number) reserva.get("id")).longValue() == idReserva)
                 .map(reserva -> String.valueOf(reserva.get("estado")))
                 .findFirst().orElse(null);
+    }
+
+    /** Fila de la bandeja del propietario para una reserva concreta. */
+    private static Map<String, Object> recibida(List<Map<String, Object>> reservas, Long idReserva) {
+        return reservas.stream()
+                .filter(reserva -> ((Number) reserva.get("id")).longValue() == idReserva)
+                .findFirst().orElseThrow(() -> new AssertionError("La reserva no esta en la bandeja."));
     }
 
     private long entradasDeHistorial(Long idReserva) {

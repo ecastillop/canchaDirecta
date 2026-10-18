@@ -1119,3 +1119,40 @@ propietario/admin (nueva semana con horas "libre" y dias "cerrado", y vuelta a l
 evidencia `docs/evidencias/ui/panel-agenda-1440.png`); backend 162/162, build OK, 22/22 unitarios,
 E2E usuario OK, a11y 34 rutas OK, humo 153/153 PS y 134/134 Bash (2026-10-18).
 
+## ADR-0044 - La bandeja del propietario muestra al titular y su ultimo pago
+
+**Contexto:** `GET /api/v1/reservas/recibidas` devolvia la reserva sin datos del titular: el
+propietario veia cancha, fecha, importes y estado, pero no a quien estaba confirmando ni si habia
+pagado. Para decidir una solicitud `PENDIENTE` tenia que pedir esos datos por fuera del sistema. El
+portal de recepcion ya mostraba titular y estado del pago de su sede (`ReservaRecepcion`) y
+`ReservaResponse` documenta a proposito que no expone al titular porque se deduce del token.
+
+**Decision:**
+1. El puerto `ReservaRepositorio.listarPorPropietario` devuelve `ReservaRecibida` (la reserva mas
+   `cliente`, `telefono` y `pagoEstado`), un read model de la bandeja del propietario. La consulta
+   nativa agrega el `JOIN usuario` y una subconsulta con el estado del ultimo pago.
+2. `GET /api/v1/reservas/recibidas` responde `ReservaRecibidaResponse`: los mismos campos de
+   `ReservaResponse` mas `cliente`, `telefono` y `pagoEstado` (nulo si la reserva no tiene pagos). Se
+   mantiene un DTO distinto del de `/reservas/mias` para que los datos de contacto no puedan viajar
+   por los endpoints del propio titular.
+3. El contrato es aditivo: los filtros (`estado`, `idCancha`, `desde`, `hasta`, `limite`) y el alcance
+   por token no cambian. `pagoEstado` es el estado del pago mas reciente (`APROBADO`, `RECHAZADO` o
+   `SOLICITADO`), no el de la reserva.
+4. El panel muestra "Cliente: nombre" con el telefono como enlace `tel:` (etiqueta accesible
+   "Llamar a ...") y un distintivo del ultimo pago (`Pagado`, `Pago rechazado`, `Reembolsado`,
+   `Pago pendiente` o `Sin pago`) junto al estado. La respuesta de confirmar/rechazar/revocar sigue
+   siendo `ReservaResponse`, asi que la fila conserva los datos del titular al actualizarse.
+
+**Consecuencias:** el propietario atiende con el mismo criterio que el personal de la sede (quien es y
+si pago) sin abrir una ruta nueva ni exponer al titular en la vista del cliente. El dato personal se
+limita a nombre y telefono, que es lo que ya ve el operador de la sede; el correo no se publica. Se
+anade una lectura extra por reserva (estado del ultimo pago) acotada al limite de la bandeja (100).
+
+**Evidencia:** `ReservasTest` (`laBandejaDelPropietarioMuestraAlTitularYSuUltimoPago`: nombre y
+telefono del titular, `pagoEstado` nulo antes de pagar y `APROBADO` tras el pago; la suite de la
+bandeja sigue en verde); E2E propietario/admin (un cliente reserva y paga por API el lunes siguiente,
+la rejilla marca la franja "reservada" y la bandeja muestra "Rosa Cliente ..." con su telefono y
+"Pagado"; evidencias `docs/evidencias/ui/panel-agenda-1440.png` y
+`docs/evidencias/ui/panel-reservas-1440.png`); backend 162/162, build OK, 22/22 unitarios, E2E usuario
+OK, a11y 34 rutas OK, humo 153/153 PS y 134/134 Bash (2026-10-18).
+

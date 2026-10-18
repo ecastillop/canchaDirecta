@@ -1,5 +1,6 @@
 package pe.com.canchadirecta.bookings.application.port.in;
 
+import pe.com.canchadirecta.bookings.application.dto.ReservaRecibida;
 import pe.com.canchadirecta.bookings.domain.model.Reserva;
 
 import java.time.Instant;
@@ -15,11 +16,12 @@ import java.util.List;
 public interface AtenderReservaUseCase {
 
     /**
-     * Reservas recibidas por las canchas del propietario; `estado` nulo lista todas y
-     * `idCancha`/`desde`/`hasta` nulos no filtran (el rango se aplica por solape).
+     * Reservas recibidas por las canchas del propietario, con el titular y el ultimo pago
+     * de cada una (ADR-0044); `estado` nulo lista todas y `idCancha`/`desde`/`hasta` nulos
+     * no filtran (el rango se aplica por solape).
      */
-    List<Reserva> recibidas(Long idUsuario, Reserva.Estado estado, Long idCancha,
-                            Instant desde, Instant hasta, int limite);
+    List<ReservaRecibida> recibidas(Long idUsuario, Reserva.Estado estado, Long idCancha,
+                                    Instant desde, Instant hasta, int limite);
 
     /** Pasa una reserva pendiente a `CONFIRMADA`. */
     Reserva confirmar(Long idReserva, Long idUsuario);

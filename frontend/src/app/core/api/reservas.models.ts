@@ -13,6 +13,17 @@ export interface Reserva {
   montoCochera: number | null;
 }
 
+/**
+ * Reserva tal como la ve el propietario en su bandeja: agrega el titular y el estado de su
+ * ultimo pago (ADR-0044). Solo la devuelve `GET /reservas/recibidas`; la vista del propio
+ * cliente (`/reservas/mias`) no expone datos de contacto.
+ */
+export interface ReservaRecibida extends Reserva {
+  cliente: string | null;
+  telefono: string | null;
+  pagoEstado: Pago['estado'] | null;
+}
+
 export interface CrearReservaPayload {
   canchaId: number;
   inicio: string;

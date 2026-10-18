@@ -81,6 +81,11 @@
   Libre/Reservada/Bloqueada/Ya pasó/Cerrado, leyenda y navegación de semana) alimentada por la
   bandeja de reservas recibidas con los filtros nuevos `idCancha`/`desde`/`hasta`; los ayudantes de
   calendario se unificaron en `shared/util/fecha-lima.ts` para la ficha pública y el panel (ADR-0043).
+- Bandeja del propietario con el titular y su último pago (2026-10-18): `GET /reservas/recibidas`
+  devuelve `cliente`, `telefono` y `pagoEstado` (estado del último pago) además de los campos de la
+  reserva; la bandeja muestra "Cliente: nombre", el teléfono como enlace `tel:` y el distintivo del
+  último pago (Pagado/Pago rechazado/Reembolsado/Pago pendiente/Sin pago), y conserva esos datos al
+  confirmar, rechazar o revocar (ADR-0044).
 
 ### Ya integrado del standalone
 
@@ -144,7 +149,7 @@ npm run test:a11y
   propietario/admin) contra backend, tanto en dev como en el contenedor Nginx (`8083`). Rediseño
   de fusión aplicado. Fase 0 y Fase 2 completadas. Modo claro/oscuro, badge de notificaciones,
   calendario fiel a la agenda, bloqueos desde recepción y ocupación semanal del propietario
-  añadidos (ADR-0039, ADR-0040, ADR-0041, ADR-0042, ADR-0043).
+  añadidos (ADR-0039, ADR-0040, ADR-0041, ADR-0042, ADR-0043, ADR-0044).
 - **Backend completado y verificado** (modulos `shared`, `identity`, `venues`, `bookings`,
   `payments`, `settlements`, `engagement`, `platform`): identidad completa (registro, verificacion
   de correo, login con limite de intentos, refresh, logout, recuperacion, perfil editable y
@@ -353,6 +358,11 @@ canchadirecta/
   rango (y `400` con `desde` no ISO), E2E propietario/admin navega a la semana siguiente (horas
   "libre" y dias "cerrado") y vuelve a la actual (`docs/evidencias/ui/panel-agenda-1440.png`),
   backend 162/162, build OK, 22/22 unitarios, E2E usuario OK y a11y 34 rutas OK.
+- Bandeja del propietario con titular y pago (ADR-0044): `ReservasTest` valida nombre, telefono y
+  `pagoEstado` (nulo antes de pagar y `APROBADO` despues), E2E propietario/admin crea y paga una
+  reserva por API, ve la franja "reservada" en la rejilla y al titular con "Pagado" en la bandeja
+  (`docs/evidencias/ui/panel-agenda-1440.png` y `panel-reservas-1440.png`), backend 162/162, build OK,
+  22/22 unitarios, E2E usuario OK y a11y 34 rutas OK.
 - `smoke.ps1` -> **153/153 PASS** (contenedor en 8089 con la imagen reconstruida y `-DbPort 3306`;
   incluye ficha, actividades, cupones, ayuda, reportes, operadores de recepción y el modulo de
   recepcion).
@@ -381,7 +391,7 @@ canchadirecta/
 5. **Docker**: `compose.yml`, `compose.mysql.yml` y Dockerfiles de backend **y frontend**
    verificados (`frontend` en 8083 con proxy `/api`).
 6. **Docs**: base completa (requisitos, arquitectura, modelo, seguridad, pruebas, limitaciones,
-   ADR-0001..**0043**, contratos API del frontend). Faltan diagramas finales y limpiar filas
+   ADR-0001..**0044**, contratos API del frontend). Faltan diagramas finales y limpiar filas
    obsoletas de `TRAZABILIDAD.md`; evidencia E2E ya existe.
 7. **Testcontainers**: pruebas de integracion con MySQL real en CI (Docker requerido).
 
@@ -439,7 +449,10 @@ sede (`esGestorDeCancha`; los horarios y precios siguen siendo del propietario; 
 ADR-0043 ocupacion semanal del propietario (la bandeja de reservas recibidas acepta `idCancha`,
 `desde` y `hasta` por solape sin ampliar el alcance del token, la pantalla "Agenda" suma la rejilla
 de la semana derivada del horario con reservas y bloqueos, y los ayudantes de calendario se unifican
-en `shared/util/fecha-lima.ts`; L-28 documenta el alcance de 60 min).
+en `shared/util/fecha-lima.ts`; L-28 documenta el alcance de 60 min) - ADR-0044 la bandeja del
+propietario muestra al titular y su ultimo pago (`GET /reservas/recibidas` agrega `cliente`,
+`telefono` y `pagoEstado` con un DTO propio, separado de `/reservas/mias` para no exponer contacto al
+titular; el puerto devuelve el read model `ReservaRecibida`).
 Ver `docs/DECISIONES_ARQUITECTURA.md`.
 
 ## 8. PRUEBAS EJECUTADAS
@@ -509,6 +522,7 @@ Ver `docs/DECISIONES_ARQUITECTURA.md`.
 | 2026-10-18 | Badge de notificaciones sin leer + modo claro/oscuro (`NotificacionesStore`, `data-theme`, tokens oscuros y migración de colores fijos) | **PASS** (build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK, a11y **34 rutas OK**; badge verificado E2E: 2 → marcar una → 1 → marcar todas → desaparece; capturas `claro-*-1440.png` y `oscuro-*-1440.png`; ADR-0039/0040) |
 | 2026-10-18 | Calendario derivado del horario configurado y bloqueos visibles (`cancha-detalle`: filas del horario, "Sin cupo" en la hora bloqueada, "Cerrado" en días sin agenda, sin listado "Horario semanal") | **PASS** (datos reales: bloqueo 10:00-11:00 → API 7→6 franjas, la rejilla mantiene la fila 10:00 como "Sin cupo" y 6 libres; días sin horario "Cerrado"; build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK, a11y **34 rutas OK**; ADR-0041) |
 | 2026-10-18 | Bloqueos de cancha desde recepción (`VenuesRepositorio.esGestorDeCancha`, sección "Bloqueos de la fecha" en la agenda del portal) | **PASS** (backend **160/160** (`RecepcionTest` 2/2 con el alta y la baja del operador y los `403` de cancha ajena, horarios y usuario sin asignación), humo **153/153** PS y **134/134** Bash, build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK con alta y baja desde la UI, a11y **34 rutas OK**; ADR-0042; captura `recepcion-bloqueo-1440.png`) |
+| 2026-10-18 | Bandeja del propietario con titular y último pago (`/reservas/recibidas` con `cliente`/`telefono`/`pagoEstado`, DTO propio separado de `/reservas/mias`; bandeja con enlace `tel:` y distintivo de pago) | **PASS** (backend **162/162** con `laBandejaDelPropietarioMuestraAlTitularYSuUltimoPago`, humo **153/153** PS y **134/134** Bash, build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK con reserva y pago por API, rejilla "reservada", titular y "Pagado" en la bandeja, a11y **34 rutas OK**; ADR-0044; capturas `panel-agenda-1440.png` y `panel-reservas-1440.png`) |
 
 Resto de la matriz de pruebas (?13 del prompt): **NOT RUN**.
 
@@ -564,15 +578,16 @@ Valores reales unicamente en `canchadirecta/.env` (gitignored). Nunca en Git.
 La hoja de ruta vigente esta en **`## 0. Mirada hacia adelante`** al inicio de este documento.
 Prioridad inmediata:
 
-1. Ficha publica: distinguir "Reservada"/"Bloqueada" en la rejilla del cliente (L-26) y rotular
+1. Seed/reset de demo controlado (incluye un operador asignado a una sede).
+2. Control de tema dentro de los portales (hoy el toggle está en la topbar pública y el pie).
+3. Ficha publica: distinguir "Reservada"/"Bloqueada" en la rejilla del cliente (L-26) y rotular
    "Cerrado" en los chips de dia sin franjas.
-2. Seed/reset de demo controlado (incluye un operador asignado a una sede).
-3. Control de tema dentro de los portales (hoy el toggle está en la topbar pública y el pie).
 4. Pulido de a11y manual (teclado/contraste, L-23) y diagramas finales.
 
 **Estado:** entrega base cerrada el 2026-10-17; rediseno de fusion, integraciones del standalone y
 bloques A/B/C/D del delta completados el 2026-10-18, más badge de notificaciones, modo claro/oscuro,
-calendario fiel a la agenda, bloqueos desde recepción y ocupación semanal del propietario.
+calendario fiel a la agenda, bloqueos desde recepción, ocupación semanal del propietario y la bandeja
+del propietario con titular y pago.
 Acta: `docs/ACTA_CIERRE.md`.
 
 Cuenta superadministrador local (roles `USER`, `OWNER`, `PLATFORM_ADMIN`):

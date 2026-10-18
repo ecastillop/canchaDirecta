@@ -1,7 +1,7 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal, computed } from '@angular/core';
 import { ReservasApi } from '../../core/api/reservas.api';
-import { EstadoReserva, Reserva } from '../../core/api/reservas.models';
+import { EstadoReserva, Reserva, ReservaRecibida } from '../../core/api/reservas.models';
 import { OwnerStore } from '../../core/api/owner.store';
 import { toApiError } from '../../core/http/api-error';
 import { CdButtonDirective } from '../../shared/ui/button/cd-button.directive';
@@ -64,8 +64,24 @@ const ESTADOS: Array<{ valor: EstadoReserva | ''; etiqueta: string }> = [
             <div class="fila__datos">
               <div class="cd-row cd-row--between">
                 <strong>{{ nombreCancha(reserva.canchaId) }} · #{{ reserva.id }}</strong>
-                <span class="cd-badge" [class]="claseEstado(reserva.estado)">{{ reserva.estado }}</span>
+                <span class="insignias">
+                  <span class="cd-badge" [class]="clasePago(reserva.pagoEstado)">{{ etiquetaPago(reserva.pagoEstado) }}</span>
+                  <span class="cd-badge" [class]="claseEstado(reserva.estado)">{{ reserva.estado }}</span>
+                </span>
               </div>
+              @if (reserva.cliente) {
+                <p class="cd-small">
+                  Cliente: <strong>{{ reserva.cliente }}</strong>
+                  @if (reserva.telefono) {
+                    ·
+                    <a
+                      [href]="'tel:' + reserva.telefono"
+                      [attr.aria-label]="'Llamar a ' + reserva.cliente + ' al ' + reserva.telefono"
+                      >{{ reserva.telefono }}</a
+                    >
+                  }
+                </p>
+              }
               <p class="cd-small cd-muted">
                 {{ reserva.inicio | date: 'EEEE d MMM, HH:mm' }} - {{ reserva.fin | date: 'HH:mm' }}
               </p>
@@ -138,6 +154,12 @@ const ESTADOS: Array<{ valor: EstadoReserva | ''; etiqueta: string }> = [
       gap: var(--cd-space-2);
       flex-wrap: wrap;
     }
+    .insignias {
+      display: flex;
+      gap: var(--cd-space-1);
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
   `,
 })
 export class PanelReservasComponent implements OnInit {
@@ -147,7 +169,7 @@ export class PanelReservasComponent implements OnInit {
   protected readonly store = inject(OwnerStore);
 
   protected readonly estados = ESTADOS;
-  protected readonly reservas = signal<Reserva[]>([]);
+  protected readonly reservas = signal<ReservaRecibida[]>([]);
   protected readonly filtro = signal<EstadoReserva | ''>('');
   protected readonly cargando = signal(true);
   protected readonly error = signal<string | null>(null);
@@ -182,6 +204,37 @@ export class PanelReservasComponent implements OnInit {
       EXPIRADA: 'cd-badge',
     };
     return mapa[estado];
+  }
+
+  /** Ultimo pago de la reserva, en palabras: es lo que el propietario necesita antes de atenderla. */
+  protected etiquetaPago(pagoEstado: ReservaRecibida['pagoEstado']): string {
+    switch (pagoEstado) {
+      case 'APROBADO':
+        return 'Pagado';
+      case 'RECHAZADO':
+        return 'Pago rechazado';
+      case 'REEMBOLSADO':
+        return 'Reembolsado';
+      case 'PENDIENTE':
+        return 'Pago pendiente';
+      default:
+        return 'Sin pago';
+    }
+  }
+
+  protected clasePago(pagoEstado: ReservaRecibida['pagoEstado']): string {
+    switch (pagoEstado) {
+      case 'APROBADO':
+        return 'cd-badge cd-badge--success';
+      case 'RECHAZADO':
+        return 'cd-badge cd-badge--danger';
+      case 'REEMBOLSADO':
+        return 'cd-badge cd-badge--info';
+      case 'PENDIENTE':
+        return 'cd-badge cd-badge--warning';
+      default:
+        return 'cd-badge';
+    }
   }
 
   protected async confirmar(reserva: Reserva): Promise<void> {
@@ -246,8 +299,11 @@ export class PanelReservasComponent implements OnInit {
     });
   }
 
+  /** La respuesta de confirmar/rechazar/revocar es una reserva sin titular: se conserva la fila. */
   private reemplazar(actualizada: Reserva, mensaje: string): void {
-    this.reservas.update((lista) => lista.map((r) => (r.id === actualizada.id ? actualizada : r)));
+    this.reservas.update((lista) =>
+      lista.map((r) => (r.id === actualizada.id ? { ...r, ...actualizada } : r)),
+    );
     this.toast.success(mensaje);
   }
 }

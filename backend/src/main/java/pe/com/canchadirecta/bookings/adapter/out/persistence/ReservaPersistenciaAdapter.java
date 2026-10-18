@@ -8,6 +8,7 @@ import jakarta.transaction.Transactional;
 import pe.com.canchadirecta.bookings.application.dto.CanchaInfo;
 import pe.com.canchadirecta.bookings.application.dto.CocheraInfo;
 import pe.com.canchadirecta.bookings.application.dto.HorarioSemanal;
+import pe.com.canchadirecta.bookings.application.dto.ReservaRecibida;
 import pe.com.canchadirecta.bookings.application.port.out.ReservaRepositorio;
 import pe.com.canchadirecta.bookings.domain.model.FranjaHoraria;
 import pe.com.canchadirecta.bookings.domain.model.Reserva;
@@ -311,10 +312,15 @@ public class ReservaPersistenciaAdapter implements ReservaRepositorio {
     }
 
     @Override
-    public List<Reserva> listarPorPropietario(Long idUsuario, Reserva.Estado estado, Long idCancha,
-                                              Instant desde, Instant hasta, int limite) {
+    public List<ReservaRecibida> listarPorPropietario(Long idUsuario, Reserva.Estado estado, Long idCancha,
+                                                      Instant desde, Instant hasta, int limite) {
         // Subconsulta en lugar de JOIN para poder reutilizar COLUMNAS_RESERVA sin calificar.
-        Query consulta = em.createNativeQuery("SELECT " + COLUMNAS_RESERVA + RESERVA_CON_COCHERA
+        // Tras las columnas de la reserva van el titular y el estado de su ultimo pago (ADR-0044).
+        Query consulta = em.createNativeQuery("SELECT " + COLUMNAS_RESERVA
+                        + ", CONCAT(u.nombres, ' ', u.apellidos), u.telefono, "
+                        + "(SELECT p.estado FROM pago p WHERE p.id_reserva = r.id_reserva "
+                        + "ORDER BY p.id_pago DESC LIMIT 1)"
+                        + RESERVA_CON_COCHERA + " JOIN usuario u ON u.id_usuario = r.id_usuario"
                         + " WHERE r.id_cancha IN (SELECT c.id_cancha FROM cancha c "
                         + "JOIN establecimiento e ON e.id_establecimiento = c.id_establecimiento "
                         + "JOIN propietario p ON p.id_propietario = e.id_propietario "
@@ -340,9 +346,11 @@ public class ReservaPersistenciaAdapter implements ReservaRepositorio {
         }
 
         List<?> filas = consulta.getResultList();
-        List<Reserva> recibidas = new ArrayList<>(filas.size());
+        List<ReservaRecibida> recibidas = new ArrayList<>(filas.size());
         for (Object fila : filas) {
-            recibidas.add(aReserva((Object[]) fila));
+            Object[] columnas = (Object[]) fila;
+            recibidas.add(new ReservaRecibida(aReserva(columnas), (String) columnas[11],
+                    (String) columnas[12], (String) columnas[13]));
         }
         return recibidas;
     }

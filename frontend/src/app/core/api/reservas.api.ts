@@ -2,7 +2,7 @@ import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { apiUrl } from '../http/api-url';
-import { CrearReservaPayload, EstadoReserva, Reserva } from './reservas.models';
+import { CrearReservaPayload, EstadoReserva, Reserva, ReservaRecibida } from './reservas.models';
 
 @Injectable({ providedIn: 'root' })
 export class ReservasApi {
@@ -29,15 +29,15 @@ export class ReservasApi {
   }
 
   /**
-   * Reservas recibidas por el propietario. `filtros` permite acotar a una cancha y a un rango
-   * de instantes (`desde`/`hasta` en ISO-8601, se aplican por solape), que es lo que usa la
-   * rejilla de ocupacion semanal del panel.
+   * Reservas recibidas por el propietario, con el titular y su ultimo pago. `filtros` permite
+   * acotar a una cancha y a un rango de instantes (`desde`/`hasta` en ISO-8601, se aplican por
+   * solape), que es lo que usa la rejilla de ocupacion semanal del panel.
    */
   recibidas(
     estado?: EstadoReserva | null,
     limite = 50,
     filtros: { idCancha?: number; desde?: string; hasta?: string } = {},
-  ): Observable<Reserva[]> {
+  ): Observable<ReservaRecibida[]> {
     let params = new HttpParams().set('limite', limite);
     if (estado) {
       params = params.set('estado', estado);
@@ -51,7 +51,7 @@ export class ReservasApi {
     if (filtros.hasta) {
       params = params.set('hasta', filtros.hasta);
     }
-    return this.http.get<Reserva[]>(apiUrl('/reservas/recibidas'), { params });
+    return this.http.get<ReservaRecibida[]>(apiUrl('/reservas/recibidas'), { params });
   }
 
   confirmar(id: number): Observable<Reserva> {

@@ -21,6 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import pe.com.canchadirecta.bookings.adapter.in.rest.dto.CrearReservaRequest;
 import pe.com.canchadirecta.bookings.adapter.in.rest.dto.ModificarReservaRequest;
 import pe.com.canchadirecta.bookings.adapter.in.rest.dto.RechazarReservaRequest;
+import pe.com.canchadirecta.bookings.adapter.in.rest.dto.ReservaRecibidaResponse;
 import pe.com.canchadirecta.bookings.adapter.in.rest.dto.ReservaResponse;
 import pe.com.canchadirecta.bookings.application.dto.CrearReservaCommand;
 import pe.com.canchadirecta.bookings.application.port.in.AtenderReservaUseCase;
@@ -104,15 +105,16 @@ public class ReservaResource {
     @GET
     @Path("/recibidas")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Lista las reservas recibidas en las canchas del propietario (HU-008-2)")
-    public List<ReservaResponse> recibidas(@QueryParam("estado") String estado,
-                                           @QueryParam("idCancha") Long idCancha,
-                                           @QueryParam("desde") String desde,
-                                           @QueryParam("hasta") String hasta,
-                                           @QueryParam("limite") @DefaultValue("50") int limite) {
+    @Operation(summary = "Lista las reservas recibidas en las canchas del propietario (HU-008-2)",
+            description = "Incluye el titular (`cliente`, `telefono`) y el estado de su ultimo pago (`pagoEstado`).")
+    public List<ReservaRecibidaResponse> recibidas(@QueryParam("estado") String estado,
+                                                   @QueryParam("idCancha") Long idCancha,
+                                                   @QueryParam("desde") String desde,
+                                                   @QueryParam("hasta") String hasta,
+                                                   @QueryParam("limite") @DefaultValue("50") int limite) {
         return atencion.recibidas(idUsuarioAutenticado(), estadoDe(estado), idCancha,
                         aInstante(desde, "desde"), aInstante(hasta, "hasta"), limite).stream()
-                .map(ReservaResource::aRespuesta)
+                .map(ReservaRecibidaResponse::de)
                 .toList();
     }
 

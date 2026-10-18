@@ -3,6 +3,7 @@ package pe.com.canchadirecta.bookings.application.port.out;
 import pe.com.canchadirecta.bookings.application.dto.CanchaInfo;
 import pe.com.canchadirecta.bookings.application.dto.CocheraInfo;
 import pe.com.canchadirecta.bookings.application.dto.HorarioSemanal;
+import pe.com.canchadirecta.bookings.application.dto.ReservaRecibida;
 import pe.com.canchadirecta.bookings.domain.model.FranjaHoraria;
 import pe.com.canchadirecta.bookings.domain.model.Reserva;
 
@@ -83,13 +84,14 @@ public interface ReservaRepositorio {
     boolean esPropietarioDeReserva(Long idReserva, Long idUsuario);
 
     /**
-     * Reservas recibidas por todas las canchas del propietario, mas recientes primero.
-     * `estado`, `idCancha`, `desde` y `hasta` son filtros opcionales (nulos = sin filtro);
-     * el rango se aplica por solape (`fin &gt; desde`, `inicio &lt; hasta`) y es lo que alimenta
-     * la vista semanal de ocupacion del panel (ADR-0043).
+     * Reservas recibidas por todas las canchas del propietario, mas recientes primero, con
+     * el titular y el ultimo pago de cada una (ADR-0044). `estado`, `idCancha`, `desde` y
+     * `hasta` son filtros opcionales (nulos = sin filtro); el rango se aplica por solape
+     * (`fin &gt; desde`, `inicio &lt; hasta`) y es lo que alimenta la vista semanal de ocupacion
+     * del panel (ADR-0043).
      */
-    List<Reserva> listarPorPropietario(Long idUsuario, Reserva.Estado estado, Long idCancha,
-                                       Instant desde, Instant hasta, int limite);
+    List<ReservaRecibida> listarPorPropietario(Long idUsuario, Reserva.Estado estado, Long idCancha,
+                                              Instant desde, Instant hasta, int limite);
 
     // --- Expiracion del hold de pago (ADR-0022) -------------------------------
 

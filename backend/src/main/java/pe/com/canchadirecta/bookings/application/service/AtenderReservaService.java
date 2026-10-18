@@ -3,6 +3,7 @@ package pe.com.canchadirecta.bookings.application.service;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import pe.com.canchadirecta.bookings.application.dto.ReservaRecibida;
 import pe.com.canchadirecta.bookings.application.port.in.AtenderReservaUseCase;
 import pe.com.canchadirecta.bookings.application.port.out.ReservaRepositorio;
 import pe.com.canchadirecta.bookings.domain.model.Reserva;
@@ -53,8 +54,8 @@ public class AtenderReservaService implements AtenderReservaUseCase {
     }
 
     @Override
-    public List<Reserva> recibidas(Long idUsuario, Reserva.Estado estado, Long idCancha,
-                                   Instant desde, Instant hasta, int limite) {
+    public List<ReservaRecibida> recibidas(Long idUsuario, Reserva.Estado estado, Long idCancha,
+                                           Instant desde, Instant hasta, int limite) {
         return reservas.listarPorPropietario(idUsuario, estado, idCancha, desde, hasta, limite);
     }
 

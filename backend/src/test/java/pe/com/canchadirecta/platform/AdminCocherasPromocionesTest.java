@@ -45,7 +45,9 @@ class AdminCocherasPromocionesTest {
         String admin = nuevoAdmin("admin.promo");
         String dueno = nuevoUsuario("dueno.promo");
         Long idCancha = crearCancha(dueno, crearEstablecimiento(dueno));
-        String codigo = "VERANO" + Math.floorMod(System.nanoTime(), 100_000);
+        // El codigo es unico en la base compartida (Modo B): se usa un sufijo amplio para no
+        // colisionar con las promociones que dejan otras ejecuciones.
+        String codigo = "VERANO" + Math.floorMod(System.nanoTime(), 1_000_000_000L);
 
         Long id = ((Number) given().auth().oauth2(admin).contentType(ContentType.JSON)
                 .body(promocion(codigo, "PORCENTAJE", new BigDecimal("15.00"), List.of(idCancha)))

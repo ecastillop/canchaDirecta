@@ -34,6 +34,14 @@ const fallo = (m) => {
   fallos.push(m);
 };
 
+/** Lunes de la semana siguiente en hora de Lima: la rejilla del panel empieza el lunes. */
+function proximoLunesLima() {
+  const lima = new Date(Date.now() - 5 * 3600 * 1000);
+  const delta = (8 - lima.getUTCDay()) % 7 || 7;
+  lima.setUTCDate(lima.getUTCDate() + delta);
+  return lima.toISOString().slice(0, 10);
+}
+
 async function api(path, { method = 'GET', body, token } = {}) {
   const res = await fetch(`${API}${path}`, {
     method,
@@ -246,7 +254,51 @@ try {
   await page.getByRole('button', { name: 'Semana siguiente' }).waitFor();
   ok('la rejilla vuelve a la semana actual');
 
+  // Un cliente reserva el lunes siguiente y paga: la rejilla y la bandeja deben reflejarlo (ADR-0044).
+  const cliente = {
+    nombres: 'Rosa',
+    apellidos: `Cliente ${stamp}`,
+    correo: `e2e.cliente.${stamp}@canchadirecta.pe`,
+    telefono: '955333444',
+    password: 'ClaveSegura123',
+  };
+  await api('/auth/register', {
+    method: 'POST',
+    body: {
+      nombres: cliente.nombres,
+      apellidos: cliente.apellidos,
+      correo: cliente.correo,
+      telefono: cliente.telefono,
+      password: cliente.password,
+      confirmacionPassword: cliente.password,
+    },
+  });
+  const loginCliente = await api('/auth/login', {
+    method: 'POST',
+    body: { correo: cliente.correo, password: cliente.password },
+  });
+  const disponibilidad = await api(
+    `/canchas/${idCancha}/disponibilidad?fecha=${proximoLunesLima()}&duracionMinutos=60`,
+  );
+  const franja = disponibilidad.franjas[0];
+  if (!franja) throw new Error('La cancha no ofrece franjas el lunes siguiente.');
+  const reserva = await api('/reservas', {
+    method: 'POST',
+    token: loginCliente.accessToken,
+    body: { canchaId: idCancha, inicio: franja.inicio, fin: franja.fin },
+  });
+  await api(`/reservas/${reserva.id}/pago`, {
+    method: 'POST',
+    token: loginCliente.accessToken,
+    body: { medioPago: 'TARJETA' },
+  });
+  ok('un cliente reserva y paga la franja del lunes siguiente');
+
+  await page.getByRole('button', { name: 'Semana siguiente' }).click();
+  await page.getByRole('cell', { name: /18:00: reservada/ }).first().waitFor({ timeout: 20000 });
+  ok('la rejilla semanal marca la franja reservada');
   await page.screenshot({ path: `${EVID}/panel-agenda-1440.png`, fullPage: false });
+  await page.getByRole('button', { name: 'Hoy', exact: true }).click();
 
   // Promociones del propietario
   await navPanel.getByRole('link', { name: 'Promociones' }).click();
@@ -297,10 +349,15 @@ try {
   ok('metricas del panel con KPIs y periodo');
   await page.screenshot({ path: `${EVID}/panel-metricas-1440.png`, fullPage: false });
 
-  // Reservas recibidas
+  // Reservas recibidas: el propietario ve al titular y el estado de su pago (ADR-0044)
   await navPanel.getByRole('link', { name: 'Reservas' }).click();
-  await page.getByText('Sin reservas recibidas').waitFor({ timeout: 20000 });
-  ok('reservas recibidas consulta OK');
+  await page.getByText(`Rosa Cliente ${stamp}`).waitFor({ timeout: 20000 });
+  await page.getByText('Pagado').first().waitFor();
+  await page
+    .getByRole('link', { name: `Llamar a Rosa Cliente ${stamp} al ${cliente.telefono}` })
+    .waitFor();
+  ok('la bandeja del propietario muestra al titular y su pago');
+  await page.screenshot({ path: `${EVID}/panel-reservas-1440.png`, fullPage: false });
 
   // 3. Administracion: tabs nuevas
   await page.locator('.panel-side__salir').click();
