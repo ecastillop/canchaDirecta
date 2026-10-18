@@ -1,0 +1,37 @@
+# Entorno
+.env
+.env.local
+*.local
+
+# Secretos locales generados (claves JWT, etc.)
+.secrets/
+.secrets/**
+
+# Java / Maven
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+!backend/.mvn/wrapper/maven-wrapper.properties
+*.class
+hs_err_pid*
+
+# Node / Angular
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/coverage/
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.suo
+*.user
+.DS_Store
+
+# Datos y artefactos locales
+**/uploads/
+**/*.log
+docs/evidencias/ui/*.tmp

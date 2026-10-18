@@ -1,0 +1,101 @@
+// ============================================================================
+// CanchaDirecta - tokens semanticos (capa 2) y paletas intercambiables.
+// Los componentes SOLO consumen variables --cd-*; ningun hex en componentes.
+// ============================================================================
+
+:root {
+  color-scheme: light;
+
+  // Tipografia (Inter si esta instalada; fallback de sistema, sin fuentes remotas)
+  --cd-font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --cd-font-mono: 'Cascadia Code', 'SFMono-Regular', Consolas, monospace;
+
+  --cd-text-xs: 0.75rem;
+  --cd-text-sm: 0.875rem;
+  --cd-text-base: 1rem;
+  --cd-text-lg: 1.25rem;
+  --cd-text-xl: 1.5rem;
+  --cd-text-2xl: 1.875rem;
+  --cd-text-3xl: 2.25rem;
+
+  --cd-leading-tight: 1.2;
+  --cd-leading-base: 1.5;
+
+  // Espacio
+  --cd-space-1: 4px;
+  --cd-space-2: 8px;
+  --cd-space-3: 12px;
+  --cd-space-4: 16px;
+  --cd-space-5: 24px;
+  --cd-space-6: 32px;
+  --cd-space-7: 48px;
+  --cd-space-8: 64px;
+
+  // Radio
+  --cd-radius-sm: 8px;
+  --cd-radius-md: 12px;
+  --cd-radius-lg: 16px;
+  --cd-radius-pill: 999px;
+
+  // Movimiento
+  --cd-duration-fast: 120ms;
+  --cd-duration-base: 200ms;
+  --cd-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  // Contenedor
+  --cd-container-max: 1200px;
+  --cd-topbar-height: 60px;
+
+  // Paleta por defecto: "cancha"
+  --cd-color-primary: #0b2545;
+  --cd-color-primary-strong: #123b66;
+  --cd-color-accent: #14b8a6;
+  --cd-color-accent-strong: #0f9488;
+  --cd-color-bg: #f6f8fb;
+  --cd-color-surface: #ffffff;
+  --cd-color-surface-alt: #eef2f7;
+  --cd-color-text: #0f172a;
+  --cd-color-text-muted: #5b6b80;
+  --cd-color-on-primary: #ffffff;
+  --cd-color-success: #15803d;
+  --cd-color-success-soft: #e7f6ec;
+  --cd-color-warning: #b45309;
+  --cd-color-warning-soft: #fdf3e3;
+  --cd-color-danger: #b91c1c;
+  --cd-color-danger-soft: #fdecec;
+  --cd-color-info: #1d4ed8;
+  --cd-color-info-soft: #e8eefc;
+  --cd-color-border: #d8e0ea;
+  --cd-color-focus: #14b8a6;
+  --cd-shadow-1: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.08);
+  --cd-shadow-2: 0 4px 12px rgba(15, 23, 42, 0.1);
+  --cd-shadow-3: 0 16px 40px rgba(15, 23, 42, 0.18);
+}
+
+:root[data-palette='grafito'] {
+  --cd-color-primary: #16181d;
+  --cd-color-primary-strong: #23262e;
+  --cd-color-accent: #a3e635;
+  --cd-color-accent-strong: #84cc16;
+  --cd-color-bg: #f4f5f7;
+  --cd-color-surface: #ffffff;
+  --cd-color-surface-alt: #eceef2;
+  --cd-color-text: #101318;
+  --cd-color-text-muted: #5c6472;
+  --cd-color-border: #d7dbe2;
+  --cd-color-focus: #84cc16;
+}
+
+:root[data-palette='arena'] {
+  --cd-color-primary: #1f3d2b;
+  --cd-color-primary-strong: #2c5239;
+  --cd-color-accent: #c2622f;
+  --cd-color-accent-strong: #a34f22;
+  --cd-color-bg: #faf6f0;
+  --cd-color-surface: #fffdf9;
+  --cd-color-surface-alt: #f1e9dd;
+  --cd-color-text: #23180f;
+  --cd-color-text-muted: #6d5c4c;
+  --cd-color-border: #e2d6c6;
+  --cd-color-focus: #c2622f;
+}

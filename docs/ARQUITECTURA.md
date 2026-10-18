@@ -1,0 +1,140 @@
+# Arquitectura
+
+## 1. Estilo
+
+Monolito modular + arquitectura hexagonal (Clean Architecture). Un backend, una base
+MySQL, un frontend Angular. Sin microservicios, mensajeria, Redis ni Kubernetes por
+defecto (ADR-0001).
+
+## 2. Modulos (capacidades de negocio)
+
+| Modulo | Responsabilidad |
+|---|---|
+| `identity` | usuarios, roles, credenciales, verificacion de correo, recuperacion, propietarios |
+| `geography` | departamentos, provincias, distritos/ubigeo |
+| `catalog` | deportes, caracteristicas, catalogo publico, busqueda, comparacion, fotos |
+| `venues` | establecimientos, canchas, horarios, precios, bloqueos, cocheras (RN-08) |
+| `bookings` | disponibilidad, reservas, historial, expiracion, cierre, cancelacion, cambios |
+| `payments` | pago simulado, reembolso, idempotencia, politicas |
+| `settlements` | comisiones, ingresos, liquidaciones |
+| `engagement` | calificaciones, reclamos, notificaciones |
+| `platform` | operaciones globales, catalogos admin, auditoria, dashboard |
+
+## 3. Capas por modulo
+
+```text
+<module>/
+  domain/                    # agregados, value objects, reglas - SOLO Java
+  application/
+    port/in/                 # casos de uso (interfaces)
+    port/out/                # repositorios, reloj, tokens, email, storage, pago
+    service/                 # orquestacion
+    dto/                     # DTO de aplicacion (no REST)
+  adapter/in/rest/           # controllers, request/response, validacion de borde
+  adapter/out/persistence/   # entidades JPA, repositorios, mappers
+  adapter/out/<otros>/       # security, payment, email, storage
+```
+
+**Reglas inviolables:** `domain` sin `@Entity/@Path/@ApplicationScoped/@Transactional`
+ni dependencias a Quarkus/HTTP/MySQL; puertos hacia dentro, adaptadores los
+implementan; controllers sin SQL/reglas/precio/estados; entidades JPA ? DTO REST ?
+dominio; `BigDecimal` para montos.
+
+## 4. Flujo critico: reserva concurrente (ADR-0005)
+
+```text
+POST /api/v1/bookings  [Idempotency-Key]
+  -> validar sesion, ventana, duracion
+  -> BEGIN (InnoDB)
+  -> SELECT ... FROM cancha WHERE id=? FOR UPDATE        -- serializa por recurso
+  -> validar establecimiento/cancha activos, horario aplicable, bloqueos
+  -> interseccion: nuevoInicio < existenteFin AND nuevoFin > existenteInicio
+  -> (opcional) SELECT cochera FOR UPDATE (orden consistente cancha->cochera, ADR-0019)
+  -> (opcional) cupo = capacidad - reserva_cochera vigente que se solapa
+  -> calcular tarifa + descuento; snapshot de importe
+  -> INSERT reserva (PENDIENTE) + historial_reserva + idempotencia
+  -> COMMIT
+  -> (fuera del lock) resultado de pago simulado en nueva transaccion idempotente
+  -> transicion CONFIRMADA / CANCELADA + notificacion
+```
+
+### 4.1 Flujo del pago simulado y reembolso (ADR-0020)
+
+```text
+POST /api/v1/reservas/{id}/pago           [titular]
+  -> reserva PENDIENTE/CONFIRMADA y sin pago APROBADO (si no, 409, RN-05)
+  -> monto = monto_cancha - monto_descuento + monto_cochera
+  -> pago_evento(SOLICITADO) -> PaymentGatewayPort (simulador determinista)
+  -> INSERT pago (APROBADO|RECHAZADO) + pago_evento(resultado)   -- COMMIT
+GET  /api/v1/reservas/{id}/pago  -> ultimo pago + reembolsos
+
+cancelar (titular) / rechazar (propietario)
+  -> cambiarestado + PoliticaReembolso (misma transaccion)
+  -> si hay pago APROBADO y procede: INSERT reembolso(PROCESADO)
+     + pago.estado = REEMBOLSADO + pago_evento(REEMBOLSADO)
+```
+
+### 4.2 Flujo de la liquidacion del propietario (ADR-0021)
+
+```text
+POST /api/v1/liquidaciones                       [propietario]
+  -> BEGIN; SELECT id_propietario FROM propietario ... FOR UPDATE   -- serializa (RN-07)
+  -> reservas liquidables (read model reserva+pago): pago APROBADO y reserva
+     CONFIRMADA/FINALIZADA, DATE(inicio) en [periodo] y aun sin liquidar
+  -> por reserva: comision = round(monto x cd.liquidaciones.porcentaje-comision/100, 2)
+                  neto     = monto - comision
+  -> INSERT liquidacion (PENDIENTE) + detalle_liquidacion (UNIQUE id_reserva)
+  -> COMMIT
+GET  /api/v1/liquidaciones                        -> cabeceras del propietario
+GET  /api/v1/liquidaciones/{id}                   -> cabecera + lineas de detalle
+```
+
+### 4.3 Flujo de la expiracion del hold y la revocacion (ADR-0022)
+
+```text
+Job @Scheduled(60s)  -> ExpirarReservasUseCase.expirarVencidas(lote)   [transaccional]
+  -> reservas PENDIENTE sin pago APROBADO con fecha_creacion < NOW() - hold
+     (hold = config_establecimiento.hold_pago_min, o cd.reservas.hold-pago-min)
+  -> SELECT ... FOR UPDATE OF r (solo la reserva; no bloquea la cancha)
+  -> UPDATE reserva SET estado = EXPIRADA + historial_reserva   -- libera la franja
+
+POST /api/v1/reservas/{id}/revocar                [propietario]
+  -> reserva CONFIRMADA y no comenzada (si no, 409)
+  -> estado = RECHAZADA + historial_reserva
+  -> PoliticaReembolso(porPropietario = true): reembolso total si habia pago APROBADO
+
+Job @Scheduled(60s)  -> FinalizarReservasUseCase.finalizarConcluidas(lote)   [transaccional]
+  -> reservas CONFIRMADA con fin < UTC_TIMESTAMP(6)   -- inicio/fin son literales UTC (ADR-0014)
+  -> SELECT ... FOR UPDATE (solo la reserva; no bloquea la cancha)
+  -> UPDATE reserva SET estado = FINALIZADA + historial_reserva   -- cierra el ciclo, sin reembolso
+```
+
+**Nota de relojes (L-04):** la expiracion mide `fecha_creacion` contra `NOW(6)` (hora local del
+servidor, la misma que la llena por defecto) y la finalizacion mide `fin` contra `UTC_TIMESTAMP(6)`
+(la columna es un literal UTC). Cada job compara contra el mismo marco horario que su columna; ninguno
+depende de la zona del servidor.
+
+## 5. Contrato REST
+
+Bajo `/api/v1`. Errores RFC 9457 (Problem Details) con `code` de negocio
+(`SLOT_UNAVAILABLE`, `OWNER_RESOURCE_FORBIDDEN`, `PAYMENT_DECLINED`, ...). Ver
+`API.md` (pendiente) y Swagger en `/q/swagger-ui`.
+
+## 6. Persistencia
+
+MySQL 8 (host), InnoDB, utf8mb4. **Flyway es dueno del esquema**; Hibernate solo
+valida. Migraciones `V1..V6` (ver `MODELO_DATOS.md`). Usuario de migracion y de
+runtime separados (ADR-0009).
+
+## 7. Frontend (objetivo, pendiente)
+
+Angular 22 standalone, lazy por areas (`public/auth/account/booking/owner/admin`),
+TS strict, Signals + RxJS, reactive forms, interceptors (auth/errores), guards como
+apoyo de UX (nunca unica seguridad), CSS con design tokens, mobile-first, WCAG 2.2 AA,
+estados loading/empty/error/success en todas las areas.
+
+## 8. Infraestructura (objetivo, pendiente)
+
+Dockerfiles multi-stage no-root, Nginx con fallback SPA y proxy `/api`, Compose con
+variante host (`host.docker.internal`) y variante MySQL aislado (3307), healthchecks,
+`.env.example`, `.dockerignore`.

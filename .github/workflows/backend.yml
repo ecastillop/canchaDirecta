@@ -1,0 +1,65 @@
+name: backend
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: canchadirecta
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Crear usuarios de base de datos
+        run: |
+          mysql -h 127.0.0.1 -uroot -proot <<'SQL'
+          CREATE USER 'canchadirecta_app'@'%' IDENTIFIED BY 'app-ci';
+          GRANT SELECT, INSERT, UPDATE, DELETE ON canchadirecta.* TO 'canchadirecta_app'@'%';
+          CREATE USER 'canchadirecta_mig'@'%' IDENTIFIED BY 'mig-ci';
+          GRANT ALL PRIVILEGES ON canchadirecta.* TO 'canchadirecta_mig'@'%';
+          FLUSH PRIVILEGES;
+          SQL
+
+      - name: Generar clave JWT HS256
+        run: |
+          KEY=$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')
+          printf '{"kty":"oct","kid":"canchadirecta-access","alg":"HS256","k":"%s"}' "$KEY" > jwt-signing-key.jwk
+          echo "JWT_SIGN_KEY_LOCATION=$GITHUB_WORKSPACE/jwt-signing-key.jwk" >> "$GITHUB_ENV"
+
+      - name: Ejecutar pruebas
+        working-directory: backend
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: '3306'
+          DB_NAME: canchadirecta
+          DB_USER: canchadirecta_app
+          DB_PASSWORD: app-ci
+          DB_MIG_USER: canchadirecta_mig
+          DB_MIG_PASSWORD: mig-ci
+          APP_TIMEZONE: America/Lima
+          APP_CURRENCY: PEN
+          APP_COMMISSION_RATE: '0.10'
+        run: ./mvnw -B test

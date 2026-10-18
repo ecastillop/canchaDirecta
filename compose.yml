@@ -1,0 +1,58 @@
+# ============================================================================
+# CanchaDirecta - Compose principal
+# Modo B: frontend (Nginx) + backend en contenedores contra el MySQL del host.
+# El backend usa host.docker.internal para llegar al MySQL de Windows.
+# Para MySQL aislado: docker compose -f compose.yml -f compose.mysql.yml up ...
+# ============================================================================
+name: canchadirecta
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: canchadirecta/backend:0.1.0
+    environment:
+      DB_HOST: ${DOCKER_DB_HOST:-host.docker.internal}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:-canchadirecta}
+      DB_USER: ${DB_USER:-canchadirecta_app}
+      DB_PASSWORD: ${DB_PASSWORD:?definir en .env}
+      DB_MIG_USER: ${DB_MIG_USER:-canchadirecta_mig}
+      DB_MIG_PASSWORD: ${DB_MIG_PASSWORD:?definir en .env}
+      QUARKUS_HTTP_PORT: 8080
+      QUARKUS_PROFILE: prod
+      # La clave JWK se monta de solo lectura: nunca se copia a la imagen.
+      JWT_SIGN_KEY_LOCATION: /app/secrets/jwt-signing-key.jwk
+    volumes:
+      - ./.secrets/jwt-signing-key.jwk:/app/secrets/jwt-signing-key.jwk:ro
+    ports:
+      # Publicado en el host en un puerto libre para verificacion/diagnostico.
+      - "${BACKEND_PORT:-8089}:8080"
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/q/health/ready || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+    networks: [cd-net]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: canchadirecta/frontend:0.1.0
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-8083}:80"
+    restart: unless-stopped
+    networks: [cd-net]
+
+networks:
+  cd-net:
+    driver: bridge

@@ -1,0 +1,327 @@
+import { chromium } from 'playwright-core';
+import fs from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const BASE = process.env.BASE ?? 'http://localhost:4300';
+const API = process.env.API ?? 'http://localhost:8089/api/v1';
+const EVID = resolve(dirname(fileURLToPath(import.meta.url)), '../../docs/evidencias/ui');
+const CHROME =
+  process.env.CHROME_PATH ??
+  (process.platform === 'win32'
+    ? 'C:/Program Files/Google/Chrome/Application/chrome.exe'
+    : '/usr/bin/google-chrome');
+const ADMIN = { correo: process.env.ADMIN_CORREO, password: process.env.ADMIN_PASSWORD };
+if (!ADMIN.correo || !ADMIN.password) {
+  console.error('Define ADMIN_CORREO y ADMIN_PASSWORD de una cuenta PLATFORM_ADMIN.');
+  process.exit(2);
+}
+fs.mkdirSync(EVID, { recursive: true });
+
+const stamp = Date.now();
+const owner = {
+  nombres: 'Owner',
+  apellidos: `E2E ${stamp}`,
+  correo: `e2e.owner.${stamp}@canchadirecta.pe`,
+  password: 'ClaveSegura123',
+};
+const documento = `E2E${String(stamp).slice(-8)}`;
+const promo = `PROMO${String(stamp).slice(-5)}`;
+const fallos = [];
+const ok = (m) => console.log(`[PASS] ${m}`);
+const fallo = (m) => {
+  console.log(`[FAIL] ${m}`);
+  fallos.push(m);
+};
+
+async function api(path, { method = 'GET', body, token } = {}) {
+  const res = await fetch(`${API}${path}`, {
+    method,
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const texto = await res.text();
+  let data = null;
+  try {
+    data = texto ? JSON.parse(texto) : null;
+  } catch {
+    data = texto;
+  }
+  if (!res.ok) throw new Error(`${method} ${path} -> ${res.status}: ${texto.slice(0, 200)}`);
+  return data;
+}
+
+// Setup: owner pendiente (la validacion se hara por la UI del admin)
+const reg = await api('/auth/register', {
+  method: 'POST',
+  body: {
+    nombres: owner.nombres,
+    apellidos: owner.apellidos,
+    correo: owner.correo,
+    telefono: '988777666',
+    password: owner.password,
+    confirmacionPassword: owner.password,
+  },
+});
+console.log(`Owner registrado id=${reg.id}`);
+const loginOwner = await api('/auth/login', { method: 'POST', body: { correo: owner.correo, password: owner.password } });
+await api('/propietarios/solicitudes', {
+  method: 'POST',
+  token: loginOwner.accessToken,
+  body: { documentoIdentidad: documento },
+});
+
+const browser = await chromium.launch({ executablePath: CHROME, headless: true });
+const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: 'es-PE' });
+const page = await context.newPage();
+const errores = [];
+page.on('pageerror', (e) => errores.push(`pageerror: ${e.message}`));
+page.on('response', (r) => {
+  const esperado =
+    (/\/propietarios\/me$/.test(r.url()) && r.status() === 404) ||
+    (/\/admin\/promociones$/.test(r.url()) && r.status() === 409);
+  if (r.status() >= 400 && !esperado) errores.push(`HTTP ${r.status()} ${r.url()}`);
+});
+page.on('console', (m) => {
+  const texto = m.text();
+  if (m.type() === 'error' && !texto.includes('favicon') && !texto.includes('Failed to load resource')) {
+    errores.push(`console: ${texto}`);
+  }
+});
+
+async function login(correo, password) {
+  await page.goto(`${BASE}/auth/login`, { waitUntil: 'networkidle' });
+  await page.locator('input[type="email"]').fill(correo);
+  await page.locator('input[type="password"]').fill(password);
+  await page.getByRole('button', { name: 'Ingresar' }).click();
+  await page.waitForURL(`${BASE}/`, { timeout: 20000 });
+}
+
+try {
+  // 1. Admin valida al propietario desde la UI y asigna OWNER
+  await login(ADMIN.correo, ADMIN.password);
+  await page.goto(`${BASE}/admin`, { waitUntil: 'networkidle' });
+  await page.getByRole('heading', { name: 'Administración de plataforma' }).waitFor();
+  await page.getByRole('button', { name: 'PENDIENTE', exact: true }).click();
+  const fila = page.locator('article.fila', { hasText: owner.correo });
+  await fila.waitFor({ timeout: 20000 });
+  await fila.getByRole('button', { name: 'Validar' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Validar' }).click();
+  await page.getByText('Rol OWNER asignado al propietario.').waitFor({ timeout: 20000 });
+  ok('admin valida propietario y asigna rol OWNER desde la UI');
+
+  const meOwner = await api('/users/me', {
+    token: (
+      await api('/auth/login', { method: 'POST', body: { correo: owner.correo, password: owner.password } })
+    ).accessToken,
+  });
+  if (meOwner.roles.includes('OWNER')) ok('backend confirma rol OWNER');
+  else fallo(`OWNER ausente en roles: ${meOwner.roles.join(',')}`);
+
+  // 2. Panel del propietario
+  await page.getByRole('button', { name: 'Salir' }).click();
+  await login(owner.correo, owner.password);
+  await page.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
+  await page.getByRole('heading', { name: 'Panel del propietario' }).waitFor({ timeout: 20000 });
+  ok('panel del propietario accesible tras validacion');
+
+  const nombreEst = `Establecimiento E2E ${stamp}`;
+  await page.locator('label:has-text("Nombre") input').first().fill(nombreEst);
+  await page.locator('label:has-text("Documento de identidad") input').fill(documento);
+  await page.locator('label:has-text("Distrito") select').selectOption({ index: 1 });
+  await page.locator('label:has-text("Dirección") input').fill('Av. Prueba 123');
+  await page.getByRole('button', { name: 'Crear establecimiento' }).click();
+  await page.getByRole('heading', { name: nombreEst, exact: true }).waitFor({ timeout: 20000 });
+  ok('establecimiento creado desde el panel');
+
+  await page.evaluate(() => localStorage.removeItem('cd.establecimiento'));
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.getByRole('heading', { name: nombreEst, exact: true }).waitFor({ timeout: 20000 });
+  ok('el panel descubre el establecimiento sin ID manual');
+
+  // Editar establecimiento desde el panel
+  await page.getByRole('button', { name: 'Editar datos' }).click();
+  const formEst = page.locator('form:has(input[formcontrolname="nombre"])').first();
+  await formEst.locator('label:has-text("Dirección") input').fill('Av. Prueba 456');
+  await formEst.getByRole('button', { name: 'Guardar' }).click();
+  await page.locator('text=Av. Prueba 456').waitFor({ timeout: 20000 });
+  ok('establecimiento editado desde el panel');
+
+  const nombreCancha = `Cancha E2E ${String(stamp).slice(-6)}`;
+  const formCancha = page.locator('section:has(h2:text("Nueva cancha"))');
+  await formCancha.locator('label:has-text("Nombre") input').fill(nombreCancha);
+  await formCancha.locator('label:has-text("Capacidad") input').fill('12');
+  await formCancha.locator('label:has-text("Precio base") input').fill('85');
+  await page.getByRole('button', { name: 'Crear cancha' }).click();
+  await page.getByText(nombreCancha).first().waitFor({ timeout: 20000 });
+  ok('cancha creada desde el panel');
+
+  // Editar cancha
+  const filaCancha = page.locator('li', { hasText: nombreCancha }).first();
+  await filaCancha.getByRole('button', { name: 'Editar' }).click();
+  const formEdicion = filaCancha.locator('form.edicion');
+  await formEdicion.waitFor();
+  await formEdicion.locator('label:has-text("Precio base") input').fill('90');
+  await formEdicion.getByRole('button', { name: 'Guardar' }).click();
+  await page.getByText(/S\/\s*90\.00\/h/).first().waitFor({ timeout: 20000 });
+  ok('cancha editada desde el panel');
+
+  // Fotos
+  await filaCancha.getByRole('button', { name: 'Fotos' }).click();
+  const urlFoto = 'https://picsum.photos/seed/canchadirecta-e2e/800/600';
+  await filaCancha.locator('label:has-text("URL de la foto") input').fill(urlFoto);
+  await filaCancha.getByRole('button', { name: 'Agregar', exact: true }).click();
+  await filaCancha.locator('ul.fotos img').first().waitFor({ timeout: 20000 });
+  ok('foto agregada desde el panel');
+
+  // Vista previa en la misma pestaña y retorno a la configuracion
+  const hrefPreview = await filaCancha.getByRole('link', { name: 'Vista previa' }).getAttribute('href');
+  const idCancha = Number(hrefPreview?.match(/canchas\/(\d+)/)?.[1]);
+  await filaCancha.getByRole('link', { name: 'Vista previa' }).click();
+  await page.waitForURL(`**/canchas/${idCancha}?from=panel`, { timeout: 20000 });
+  await page.getByRole('link', { name: 'Volver a configurar' }).waitFor();
+  ok('vista previa abre en la misma pestaña con boton de retorno');
+
+  const miniaturas = page.locator('.galeria__miniaturas .miniatura');
+  if ((await miniaturas.count()) >= 1) ok('la galeria muestra todas las miniaturas');
+  else fallo('la galeria no muestra miniaturas');
+  await page.waitForFunction(
+    () => {
+      const img = document.querySelector('.galeria__principal img');
+      return !!img && img.complete && img.naturalWidth > 0;
+    },
+    { timeout: 20000 },
+  );
+  ok('la foto principal carga correctamente');
+  await page.waitForFunction(
+    () =>
+      [...document.querySelectorAll('.galeria__miniaturas .miniatura img')].every(
+        (img) => img.complete && img.naturalWidth > 0,
+      ),
+    { timeout: 20000 },
+  );
+  ok('todas las miniaturas cargan correctamente');
+  const urlMiniatura = await miniaturas.first().locator('img').getAttribute('src');
+  await miniaturas.first().click();
+  const urlPrincipal = await page.locator('.galeria__principal img').getAttribute('src');
+  if (urlPrincipal === urlMiniatura) ok('la miniatura actualiza la foto principal');
+  else fallo('la miniatura no actualiza la foto principal');
+  await page.locator('.galeria__principal').click();
+  await page.getByRole('dialog', { name: 'Fotos de la cancha' }).waitFor();
+  await page.keyboard.press('Escape');
+  ok('la galeria abre el visor y cierra con Escape');
+
+  await page.getByRole('link', { name: 'Volver a configurar' }).click();
+  await page.waitForURL(`**/panel?editarCancha=${idCancha}`, { timeout: 20000 });
+  await page.locator('form:has(input[formcontrolname="precioBase"])').first().waitFor();
+  ok('vuelve al panel con la cancha en edicion');
+
+  // Cochera
+  const formCochera = page.locator('section:has(h2:text("Cocheras"))');
+  await formCochera.locator('label:has-text("Nombre") input').fill('Cochera E2E');
+  await formCochera.locator('label:has-text("Capacidad") input').fill('8');
+  await formCochera.locator('label:has-text("Tarifa") input').fill('6');
+  await page.getByRole('button', { name: 'Agregar cochera' }).click();
+  await page.getByText('Cochera E2E').first().waitFor({ timeout: 20000 });
+  ok('cochera creada desde el panel');
+
+  // Agenda
+  const navPanel = page.getByRole('navigation', { name: 'Secciones del panel' });
+  await navPanel.getByRole('link', { name: 'Agenda' }).click();
+  await page.getByRole('heading', { name: 'Horario semanal recurrente' }).waitFor();
+  await page.getByRole('textbox', { name: 'Inicio', exact: true }).fill('18:00');
+  await page.getByRole('textbox', { name: 'Fin', exact: true }).fill('23:00');
+  await page.getByRole('button', { name: 'Agregar horario' }).click();
+  await page.getByText('Lunes · 18:00-23:00').first().waitFor({ timeout: 20000 });
+  ok('horario agregado');
+  await page.screenshot({ path: `${EVID}/panel-agenda-1440.png`, fullPage: false });
+
+  // Promociones del propietario
+  await navPanel.getByRole('link', { name: 'Promociones' }).click();
+  await page.getByRole('heading', { name: 'Nueva promoción' }).waitFor();
+  await page.locator('label:has-text("Código") input').fill(promo);
+  await page.locator('label:has-text("Descripción") input').fill('Promo E2E');
+  await page.locator('label:has-text("Desde") input').fill(new Date().toISOString().slice(0, 10));
+  await page.locator('label:has-text("Hasta") input').fill(new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10));
+  await page.getByRole('button', { name: 'Crear promoción' }).click();
+  await page.getByText('Promo E2E').first().waitFor({ timeout: 20000 });
+  ok('promocion del propietario creada');
+  await page.screenshot({ path: `${EVID}/panel-promociones-1440.png`, fullPage: false });
+
+  // Reservas recibidas
+  await navPanel.getByRole('link', { name: 'Reservas' }).click();
+  await page.getByText('Sin reservas recibidas').waitFor({ timeout: 20000 });
+  ok('reservas recibidas consulta OK');
+
+  // 3. Administracion: tabs nuevas
+  await page.getByRole('button', { name: 'Salir' }).click();
+  await login(ADMIN.correo, ADMIN.password);
+  await page.goto(`${BASE}/admin`, { waitUntil: 'networkidle' });
+  await page.getByRole('heading', { name: 'Administración de plataforma' }).waitFor();
+
+  await page.getByRole('button', { name: 'Propietarios', exact: true }).click();
+  await page.getByText(owner.correo).first().waitFor({ timeout: 20000 });
+  ok('admin lista propietarios con el owner validado');
+
+  await page.getByRole('button', { name: 'Reclamos', exact: true }).click();
+  await page.locator('button.reclamo').first().waitFor({ timeout: 20000 });
+  await page.locator('button.reclamo').first().click();
+  await page.getByRole('heading', { name: 'Seguimientos' }).waitFor();
+  ok('admin consulta reclamo y seguimientos');
+
+  await page.getByRole('button', { name: 'Usuarios', exact: true }).click();
+  await page.getByText(owner.correo).first().waitFor({ timeout: 20000 });
+  const filaUsuario = page.locator('tr', { hasText: owner.correo }).first();
+  await filaUsuario.getByRole('button', { name: 'Roles' }).click();
+  const modalRoles = page.getByRole('dialog');
+  await modalRoles.waitFor({ timeout: 10000 });
+  await modalRoles.getByRole('heading', { name: /Roles de / }).waitFor();
+  ok('admin abre el modal de roles');
+  await page.keyboard.press('Escape');
+  await modalRoles.waitFor({ state: 'detached' });
+
+  await page.getByRole('button', { name: 'Promociones', exact: true }).click();
+  await page.getByRole('heading', { name: 'Promociones de plataforma' }).waitFor();
+  await page.getByRole('heading', { name: 'Nueva promoción global' }).waitFor();
+  const codigoGlobal = `GLOBAL${String(stamp).slice(-4)}`;
+  await page.locator('label:has-text("Código") input').fill(codigoGlobal);
+  await page.locator('label:has-text("Descripción") input').fill('Promo global E2E');
+  await page.locator('label:has-text("Desde") input').fill(new Date().toISOString().slice(0, 10));
+  await page.locator('label:has-text("Hasta") input').fill(new Date(Date.now() + 20 * 86400000).toISOString().slice(0, 10));
+  await page.getByRole('button', { name: 'Crear promoción' }).click();
+  await page.getByText(codigoGlobal).first().waitFor({ timeout: 20000 });
+  ok('admin crea promocion global');
+
+  await page.getByRole('button', { name: 'Cocheras', exact: true }).click();
+  await page.getByText('Cochera E2E').first().waitFor({ timeout: 20000 });
+  ok('admin lista cocheras');
+
+  await page.getByRole('button', { name: 'Supervisión', exact: true }).click();
+  await page.getByText(nombreEst).first().waitFor({ timeout: 20000 });
+  ok('admin supervisa establecimientos');
+  await page.getByRole('button', { name: 'reservas', exact: true }).click();
+  await page.getByRole('columnheader', { name: 'Titular' }).waitFor();
+  await page.getByRole('button', { name: 'pagos', exact: true }).click();
+  await page.getByRole('columnheader', { name: 'Medio' }).waitFor();
+  ok('admin supervisa reservas y pagos');
+  await page.screenshot({ path: `${EVID}/admin-supervision-1440.png`, fullPage: false });
+
+  await page.getByRole('button', { name: 'Auditoría', exact: true }).click();
+  await page.getByRole('columnheader', { name: 'Acción' }).waitFor();
+  const filasAuditoria = await page.locator('table.tabla tbody tr').count();
+  if (filasAuditoria > 0) ok(`admin consulta auditoria (${filasAuditoria} eventos)`);
+  else fallo('auditoria sin eventos');
+} catch (error) {
+  fallo(`excepcion: ${error.message}`);
+  await page.screenshot({ path: `${EVID}/fallo-owner-admin.png`, fullPage: false }).catch(() => {});
+} finally {
+  await browser.close();
+}
+
+if (errores.length) {
+  console.log('Errores de red/consola:');
+  errores.forEach((e) => console.log(`  - ${e}`));
+  fallos.push(`${errores.length} error(es) de red`);
+}
+console.log(fallos.length ? `\nE2E owner/admin con ${fallos.length} fallo(s).` : '\nE2E owner/admin OK.');
+process.exit(fallos.length ? 1 : 0);

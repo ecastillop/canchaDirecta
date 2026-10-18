@@ -1,0 +1,41 @@
+# ============================================================================
+# CanchaDirecta - Override: MySQL aislado (Modo C)
+# Uso: docker compose -f compose.yml -f compose.mysql.yml up --build -d
+# El backend se conecta al servicio `mysql` por DNS interno; NO usa el 3306 del host.
+# Puerto host opcional (3307) solo para inspeccion desde el anfitrion.
+# ============================================================================
+services:
+  mysql:
+    image: mysql:8.4
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?definir en .env}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-canchadirecta}
+      MYSQL_USER: ${MYSQL_USER:-canchadirecta_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?definir en .env}
+    ports:
+      # Puerto del host libre (3307/3308 ocupados por otros procesos).
+      - "${MYSQL_HOST_PORT:-3309}:3306"
+    volumes:
+      - cd-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+    networks: [cd-net]
+
+  backend:
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_MIG_USER: ${MYSQL_USER:-canchadirecta_app}
+      DB_MIG_PASSWORD: ${MYSQL_PASSWORD:?definir en .env}
+
+volumes:
+  cd-mysql-data:

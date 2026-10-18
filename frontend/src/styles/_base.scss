@@ -1,0 +1,186 @@
+// ============================================================================
+// CanchaDirecta - reset, base tipografica y estilos de formulario compartidos.
+// ============================================================================
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--cd-color-bg);
+  color: var(--cd-color-text);
+  font-family: var(--cd-font-sans);
+  font-size: var(--cd-text-base);
+  line-height: var(--cd-leading-base);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+ul,
+ol,
+figure {
+  margin: 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: var(--cd-leading-tight);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: var(--cd-text-2xl);
+}
+h2 {
+  font-size: var(--cd-text-xl);
+}
+h3 {
+  font-size: var(--cd-text-lg);
+}
+
+a {
+  color: var(--cd-color-primary-strong);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: var(--cd-color-accent-strong);
+}
+
+img,
+svg {
+  max-width: 100%;
+  display: block;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--cd-color-focus);
+  outline-offset: 2px;
+  border-radius: var(--cd-radius-sm);
+}
+
+::selection {
+  background: var(--cd-color-accent);
+  color: #04211d;
+}
+
+// ---------------------------------------------------------------------------
+// Inputs compartidos (directiva cdInput)
+// ---------------------------------------------------------------------------
+.cd-input {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--cd-color-border);
+  border-radius: var(--cd-radius-sm);
+  background: var(--cd-color-surface);
+  color: var(--cd-color-text);
+  transition:
+    border-color var(--cd-duration-fast) var(--cd-ease),
+    box-shadow var(--cd-duration-fast) var(--cd-ease);
+}
+
+.cd-input::placeholder {
+  color: var(--cd-color-text-muted);
+  opacity: 0.75;
+}
+
+.cd-input:hover {
+  border-color: var(--cd-color-text-muted);
+}
+
+.cd-input:focus {
+  border-color: var(--cd-color-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cd-color-accent) 25%, transparent);
+  outline: none;
+}
+
+.cd-input.is-invalid {
+  border-color: var(--cd-color-danger);
+}
+
+textarea.cd-input {
+  min-height: 110px;
+  resize: vertical;
+}
+
+// Grupo de formulario accesible (label envuelve al control)
+.cd-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cd-field__label {
+  font-size: var(--cd-text-sm);
+  font-weight: 600;
+  color: var(--cd-color-text);
+}
+
+.cd-field__label .optional {
+  font-weight: 400;
+  color: var(--cd-color-text-muted);
+}
+
+.cd-field__hint {
+  font-size: var(--cd-text-xs);
+  color: var(--cd-color-text-muted);
+}
+
+.cd-field__error {
+  font-size: var(--cd-text-xs);
+  color: var(--cd-color-danger);
+  font-weight: 600;
+}
+
+.cd-field--check {
+  display: flex;
+  align-items: center;
+  gap: var(--cd-space-2);
+}
+
+.cd-field--check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--cd-color-accent-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

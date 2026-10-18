@@ -1,0 +1,116 @@
+// ============================================================================
+// Estilos de componentes con selector nativo (directivas).
+// ============================================================================
+
+.cd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cd-space-2);
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid transparent;
+  border-radius: var(--cd-radius-sm);
+  font-weight: 700;
+  font-size: var(--cd-text-sm);
+  line-height: 1.2;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color var(--cd-duration-fast) var(--cd-ease),
+    border-color var(--cd-duration-fast) var(--cd-ease),
+    color var(--cd-duration-fast) var(--cd-ease),
+    transform var(--cd-duration-fast) var(--cd-ease);
+}
+
+.cd-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.cd-btn:disabled,
+.cd-btn[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cd-btn--primary {
+  background: var(--cd-color-primary);
+  color: var(--cd-color-on-primary);
+}
+.cd-btn--primary:hover:not(:disabled) {
+  background: var(--cd-color-primary-strong);
+  color: var(--cd-color-on-primary);
+}
+
+.cd-btn--accent {
+  background: var(--cd-color-accent);
+  color: #04211d;
+}
+.cd-btn--accent:hover:not(:disabled) {
+  background: var(--cd-color-accent-strong);
+  color: #ffffff;
+}
+
+.cd-btn--secondary {
+  background: var(--cd-color-surface);
+  color: var(--cd-color-primary);
+  border-color: var(--cd-color-border);
+}
+.cd-btn--secondary:hover:not(:disabled) {
+  border-color: var(--cd-color-primary);
+}
+
+.cd-btn--ghost {
+  background: transparent;
+  color: var(--cd-color-primary);
+}
+.cd-btn--ghost:hover:not(:disabled) {
+  background: var(--cd-color-surface-alt);
+}
+
+.cd-btn--danger {
+  background: var(--cd-color-danger);
+  color: #ffffff;
+}
+.cd-btn--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--cd-color-danger) 85%, #000000);
+}
+
+.cd-btn--sm {
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: var(--cd-text-xs);
+}
+
+.cd-btn--block {
+  width: 100%;
+}
+
+.cd-btn.is-loading {
+  position: relative;
+  color: transparent;
+  pointer-events: none;
+}
+
+.cd-btn.is-loading::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: cd-spin 700ms linear infinite;
+  color: var(--cd-color-on-primary);
+}
+
+.cd-btn--secondary.is-loading::after,
+.cd-btn--ghost.is-loading::after {
+  color: var(--cd-color-primary);
+}
+
+@keyframes cd-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
