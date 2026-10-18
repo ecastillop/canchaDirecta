@@ -72,6 +72,10 @@
   configurado, así que un bloqueo o una reserva se ven como "Sin cupo" en su hora (antes la hora
   desaparecía), los días sin agenda se rotulan "Cerrado" y se retiró el listado redundante "Horario
   semanal" de la ficha (ADR-0041).
+- Bloqueos desde recepción (2026-10-18): el personal asignado a la sede puede bloquear y levantar
+  franjas sin depender del propietario; la "Agenda del día" del portal de recepción suma la sección
+  "Bloqueos de la fecha" (listado por sede y fecha, alta con cancha/desde/hasta/motivo y baja con
+  confirmación) reutilizando `/canchas/{id}/bloqueos` (ADR-0042). Resuelve L-25.
 
 ### Ya integrado del standalone
 
@@ -92,8 +96,9 @@
 1. ~~Grupo de bloques A/B/C~~ (hecho 2026-10-18): portal admin, módulos reutilizando APIs y
    configuración persistente de plataforma.
 2. ~~**Operador/Recepción** (Bloque D)~~ (hecho 2026-10-18): rol `OPERADOR`, turno, agenda de
-   recepción, reserva presencial, check-in, cobros e incidencias (ADR-0038). Pendiente menor del
-   bloque: gestión de bloqueos desde recepción y reserva telefónica sin cuenta registrada.
+   recepción, reserva presencial, check-in, cobros e incidencias (ADR-0038) y bloqueos de franja
+   desde la agenda del día (ADR-0042). Pendiente menor del
+   bloque: reserva telefónica sin cuenta registrada (L-24).
 3. ~~**Notificaciones**: badge de no leídas en el topbar y campana~~ (hecho 2026-10-18, ADR-0039).
 4. ~~**Modo oscuro** con toggle explícito y persistencia~~ (hecho 2026-10-18, ADR-0040).
 5. **Seed/reset de demo**: la base tiene >2,000 canchas por humo/E2E; conviene un script de limpieza
@@ -129,8 +134,9 @@ npm run test:a11y
 - **Estado:** **BACKEND + FRONTEND OPERATIVOS**. Backend 160/160 tests y 153/153 humo;
   frontend Angular 22 compila, pasa 22/22 tests unitarios y 2 suites E2E reales (usuario y
   propietario/admin) contra backend, tanto en dev como en el contenedor Nginx (`8083`). Rediseño
-  de fusión aplicado. Fase 0 y Fase 2 completadas. Modo claro/oscuro y badge de notificaciones
-  añadidos (ADR-0039, ADR-0040).
+  de fusión aplicado. Fase 0 y Fase 2 completadas. Modo claro/oscuro, badge de notificaciones,
+  calendario fiel a la agenda y bloqueos desde recepción añadidos (ADR-0039, ADR-0040, ADR-0041,
+  ADR-0042).
 - **Backend completado y verificado** (modulos `shared`, `identity`, `venues`, `bookings`,
   `payments`, `settlements`, `engagement`, `platform`): identidad completa (registro, verificacion
   de correo, login con limite de intentos, refresh, logout, recuperacion, perfil editable y
@@ -330,6 +336,11 @@ canchadirecta/
 - Badge de notificaciones y modo claro/oscuro (ADR-0039/0040): 22/22 unitarios frontend, E2E usuario
   y propietario/admin OK, a11y 34 rutas OK; badge verificado E2E (2 -> 1 -> desaparece) y capturas
   del tema en `docs/evidencias/ui/{claro,oscuro}-*-1440.png` (`e2e/dark-mode-capturas.mjs`).
+- Bloqueos de cancha desde recepcion (ADR-0042): `RecepcionTest` (el operador bloquea y levanta una
+  franja de su sede; `403` en cancha de otra sede, al crear un horario y con un `USER` sin
+  asignacion), E2E propietario/admin con el alta y la baja desde "Agenda del dia"
+  (`docs/evidencias/ui/recepcion-bloqueo-1440.png`), backend 160/160, 22/22 unitarios y a11y 34
+  rutas OK.
 - `smoke.ps1` -> **153/153 PASS** (contenedor en 8089 con la imagen reconstruida y `-DbPort 3306`;
   incluye ficha, actividades, cupones, ayuda, reportes, operadores de recepción y el modulo de
   recepcion).
@@ -358,7 +369,7 @@ canchadirecta/
 5. **Docker**: `compose.yml`, `compose.mysql.yml` y Dockerfiles de backend **y frontend**
    verificados (`frontend` en 8083 con proxy `/api`).
 6. **Docs**: base completa (requisitos, arquitectura, modelo, seguridad, pruebas, limitaciones,
-   ADR-0001..**0041**, contratos API del frontend). Faltan diagramas finales y limpiar filas
+   ADR-0001..**0042**, contratos API del frontend). Faltan diagramas finales y limpiar filas
    obsoletas de `TRAZABILIDAD.md`; evidencia E2E ya existe.
 7. **Testcontainers**: pruebas de integracion con MySQL real en CI (Docker requerido).
 
@@ -405,7 +416,14 @@ revocacion de access tokens por version) - ADR-0034 idempotencia de reservas y r
 duracion fija - ADR-0035 arquitectura del frontend y sistema de diseno - ADR-0036 calendario
 semanal y ventana de 365 dias - ADR-0037 configuracion persistente de plataforma
 (`configuracion_plataforma`, puerto `ConfiguracionPlataforma`, `GET/PUT /admin/configuracion`,
-validacion y auditoria).
+validacion y auditoria) - ADR-0038 rol `OPERADOR` y portal de recepcion (modulo `reception`, `V18` con
+`operador_establecimiento`, alcance por sede, turno, agenda, reserva presencial, check-in, cobros e
+incidencias) - ADR-0039 badge de notificaciones sin leer (`NotificacionesStore` compartido entre la
+topbar, la cabecera de cuenta y `/notificaciones`) - ADR-0040 modo claro/oscuro explicito y persistente
+(`cd.modo`, `data-theme='dark'`, `color-scheme` y juego oscuro de tokens) - ADR-0041 el calendario de la
+ficha se deriva del horario configurado ("Sin cupo" en la hora ocupada o bloqueada y "Cerrado" en los
+dias sin agenda) - ADR-0042 los bloqueos de la cancha los gestiona tambien el personal asignado a la
+sede (`esGestorDeCancha`; los horarios y precios siguen siendo del propietario; L-25 resuelta).
 Ver `docs/DECISIONES_ARQUITECTURA.md`.
 
 ## 8. PRUEBAS EJECUTADAS
@@ -474,6 +492,7 @@ Ver `docs/DECISIONES_ARQUITECTURA.md`.
 | 2026-10-18 | Bloque D: rol `OPERADOR` y portal de recepción (`V18`, paquete `reception`, `/recepcion`, `/admin/operadores`) | **PASS** (backend **160/160** (`RecepcionTest` 2/2), humo **153/153** PS y **134/134** Bash, build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK, a11y **34 rutas OK**; ADR-0038; capturas `recepcion-*.png` y `admin-operadores-1440.png`) |
 | 2026-10-18 | Badge de notificaciones sin leer + modo claro/oscuro (`NotificacionesStore`, `data-theme`, tokens oscuros y migración de colores fijos) | **PASS** (build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK, a11y **34 rutas OK**; badge verificado E2E: 2 → marcar una → 1 → marcar todas → desaparece; capturas `claro-*-1440.png` y `oscuro-*-1440.png`; ADR-0039/0040) |
 | 2026-10-18 | Calendario derivado del horario configurado y bloqueos visibles (`cancha-detalle`: filas del horario, "Sin cupo" en la hora bloqueada, "Cerrado" en días sin agenda, sin listado "Horario semanal") | **PASS** (datos reales: bloqueo 10:00-11:00 → API 7→6 franjas, la rejilla mantiene la fila 10:00 como "Sin cupo" y 6 libres; días sin horario "Cerrado"; build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK, a11y **34 rutas OK**; ADR-0041) |
+| 2026-10-18 | Bloqueos de cancha desde recepción (`VenuesRepositorio.esGestorDeCancha`, sección "Bloqueos de la fecha" en la agenda del portal) | **PASS** (backend **160/160** (`RecepcionTest` 2/2 con el alta y la baja del operador y los `403` de cancha ajena, horarios y usuario sin asignación), humo **153/153** PS y **134/134** Bash, build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK con alta y baja desde la UI, a11y **34 rutas OK**; ADR-0042; captura `recepcion-bloqueo-1440.png`) |
 
 Resto de la matriz de pruebas (?13 del prompt): **NOT RUN**.
 
@@ -534,7 +553,8 @@ Prioridad inmediata:
 3. Pulido de a11y manual (teclado/contraste, L-23) y diagramas finales.
 
 **Estado:** entrega base cerrada el 2026-10-17; rediseno de fusion, integraciones del standalone y
-bloques A/B/C/D del delta completados el 2026-10-18, más badge de notificaciones y modo claro/oscuro.
+bloques A/B/C/D del delta completados el 2026-10-18, más badge de notificaciones, modo claro/oscuro,
+calendario fiel a la agenda y bloqueos desde recepción.
 Acta: `docs/ACTA_CIERRE.md`.
 
 Cuenta superadministrador local (roles `USER`, `OWNER`, `PLATFORM_ADMIN`):

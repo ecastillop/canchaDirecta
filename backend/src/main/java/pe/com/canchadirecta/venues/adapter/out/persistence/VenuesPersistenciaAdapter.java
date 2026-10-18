@@ -280,6 +280,23 @@ public class VenuesPersistenciaAdapter implements VenuesRepositorio {
     }
 
     @Override
+    public boolean esGestorDeCancha(Long idCancha, Long idUsuario) {
+        List<?> filas = em.createNativeQuery("SELECT c.id_cancha FROM cancha c "
+                        + "JOIN establecimiento e ON e.id_establecimiento = c.id_establecimiento "
+                        + "WHERE c.id_cancha = :idCancha AND ("
+                        + "e.id_propietario = (SELECT p.id_propietario FROM propietario p "
+                        + "WHERE p.id_usuario = :idUsuario) "
+                        + "OR EXISTS (SELECT 1 FROM operador_establecimiento oe "
+                        + "WHERE oe.id_usuario = :idUsuario "
+                        + "AND oe.id_establecimiento = e.id_establecimiento AND oe.activo = 1))")
+                .setParameter("idCancha", idCancha.intValue())
+                .setParameter("idUsuario", idUsuario.intValue())
+                .setMaxResults(1)
+                .getResultList();
+        return !filas.isEmpty();
+    }
+
+    @Override
     public List<HorarioCancha> listarHorarios(Long idCancha) {
         List<?> filas = em.createNativeQuery("SELECT id_horario, dia_semana, CAST(hora_inicio AS CHAR), "
                         + "CAST(hora_fin AS CHAR), precio, activo FROM horario_cancha "

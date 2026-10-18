@@ -34,8 +34,9 @@ import java.util.List;
 
 /**
  * Adaptador de entrada REST de la agenda de una cancha: horarios de atencion (HU-005) y
- * bloqueos operativos (RN-03). Consultar horarios es publico; el resto exige ser el
- * propietario del establecimiento.
+ * bloqueos operativos (RN-03). Consultar horarios es publico; los horarios exigen ser el
+ * propietario del establecimiento y los bloqueos los gestiona el propietario o el personal
+ * asignado a la sede (ADR-0042).
  */
 @Path("/api/v1/canchas/{idCancha}")
 @Tag(name = "venues", description = "Establecimientos y canchas")
@@ -88,7 +89,7 @@ public class AgendaResource {
     @Path("/bloqueos")
     @Authenticated
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Bloqueos de la cancha en un rango (solo el propietario)")
+    @Operation(summary = "Bloqueos de la cancha en un rango (propietario o personal de la sede)")
     public List<BloqueoCancha> listarBloqueos(@PathParam("idCancha") Long idCancha,
                                               @QueryParam("desde") String desde,
                                               @QueryParam("hasta") String hasta) {
@@ -101,7 +102,7 @@ public class AgendaResource {
     @Authenticated
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Bloquea una franja de una cancha propia (409 si choca con una reserva)")
+    @Operation(summary = "Bloquea una franja de la cancha (409 si choca con una reserva)")
     public Response crearBloqueo(@PathParam("idCancha") Long idCancha,
                                  @Valid CrearBloqueoRequest request) {
         Long id = agenda.registrarBloqueo(idUsuarioAutenticado(),
@@ -114,7 +115,7 @@ public class AgendaResource {
     @DELETE
     @Path("/bloqueos/{idBloqueo}")
     @Authenticated
-    @Operation(summary = "Levanta un bloqueo de una cancha propia")
+    @Operation(summary = "Levanta un bloqueo de la cancha (propietario o personal de la sede)")
     public Response eliminarBloqueo(@PathParam("idCancha") Long idCancha,
                                     @PathParam("idBloqueo") Long idBloqueo) {
         agenda.eliminarBloqueo(idUsuarioAutenticado(), idCancha, idBloqueo);

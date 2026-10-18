@@ -1049,3 +1049,35 @@ las 7 filas con la de 10:00 como "Sin cupo", los dias sin horario se rotulan "Ce
 el bloque "Horario semanal". Build OK, 22/22 unitarios, E2E usuario OK, propietario/admin OK y a11y
 34 rutas OK (2026-10-18).
 
+## ADR-0042 - Los bloqueos de la cancha los gestiona tambien el personal de la sede
+
+**Contexto:** los bloqueos operativos (RN-03) solo los podia registrar el propietario
+(`VenuesRepositorio.esPropietarioDeCancha`). El dia a dia de la sede lo lleva el personal de recepcion
+(rol `OPERADOR`, ADR-0038): si una cancha entraba en mantenimiento, el operador tenia que pedirselo al
+propietario. Era la limitacion L-25.
+
+**Decision:**
+1. Se anade `VenuesRepositorio.esGestorDeCancha(idCancha, idUsuario)`: propietario del establecimiento
+   o personal asignado a la sede (`operador_establecimiento` con `activo = 1`, `V18`).
+2. `GestionAgendaService` usa ese predicado en los bloqueos (`listarBloqueos`, `registrarBloqueo`,
+   `eliminarBloqueo`) y mantiene `esPropietarioDeCancha` en los horarios: el horario y el precio son
+   configuracion comercial del propietario, el bloqueo es operacion de la sede.
+3. No se crean endpoints nuevos: el portal de recepcion reutiliza `/api/v1/canchas/{id}/bloqueos` con
+   el token del operador. La pantalla "Agenda del dia" gana la seccion "Bloqueos de la fecha" (listado
+   del dia para toda la sede y alta/baja de franjas).
+4. Las horas se muestran con el helper compartido `horaLima()`
+   (`frontend/src/app/shared/util/fecha-lima.ts`), que tambien usa la ficha publica.
+
+**Consecuencias:** el personal asignado a la sede bloquea y levanta franjas sin depender del
+propietario, y la autorizacion sigue en un unico punto (el caso de uso), sin ruta alternativa que la
+evite: un usuario ajeno a la sede y un titular sin asignacion reciben `403`. El modulo `venues` lee la
+tabla de asignacion `operador_establecimiento` (introducida por el modulo de recepcion): es una lectura
+de datos de la misma base, coherente con los adaptadores nativos (ADR-0012). La reserva presencial sin
+cuenta registrada sigue pendiente (L-24).
+
+**Evidencia:** `RecepcionTest` (el operador bloquea y levanta en su sede; `403` al bloquear una cancha
+de otra sede, al crear un horario y con un `USER` sin asignacion); E2E propietario/admin (el operador
+bloquea 10:00-11:00 desde "Agenda del dia", lo ve listado y lo levanta; evidencia
+`docs/evidencias/ui/recepcion-bloqueo-1440.png`); backend 160/160, build OK, 22/22 unitarios, E2E
+usuario OK, a11y 34 rutas OK, humo 153/153 PS y 134/134 Bash (2026-10-18).
+

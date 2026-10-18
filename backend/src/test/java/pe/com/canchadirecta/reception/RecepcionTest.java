@@ -67,6 +67,50 @@ class RecepcionTest {
                 .body("reservasDelDia", greaterThanOrEqualTo(0))
                 .body("canchasDisponibles", equalTo(1));
 
+        // Bloqueos (RN-03): el personal de la sede opera la agenda del dia a dia, pero la
+        // configuracion comercial (horarios) sigue siendo del propietario.
+        Instant inicioBloqueo = Instant.now().plus(30, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
+        Instant finBloqueo = inicioBloqueo.plus(1, ChronoUnit.HOURS);
+        Map<String, Object> bloqueo = Map.of("inicio", inicioBloqueo.toString(),
+                "fin", finBloqueo.toString(), "motivo", "Mantenimiento de grass");
+
+        Long idBloqueo = ((Number) given().auth().oauth2(operadorConRol.token()).contentType(ContentType.JSON)
+                .body(bloqueo)
+                .when().post("/api/v1/canchas/" + idCancha + "/bloqueos")
+                .then().statusCode(201).extract().path("id")).longValue();
+
+        given().auth().oauth2(operadorConRol.token())
+                .when().get("/api/v1/canchas/" + idCancha + "/bloqueos?desde=" + inicioBloqueo
+                        + "&hasta=" + finBloqueo)
+                .then().statusCode(200).body("$", hasSize(1))
+                .body("[0].motivo", equalTo("Mantenimiento de grass"));
+
+        given().auth().oauth2(operadorConRol.token()).contentType(ContentType.JSON)
+                .body(Map.of("diaSemana", 1, "horaInicio", "08:00", "horaFin", "09:00", "precio", 80))
+                .when().post("/api/v1/canchas/" + idCancha + "/horarios")
+                .then().statusCode(403);
+
+        given().auth().oauth2(operadorConRol.token())
+                .when().delete("/api/v1/canchas/" + idCancha + "/bloqueos/" + idBloqueo)
+                .then().statusCode(204);
+        given().auth().oauth2(operadorConRol.token())
+                .when().get("/api/v1/canchas/" + idCancha + "/bloqueos?desde=" + inicioBloqueo
+                        + "&hasta=" + finBloqueo)
+                .then().statusCode(200).body("$", hasSize(0));
+
+        // Un usuario sin asignacion no puede bloquear la cancha de otra sede.
+        Sesion ajeno = usuario("ajeno.recepcion");
+        Long establecimientoAjeno = crearEstablecimiento(ajeno.token());
+        Long canchaAjena = crearCancha(ajeno.token(), establecimientoAjeno);
+        given().auth().oauth2(operadorConRol.token()).contentType(ContentType.JSON)
+                .body(bloqueo)
+                .when().post("/api/v1/canchas/" + canchaAjena + "/bloqueos")
+                .then().statusCode(403);
+        given().auth().oauth2(cliente.token()).contentType(ContentType.JSON)
+                .body(bloqueo)
+                .when().post("/api/v1/canchas/" + idCancha + "/bloqueos")
+                .then().statusCode(403);
+
         // Reserva presencial con pago recibido.
         Instant inicio = Instant.now().plus(3, ChronoUnit.HOURS);
         Long reserva = ((Number) given().auth().oauth2(operadorConRol.token()).contentType(ContentType.JSON)

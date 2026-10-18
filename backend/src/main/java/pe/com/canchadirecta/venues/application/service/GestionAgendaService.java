@@ -25,6 +25,10 @@ import java.util.List;
  * pueden solaparse con otra reserva vigente ni con otro bloqueo: la comprobacion se hace
  * bajo el bloqueo exclusivo de la fila de la cancha, el mismo que usa RN-01, para que no
  * pueda colarse una reserva entre la comprobacion y el INSERT (ADR-0017).</p>
+ *
+ * <p><b>Autorizacion.</b> Los horarios (configuracion comercial) exigen ser el propietario;
+ * los bloqueos, al ser operacion del dia a dia, los gestiona el propietario o el personal
+ * asignado a la sede (ADR-0042).</p>
  */
 @ApplicationScoped
 public class GestionAgendaService implements GestionAgendaUseCase {
@@ -80,7 +84,7 @@ public class GestionAgendaService implements GestionAgendaUseCase {
     @Override
     public List<BloqueoCancha> listarBloqueos(Long idUsuario, Long idCancha, Instant desde, Instant hasta) {
         exigirCancha(idCancha);
-        exigirPropietario(idCancha, idUsuario);
+        exigirGestor(idCancha, idUsuario);
 
         Instant inicio = desde != null ? desde : reloj.ahora();
         Instant fin = hasta != null ? hasta : inicio.plus(DIAS_POR_DEFECTO, ChronoUnit.DAYS);
@@ -98,7 +102,7 @@ public class GestionAgendaService implements GestionAgendaUseCase {
         BloqueoCancha bloqueo = new BloqueoCancha(null, command.idCancha(), command.inicio(),
                 command.fin(), command.motivo());
         exigirCancha(bloqueo.idCancha());
-        exigirPropietario(bloqueo.idCancha(), idUsuario);
+        exigirGestor(bloqueo.idCancha(), idUsuario);
 
         // Mismo orden de bloqueo que RN-01: primero la fila de la cancha.
         repositorio.bloquearCancha(bloqueo.idCancha())
@@ -119,7 +123,7 @@ public class GestionAgendaService implements GestionAgendaUseCase {
     @Transactional
     public void eliminarBloqueo(Long idUsuario, Long idCancha, Long idBloqueo) {
         exigirCancha(idCancha);
-        exigirPropietario(idCancha, idUsuario);
+        exigirGestor(idCancha, idUsuario);
         if (!repositorio.eliminarBloqueo(idCancha, idBloqueo)) {
             throw new DomainException(ErrorCodes.NO_ENCONTRADO, "El bloqueo no existe en esta cancha.");
         }
@@ -138,6 +142,17 @@ public class GestionAgendaService implements GestionAgendaUseCase {
         if (idUsuario == null || !repositorio.esPropietarioDeCancha(idCancha, idUsuario)) {
             throw new DomainException(ErrorCodes.SIN_PERMISO,
                     "Solo el propietario puede gestionar la agenda de esta cancha.");
+        }
+    }
+
+    /**
+     * Autorizacion de la agenda operativa (bloqueos): propietario o personal asignado a la
+     * sede. La configuracion comercial (horarios y precios) sigue exigiendo al propietario.
+     */
+    private void exigirGestor(Long idCancha, Long idUsuario) {
+        if (idUsuario == null || !repositorio.esGestorDeCancha(idCancha, idUsuario)) {
+            throw new DomainException(ErrorCodes.SIN_PERMISO,
+                    "Solo el propietario o el personal de la sede puede gestionar los bloqueos de esta cancha.");
         }
     }
 }

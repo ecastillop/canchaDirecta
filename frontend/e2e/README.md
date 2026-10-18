@@ -19,7 +19,8 @@ Usan `playwright-core` con el Chrome instalado (no descargan navegadores).
 # Flujo de usuario: registro, login, catalogo, reserva, pago demo, reclamo, responsive
 $env:BASE='http://localhost:4300'; npm run test:e2e
 
-# Flujo propietario/admin (requiere admin)
+# Flujo propietario/admin (requiere admin). Incluye el portal de recepcion: el administrador
+# vincula al operador y este bloquea y levanta una franja de las canchas de su sede (ADR-0042).
 $env:BASE='http://localhost:4300'
 $env:ADMIN_CORREO='admin@dominio.com'
 $env:ADMIN_PASSWORD='...'

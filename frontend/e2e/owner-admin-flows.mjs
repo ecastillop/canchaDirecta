@@ -444,6 +444,25 @@ try {
   ok('agenda de recepcion carga para el operador');
   await page.screenshot({ path: `${EVID}/recepcion-agenda-1440.png`, fullPage: false });
 
+  // El personal de la sede bloquea una franja sin depender del propietario (RN-03, ADR-0042).
+  const seccionBloqueos = page.locator('section', {
+    has: page.getByRole('heading', { name: 'Bloqueos de la fecha' }),
+  });
+  const formBloqueo = seccionBloqueos.locator('form');
+  await formBloqueo.getByLabel('Desde').fill('10:00');
+  await formBloqueo.getByLabel('Hasta').fill('11:00');
+  await formBloqueo.getByLabel('Motivo').fill('Mantenimiento E2E');
+  await formBloqueo.getByRole('button', { name: 'Bloquear franja' }).click();
+  await seccionBloqueos.getByText('Mantenimiento E2E').waitFor({ timeout: 20000 });
+  ok('el operador bloquea una franja de una cancha de su sede');
+  await page.screenshot({ path: `${EVID}/recepcion-bloqueo-1440.png`, fullPage: false });
+
+  const filaBloqueo = seccionBloqueos.locator('li', { hasText: 'Mantenimiento E2E' });
+  await filaBloqueo.getByRole('button', { name: 'Levantar' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Levantar' }).click();
+  await seccionBloqueos.getByText('Mantenimiento E2E').waitFor({ state: 'detached', timeout: 20000 });
+  ok('el operador levanta el bloqueo que creo');
+
   await navRecep.getByRole('link', { name: 'Reserva presencial' }).click();
   await page.getByRole('button', { name: 'Registrar reserva' }).waitFor({ timeout: 20000 });
   ok('formulario de reserva presencial disponible');

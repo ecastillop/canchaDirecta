@@ -84,6 +84,15 @@ public interface VenuesRepositorio {
     boolean esPropietarioDeCancha(Long idCancha, Long idUsuario);
 
     /**
+     * Autorizacion de la agenda operativa: propietario del establecimiento o personal
+     * asignado a la sede (operador de recepcion, `operador_establecimiento`). El dia a dia
+     * de la sede no puede depender de que el propietario este disponible (RN-03, ADR-0042).
+     * No aplica a la configuracion comercial (horarios y precios), que sigue siendo del
+     * propietario.
+     */
+    boolean esGestorDeCancha(Long idCancha, Long idUsuario);
+
+    /**
      * Toma el bloqueo exclusivo de la fila de la cancha (`SELECT ... FOR UPDATE`) y la
      * devuelve. Es el mismo bloqueo que usa RN-01, reutilizado para que un bloqueo
      * operativo no pueda colarse entre la comprobacion de solapes y el INSERT de una

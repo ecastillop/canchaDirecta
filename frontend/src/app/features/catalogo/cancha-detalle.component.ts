@@ -14,6 +14,7 @@ import { CdErrorStateComponent } from '../../shared/ui/states/cd-error-state.com
 import { CdIconComponent } from '../../shared/ui/icon/cd-icon.component';
 import { CdInputDirective } from '../../shared/ui/input/cd-input.directive';
 import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.component';
+import { horaLima } from '../../shared/util/fecha-lima';
 
 const FOTO_FALLBACK =
   'data:image/svg+xml;charset=UTF-8,' +
@@ -1848,12 +1849,7 @@ export class CanchaDetalleComponent implements OnInit {
   }
 
   protected hora(inicio: string): string {
-    return new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'America/Lima',
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23',
-    }).format(new Date(inicio));
+    return horaLima(inicio);
   }
 
   protected textoCupos(cantidad: number): string {
