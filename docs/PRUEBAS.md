@@ -57,6 +57,7 @@ $env:BASE='http://localhost:8083'; $env:A11Y_SIN_SESION='1'; npm run test:a11y
 nombres accesibles en controles, campos, imagenes, tablas y dialogos), enlace de salto,
 recorrido de teclado, foco que pasa al contenido al cambiar de pantalla y capturas. La variante
 `A11Y_SIN_SESION=1` cubre ademas `/auth/*`, que el guard de invitado esconde con sesion iniciada.
+La revision con lector de pantalla se guia con `docs/ACCESIBILIDAD_MANUAL.md`.
 
 Testcontainers requiere Docker operativo (Docker ya operativo: migrar los tests de integracion,
 ver `L-09`).

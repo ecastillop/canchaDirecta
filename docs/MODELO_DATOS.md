@@ -71,5 +71,6 @@ anticipacion, zona), `reclamo_seguimiento`, `pago_evento`.
 ## 7. Pendiente
 
 - Diccionario de datos actualizado (a partir de `diccionario_datos.xlsx`).
-- Modelo fisico/logico regenerado (`.dbml`/`.puml`) coherente con el codigo.
 - Scripts de rollback/recuperacion de migracion.
+
+El ER simplificado y el resto de diagramas estan en `docs/DIAGRAMAS.md`.

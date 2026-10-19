@@ -42,6 +42,8 @@
 
 - Resultados detallados: `docs/RESULTADOS_PRUEBAS.md` (E-01 a E-43).
 - Trazabilidad de requisitos: `docs/TRAZABILIDAD.md`.
+- Diagramas de arquitectura: `docs/DIAGRAMAS.md` (contexto, despliegue, modulos, reserva
+  concurrente, estados, portales y modelo de datos).
 - Capturas de UI: `docs/evidencias/ui/` (flujos usuario, propietario/admin).
 - Capturas de accesibilidad:
   - `a11y-foco-skip-link.png`
@@ -78,7 +80,7 @@
 
 ## 6. Tareas opcionales posteriores
 
-1. Revision manual con lector de pantalla en Windows.
+1. Revision manual con lector de pantalla en Windows (guion en `docs/ACCESIBILIDAD_MANUAL.md`).
 2. Endurecer el arranque de la cuenta superadministrador con un script idempotente de bootstrap.
 3. Cambiar la contrasena local del superadministrador antes de cualquier despliegue real.
 4. Fase 2: modo oscuro, asistente de configuracion y rediseno de bloqueos.

@@ -9,7 +9,8 @@
 
 - Repositorio Git inicializado en `canchadirecta/`.
 - **Hoja de ruta de producto cerrada (2026-10-18)**: los siete frentes planificados están hechos;
-  solo queda pulido manual de a11y con lector de pantalla (L-23) y los diagramas finales.
+  solo queda la revisión manual de a11y con lector de pantalla (L-23). Los diagramas de
+  arquitectura ya están en `docs/DIAGRAMAS.md` con sus imagenes en `docs/evidencias/diagramas/`.
 - Commits relevantes (más reciente primero):
   - `03a6eb4` el walk-in cobrado en mostrador queda confirmado (ADR-0048, L-24).
   - `bcafd62` la disponibilidad pública informa si la franja está reservada o bloqueada (ADR-0047).
@@ -658,8 +659,9 @@ La hoja de ruta vigente esta en **`## 0. Mirada hacia adelante`** al inicio de e
 Prioridad inmediata:
 
 1. Revisión manual con lector de pantalla (L-23; el contraste ya está automatizado con
-   `frontend/e2e/contraste-modos.mjs` y la estructura/teclado con `a11y-check.mjs`, incluida la
-   variante `A11Y_SIN_SESION=1` para `/auth/*`) y los diagramas de arquitectura para el acta.
+   `frontend/e2e/contraste-modos.mjs`, la estructura/teclado con `a11y-check.mjs` —incluida la
+   variante `A11Y_SIN_SESION=1` para `/auth/*`— y el guion paso a paso en
+   `docs/ACCESIBILIDAD_MANUAL.md`).
 2. Re-ejecutar `npm run test:a11y` como `PLATFORM_ADMIN` para pasar las comprobaciones nuevas
    (tablas con nombre, `main`/`h1` únicos) por las 34 rutas privadas.
 

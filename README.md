@@ -135,9 +135,10 @@ Detalle en [`docs/DEPLOY_DOCKER.md`](docs/DEPLOY_DOCKER.md).
 
 ## Documentacion
 
-`docs/` - requisitos y reconciliacion, trazabilidad, arquitectura, modelo de
-datos, API, seguridad, UX, [diseño de fusión](docs/DISENO_FUSION.md), pruebas, despliegue,
-decisiones (ADRs), limitaciones y [acta de cierre](docs/ACTA_CIERRE.md).
+`docs/` - requisitos y reconciliacion, trazabilidad, arquitectura, [diagramas](docs/DIAGRAMAS.md),
+modelo de datos, API, seguridad, UX, [diseño de fusión](docs/DISENO_FUSION.md), pruebas,
+[accesibilidad manual](docs/ACCESIBILIDAD_MANUAL.md), despliegue, decisiones (ADRs), limitaciones y
+[acta de cierre](docs/ACTA_CIERRE.md).
 
 ## Base de datos
 

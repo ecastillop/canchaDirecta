@@ -27,9 +27,8 @@ Actualizar a medida que avance la implementacion. Ningun `PASS` sin ejecucion re
 | CU01.1 | CU_01 | Registrar cuenta | identity | **IMPLEMENTADO** |
 | CU01.2 | CU_01 | Verificar correo | identity | **IMPLEMENTADO** (columna `usuario.correo_verificado`, token `EMAIL_VERIFY`, `POST /auth/email/verify`, reenvio y flag `cd.auth.requerir-correo-verificado`) |
 | CU01.3 | CU_01 | Iniciar sesion | identity | **IMPLEMENTADO** |
-| CU01.4 | CU_01 | Renovar sesion (refresh con rotacion) | identity | **IMPLEMENTADO** |
-| CU01.5 | CU_01 | Cerrar sesion | identity | **IMPLEMENTADO** |
-| CU01.6 | CU_01 | Recuperar contrasena | identity | **IMPLEMENTADO** |
+| CU01.3a | CU_01 | Renovar sesion (refresh con rotacion) | identity | **IMPLEMENTADO** (`SesionRefreshTest`) |
+| CU01.3b | CU_01 | Cerrar sesion | identity | **IMPLEMENTADO** |
 | CU01.4 | CU_01 | Recuperar contrasena | identity | **IMPLEMENTADO** (`RecuperacionPasswordTest`, 5 tests) |
 | CU01.5 | CU_01 | Perfil editable | identity | **IMPLEMENTADO** (`GET/PUT /users/me`) |
 | CU01.6 | CU_01 | Solicitar alta de propietario | identity/platform | **IMPLEMENTADO** (`POST /propietarios/solicitudes`, `GET /propietarios/me`; validacion admin CU06.2) |
@@ -138,13 +137,13 @@ Actualizar a medida que avance la implementacion. Ningun `PASS` sin ejecucion re
 
 | Elemento | Estado | Evidencia |
 |---|---|---|
-| Esquema MySQL (Flyway) | IMPLEMENTADO | 6 migraciones aplicadas; 38 tablas |
+| Esquema MySQL (Flyway) | IMPLEMENTADO | 18 migraciones aplicadas (V1..V18); 44 tablas |
 | Backend compila y arranca | IMPLEMENTADO | `mvnw test` -> BUILD SUCCESS |
 | Slice identidad (registro/login/JWT/me) | IMPLEMENTADO | 10 tests PASS |
 | Liquidaciones del propietario (F05) | IMPLEMENTADO | `LiquidacionTest` 10 tests + humo 59/59 (E-20/E-21) |
 | Expiracion del hold de pago + revocacion (L-14) | IMPLEMENTADO | `ExpiracionReservasTest` 4 + `ReservasTest` revocacion 3 + humo 63/63 (E-22/E-23) |
 | Cierre automatico de reservas concluidas (L-15) | IMPLEMENTADO | `FinalizarReservasService` (`@Scheduled`) + `FinalizacionReservasTest` 4 (E-24) |
-| Frontend Angular | **IMPLEMENTADO / RUN** | Angular 22: catálogo paginado, detalle con calendario, reservas, perfil (reenvío de verificación), reclamos, notificaciones, panel del propietario con descubrimiento automático de establecimientos (`/establecimientos/mios`), edición/baja, canchas, agenda, promociones y liquidaciones; administración con roles en modal y listas paginadas; registro con auto-login y retorno a la ruta original. `npm run build` OK, 15/15 unitarios, E2E usuario + propietario/admin OK y a11y OK (E-43). |
+| Frontend Angular | **IMPLEMENTADO / RUN** | Angular 22: catálogo paginado, detalle con calendario, reservas, perfil (reenvío de verificación), reclamos, notificaciones, panel del propietario con descubrimiento automático de establecimientos (`/establecimientos/mios`), edición/baja, canchas, agenda, promociones y liquidaciones; administración con roles en modal y listas paginadas; registro con auto-login y retorno a la ruta original. `npm run build` OK, 28/28 unitarios, E2E usuario + propietario/admin OK y a11y OK (E-43). |
 | Docker/Compose | **IMPLEMENTADO Y VERIFICADO** | `compose up` (Modo C) + smoke 10/10 en :8089 |
 | OpenAPI/Swagger | **IMPLEMENTADO** | extension presente; `/q/openapi` y `/q/swagger-ui` publicados con titulo/version y anotaciones por endpoint |
 | CI | **IMPLEMENTADO** | `.github/workflows/backend.yml` (MySQL 8.4 efimero, JDK 21, clave JWT, `mvnw test`) |

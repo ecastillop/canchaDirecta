@@ -11,14 +11,17 @@ defecto (ADR-0001).
 | Modulo | Responsabilidad |
 |---|---|
 | `identity` | usuarios, roles, credenciales, verificacion de correo, recuperacion, propietarios |
-| `geography` | departamentos, provincias, distritos/ubigeo |
-| `catalog` | deportes, caracteristicas, catalogo publico, busqueda, comparacion, fotos |
-| `venues` | establecimientos, canchas, horarios, precios, bloqueos, cocheras (RN-08) |
+| `venues` | establecimientos, canchas, horarios, precios, bloqueos, cocheras (RN-08), catalogo publico, busqueda, comparacion, fotos y ubigeo (absorbe `catalog` y `geography`) |
 | `bookings` | disponibilidad, reservas, historial, expiracion, cierre, cancelacion, cambios |
 | `payments` | pago simulado, reembolso, idempotencia, politicas |
 | `settlements` | comisiones, ingresos, liquidaciones |
 | `engagement` | calificaciones, reclamos, notificaciones |
-| `platform` | operaciones globales, catalogos admin, auditoria, dashboard |
+| `activities` | actividades deportivas, cupos e inscripciones |
+| `reception` | operadores de recepcion, agenda del dia, walk-in y cobros en mostrador |
+| `dashboard` | metricas del propietario (ocupacion, ingresos, demandas) |
+| `helpcenter` | centro de ayuda: categorias, articulos y busqueda |
+| `platform` | operaciones globales: usuarios/roles, propietarios, supervision, auditoria, configuracion, reportes, promociones y cocheras |
+| `shared` | RFC 9457, seguridad JWT/JWKS, reloj, storage y utilidades transversales |
 
 ## 3. Capas por modulo
 
@@ -126,15 +129,17 @@ MySQL 8 (host), InnoDB, utf8mb4. **Flyway es dueno del esquema**; Hibernate solo
 valida. Migraciones `V1..V6` (ver `MODELO_DATOS.md`). Usuario de migracion y de
 runtime separados (ADR-0009).
 
-## 7. Frontend (objetivo, pendiente)
+## 7. Frontend
 
-Angular 22 standalone, lazy por areas (`public/auth/account/booking/owner/admin`),
-TS strict, Signals + RxJS, reactive forms, interceptors (auth/errores), guards como
-apoyo de UX (nunca unica seguridad), CSS con design tokens, mobile-first, WCAG 2.2 AA,
-estados loading/empty/error/success en todas las areas.
+Angular 22 standalone, lazy por areas (`public/auth/account/booking/owner/reception/admin`),
+TS strict, Signals + RxJS, reactive forms, interceptors (auth/errores/carga), guards como
+apoyo de UX (nunca unica seguridad), CSS con design tokens y tema claro/oscuro, mobile-first,
+WCAG 2.2 AA, estados loading/empty/error/success en todas las areas. Los portales se resumen en
+`DIAGRAMAS.md`.
 
-## 8. Infraestructura (objetivo, pendiente)
+## 8. Infraestructura
 
-Dockerfiles multi-stage no-root, Nginx con fallback SPA y proxy `/api`, Compose con
-variante host (`host.docker.internal`) y variante MySQL aislado (3307), healthchecks,
-`.env.example`, `.dockerignore`.
+Dockerfiles multi-stage no-root, Nginx con fallback SPA y proxy `/api`, Compose con variante
+host (`host.docker.internal`) y variante MySQL aislado (`compose.mysql.yml`, :3309), healthchecks,
+JWKS montado de solo lectura, `.env.example` y `.dockerignore`. Puertos por defecto: frontend
+:8083, backend :8089 (contenedor :8080), MySQL del host :3306.
