@@ -15,7 +15,7 @@ import { filter, map, startWith } from 'rxjs';
 import { NotificacionesStore } from '../../core/api/notificaciones.store';
 import { AuthStore } from '../../core/auth/auth.store';
 import { LoadingService } from '../../core/http/loading.service';
-import { MODOS, ModoId, PALETTES, PaletteId, ThemeService } from '../../core/theme/theme.service';
+import { ThemeService } from '../../core/theme/theme.service';
 import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
 
 @Component({
@@ -157,24 +157,6 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
             <a routerLink="/auth/registro">Mi cuenta</a>
           }
         </nav>
-        <div class="drawer__paleta">
-          <label class="cd-field">
-            <span class="cd-field__label">Tema</span>
-            <select cdInput [value]="theme.palette()" (change)="cambiarPaleta($event)">
-              @for (paleta of palettes; track paleta.id) {
-                <option [value]="paleta.id">{{ paleta.nombre }}</option>
-              }
-            </select>
-          </label>
-          <label class="cd-field">
-            <span class="cd-field__label">Modo</span>
-            <select cdInput [value]="theme.modo()" (change)="cambiarModo($event)">
-              @for (modo of modos; track modo.id) {
-                <option [value]="modo.id">{{ modo.nombre }}</option>
-              }
-            </select>
-          </label>
-        </div>
       </aside>
     }
     }
@@ -229,22 +211,6 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
       </div>
       <div class="cd-container pie__bottom">
         <span>© {{ year }} CanchaDirecta · Pagos y liquidaciones son simulados.</span>
-        <label class="pie__paleta">
-          <span class="cd-xs">Tema</span>
-          <select class="pie__select" [value]="theme.palette()" (change)="cambiarPaleta($event)" aria-label="Tema visual">
-            @for (paleta of palettes; track paleta.id) {
-              <option [value]="paleta.id">{{ paleta.nombre }}</option>
-            }
-          </select>
-        </label>
-        <label class="pie__paleta">
-          <span class="cd-xs">Modo</span>
-          <select class="pie__select" [value]="theme.modo()" (change)="cambiarModo($event)" aria-label="Modo claro u oscuro">
-            @for (modo of modos; track modo.id) {
-              <option [value]="modo.id">{{ modo.nombre }}</option>
-            }
-          </select>
-        </label>
       </div>
       </footer>
     }
@@ -635,7 +601,7 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
       font-weight: 500;
       text-decoration: none;
     }
-    .cuenta-menu__panel > a:hover {
+    .cuenta-menu__panel > a:not(.cd-btn):hover {
       background: var(--cd-color-surface-alt);
     }
     .cuenta-menu__panel .cd-btn {
@@ -769,8 +735,6 @@ export class ShellComponent {
     else this.notificaciones.limpiar();
   });
 
-  protected readonly palettes = PALETTES;
-  protected readonly modos = MODOS;
   protected readonly year = new Date().getFullYear();
   protected readonly drawerOpen = signal(false);
   protected readonly inicial = computed(() => this.auth.fullName().charAt(0).toUpperCase() || '?');
@@ -811,16 +775,6 @@ export class ShellComponent {
   @HostListener('document:keydown.escape')
   protected cerrarDrawer(): void {
     this.drawerOpen.set(false);
-  }
-
-  protected cambiarPaleta(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value as PaletteId;
-    this.theme.setPalette(value);
-  }
-
-  protected cambiarModo(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value as ModoId;
-    this.theme.setModo(value);
   }
 
   protected async salir(): Promise<void> {

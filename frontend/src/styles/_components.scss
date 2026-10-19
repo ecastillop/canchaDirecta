@@ -44,11 +44,11 @@
 
 .cd-btn--accent {
   background: var(--cd-color-accent);
-  color: #04211d;
+  color: var(--cd-color-on-accent);
 }
 .cd-btn--accent:hover:not(:disabled) {
   background: var(--cd-color-accent-strong);
-  color: #ffffff;
+  color: var(--cd-color-on-accent);
 }
 
 .cd-btn--lime {

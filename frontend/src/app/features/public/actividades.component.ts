@@ -221,7 +221,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
       padding: 0 6px;
       border-radius: 999px;
       background: var(--cd-color-accent-soft);
-      color: var(--cd-color-brand-ink);
+      color: var(--cd-color-text);
       font-size: 11px;
       font-weight: 800;
     }
@@ -246,7 +246,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
       gap: 2px;
       padding: 18px 10px;
       background: var(--cd-color-accent-soft);
-      color: var(--cd-color-brand-ink);
+      color: var(--cd-color-text);
     }
     .actividad__fecha strong {
       font-family: var(--cd-font-display);

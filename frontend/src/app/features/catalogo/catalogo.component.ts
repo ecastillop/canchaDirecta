@@ -234,7 +234,7 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
             </button>
             <button
               type="button"
-              class="cd-btn cd-btn--primary cd-btn--sm"
+              class="cd-btn cd-btn--accent cd-btn--sm"
               [disabled]="!comparacion.puedeComparar()"
               (click)="irAComparar()"
             >
@@ -332,10 +332,10 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       padding: 16px;
       border-radius: var(--cd-radius-md);
       background: var(--cd-color-accent-soft);
-      color: var(--cd-color-brand-ink);
+      color: var(--cd-color-text);
     }
     .panel-filtros__tip cd-icon {
-      color: var(--cd-color-brand);
+      color: var(--cd-color-accent);
     }
     .panel-filtros__tip strong {
       display: block;
@@ -343,7 +343,7 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
     }
     .panel-filtros__tip p {
       margin: 6px 0 0;
-      color: color-mix(in srgb, var(--cd-color-brand-ink) 72%, transparent);
+      color: var(--cd-color-text-muted);
       font-size: 12px;
       line-height: 1.5;
     }
@@ -361,8 +361,8 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       gap: 20px;
       padding: 12px 16px 12px 22px;
       border-radius: var(--cd-radius-pill);
-      background: var(--cd-color-primary);
-      color: var(--cd-color-on-primary);
+      background: var(--cd-color-inverse-bg);
+      color: var(--cd-color-inverse-text);
       box-shadow: var(--cd-shadow-3);
     }
     .comparar-barra p {
@@ -375,8 +375,8 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       gap: 8px;
     }
     .comparar-barra .cd-btn--ghost {
-      color: var(--cd-color-on-primary);
-      border-color: color-mix(in srgb, var(--cd-color-on-primary) 30%, transparent);
+      color: var(--cd-color-inverse-text);
+      border-color: color-mix(in srgb, var(--cd-color-inverse-text) 30%, transparent);
     }
     @media (max-width: 620px) {
       .comparar-barra {
@@ -565,7 +565,7 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       height: 38px;
       border-radius: 50%;
       background: var(--cd-color-accent-soft);
-      color: var(--cd-color-brand-ink);
+      color: var(--cd-color-text);
       text-decoration: none;
       transition:
         background var(--cd-duration-fast),

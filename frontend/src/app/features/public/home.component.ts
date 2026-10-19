@@ -335,7 +335,7 @@ const EMOJIS: Record<string, string> = {
       border: 2px solid var(--cd-color-inverse-bg);
       border-radius: 50%;
       background: var(--cd-color-success-soft);
-      color: var(--cd-color-brand-ink);
+      color: var(--cd-color-text);
       font-size: 10px;
       font-weight: 800;
     }

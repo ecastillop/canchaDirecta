@@ -45,6 +45,10 @@
   Añadidos: filtro por día en el catálogo (`fecha` en `GET /canchas`, por día de agenda), barra
   flotante de comparación que abre `/canchas/comparar`, CTA lima en los héroes oscuros y en la
   banda final, escudo en “Espacios verificados” y pie pegado al contenido (sin `min-height`).
+- Ajustes de contraste claro/oscuro (2026-10-19): retirados los selectores Tema/Modo del pie y del
+  menú móvil (el modo se cambia con el botón de la cabecera); corregidos el tip, las fechas de
+  actividad, los badges, los avatares, la barra de comparación y el botón “Ingresar” del menú al
+  pasar el cursor.
 - Ficha de espacio implementada (2026-10-18): `GET /api/v1/establecimientos/{id}/ficha`,
   ruta `/establecimientos/:id` y enlace desde el detalle de cancha.
 - Actividades reales implementadas (2026-10-18): migración `V14`, API de actividades e
