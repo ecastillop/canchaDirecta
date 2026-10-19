@@ -226,7 +226,7 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       position: relative;
       overflow: hidden;
       padding: clamp(64px, 8vw, 100px) 0 clamp(58px, 7vw, 86px);
-      background: var(--cd-color-hero-green);
+      background: var(--cd-color-inverse-bg);
       color: var(--cd-color-inverse-text);
     }
     .hero-catalogo::after {

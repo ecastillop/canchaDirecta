@@ -133,7 +133,7 @@ import { CdThemeToggleComponent } from '../../shared/ui/theme-toggle/cd-theme-to
       width: 42px;
       height: 42px;
       border-radius: 12px;
-      background: #c5f56b;
+      background: #83be76;
       transform: rotate(-7deg);
     }
     .logo-symbol span {
@@ -231,7 +231,7 @@ import { CdThemeToggleComponent } from '../../shared/ui/theme-toggle/cd-theme-to
       height: 32px;
       margin-bottom: 13px;
       border-radius: 9px;
-      background: #c5f56b;
+      background: #83be76;
       color: #214d37;
     }
     .panel-side__help strong {

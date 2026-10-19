@@ -63,9 +63,8 @@
   --cd-color-primary: #0f191e;
   --cd-color-primary-strong: #172324;
   --cd-color-teal: #167a70;
-  --cd-color-accent: #c5f56b;
-  --cd-color-accent-strong: #b2e356;
-  --cd-color-hero-green: #153a33;
+  --cd-color-accent: #83be76;
+  --cd-color-accent-strong: #6fae63;
   --cd-color-on-accent: #0f191e;
   --cd-color-bg: #f7f8f4;
   --cd-color-surface: #ffffff;
@@ -94,12 +93,11 @@
 
 :root[data-palette='grafito'] {
   color-scheme: dark;
-  --cd-color-primary: #c5f56b;
+  --cd-color-primary: #83be76;
   --cd-color-primary-strong: #d5ff88;
   --cd-color-teal: #69d3c3;
-  --cd-color-accent: #c5f56b;
-  --cd-color-accent-strong: #b2e356;
-  --cd-color-hero-green: #153a33;
+  --cd-color-accent: #83be76;
+  --cd-color-accent-strong: #6fae63;
   --cd-color-bg: #0b1417;
   --cd-color-surface: #101c20;
   --cd-color-surface-alt: #16262a;
@@ -116,7 +114,7 @@
   --cd-color-info: #9cc7ef;
   --cd-color-info-soft: #162b3a;
   --cd-color-border: #263a36;
-  --cd-color-focus: #c5f56b;
+  --cd-color-focus: #83be76;
   --cd-color-inverse-bg: #101c20;
   --cd-color-inverse-text: #edf3ee;
   --cd-color-inverse-muted: #a9b8af;
@@ -130,9 +128,8 @@
   --cd-color-primary: #1f3d2b;
   --cd-color-primary-strong: #2c5239;
   --cd-color-teal: #167a70;
-  --cd-color-accent: #c5f56b;
-  --cd-color-accent-strong: #b2e356;
-  --cd-color-hero-green: #153a33;
+  --cd-color-accent: #83be76;
+  --cd-color-accent-strong: #6fae63;
   --cd-color-bg: #fbf7f0;
   --cd-color-surface: #fffdf8;
   --cd-color-surface-alt: #f1e9dd;
@@ -149,12 +146,11 @@
 // de igual especificidad y aplicar el juego oscuro sobre cualquier paleta elegida.
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --cd-color-primary: #c5f56b;
+  --cd-color-primary: #83be76;
   --cd-color-primary-strong: #d5ff88;
   --cd-color-teal: #69d3c3;
-  --cd-color-accent: #c5f56b;
-  --cd-color-accent-strong: #b2e356;
-  --cd-color-hero-green: #153a33;
+  --cd-color-accent: #83be76;
+  --cd-color-accent-strong: #6fae63;
   --cd-color-bg: #0b1417;
   --cd-color-surface: #101c20;
   --cd-color-surface-alt: #16262a;
@@ -171,7 +167,7 @@
   --cd-color-info: #9cc7ef;
   --cd-color-info-soft: #162b3a;
   --cd-color-border: #263a36;
-  --cd-color-focus: #c5f56b;
+  --cd-color-focus: #83be76;
   --cd-color-inverse-bg: #101c20;
   --cd-color-inverse-text: #edf3ee;
   --cd-color-inverse-muted: #a9b8af;

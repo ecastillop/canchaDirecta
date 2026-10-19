@@ -70,89 +70,81 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
         <div class="grid">
           @for (actividad of actividades(); track actividad.id) {
             <article class="actividad">
-              <div class="actividad__top">
-                <span class="cd-badge cd-badge--suave">{{ actividad.distrito }}</span>
-                <span class="actividad__fecha">
-                  <cd-icon name="calendar" [size]="13" />
-                  {{ actividad.inicio | date: 'd MMM yyyy' }}
-                </span>
+              <div class="actividad__fecha" aria-hidden="true">
+                <strong>{{ actividad.inicio | date: 'd' }}</strong>
+                <span>{{ actividad.inicio | date: 'MMM' }}</span>
               </div>
-              <h3>{{ actividad.nombre }}</h3>
-              @if (actividad.descripcion) {
-                <p class="cd-small cd-muted descripcion">{{ actividad.descripcion }}</p>
-              }
-              <p class="meta cd-small cd-muted">
-                <cd-icon name="clock" [size]="14" />
-                {{ actividad.inicio | date: 'EEE d MMM, HH:mm' }} - {{ actividad.fin | date: 'HH:mm' }}
-              </p>
-              <p class="meta cd-small cd-muted">
-                <cd-icon name="pin" [size]="14" />
-                <a class="enlace" [routerLink]="['/establecimientos', actividad.idEstablecimiento]">
-                  {{ actividad.establecimiento }}
-                </a>
-              </p>
-              <div
-                class="actividad__progreso"
-                role="img"
-                [attr.aria-label]="
-                  actividad.cuposDisponibles + ' de ' + actividad.cupos + ' cupos disponibles'
-                "
-              >
-                <span [style.width.%]="ocupacion(actividad)"></span>
-              </div>
-              <div class="actividad__pie">
-                <span class="precio">
-                  @if (actividad.precio > 0) {
-                    <strong>{{ actividad.precio | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</strong>
-                    <small>por persona</small>
+              <div class="actividad__cuerpo">
+                <div class="cd-row actividad__tags">
+                  <span class="cd-badge">{{ actividad.distrito }}</span>
+                  @if (actividad.cuposDisponibles <= 5) {
+                    <span class="cd-badge cd-badge--warning">Últimos {{ actividad.cuposDisponibles }} cupos</span>
                   } @else {
-                    <strong>Gratis</strong>
+                    <span class="cd-badge cd-badge--success">{{ actividad.cuposDisponibles }} cupos libres</span>
                   }
-                  <small class="disponibles">
-                    @if (esInscrito(actividad.id)) {
-                      Inscrito
-                    } @else if (actividad.cuposDisponibles === 0) {
-                      Sin cupos
-                    } @else if (actividad.cuposDisponibles <= 5) {
-                      Últimos {{ actividad.cuposDisponibles }} cupos
-                    } @else {
-                      {{ actividad.cuposDisponibles }} cupos disponibles
-                    }
-                  </small>
-                </span>
-                @if (!auth.isAuthenticated()) {
-                  <a
-                    [routerLink]="['/auth/login']"
-                    [queryParams]="{ redirect: '/actividades' }"
-                    class="cd-btn cd-btn--secondary cd-btn--sm"
-                  >
-                    Ingresa para inscribirte <cd-icon name="arrow" [size]="15" />
-                  </a>
-                } @else if (esInscrito(actividad.id)) {
-                  <button
-                    cdButton
-                    variant="secondary"
-                    size="sm"
-                    type="button"
-                    [loading]="accionando() === actividad.id"
-                    (click)="cancelarInscripcion(actividad)"
-                  >
-                    Cancelar inscripción
-                  </button>
-                } @else if (actividad.cuposDisponibles === 0) {
-                  <button cdButton variant="secondary" size="sm" type="button" disabled>Sin cupos</button>
-                } @else {
-                  <button
-                    cdButton
-                    variant="primary"
-                    size="sm"
-                    type="button"
-                    [loading]="accionando() === actividad.id"
-                    (click)="inscribirse(actividad)"
-                  >
-                    Inscribirme
-                  </button>
+                  @if (esInscrito(actividad.id)) {
+                    <span class="cd-badge cd-badge--accent"><cd-icon name="check" [size]="11" /> Inscrito</span>
+                  }
+                </div>
+                <h3>{{ actividad.nombre }}</h3>
+                @if (actividad.descripcion) {
+                  <p class="cd-small cd-muted descripcion">{{ actividad.descripcion }}</p>
                 }
+                <p class="meta cd-small cd-muted">
+                  <cd-icon name="calendar" [size]="14" />
+                  {{ actividad.inicio | date: 'EEE d MMM, HH:mm' }} - {{ actividad.fin | date: 'HH:mm' }}
+                </p>
+                <p class="meta cd-small cd-muted">
+                  <cd-icon name="pin" [size]="14" />
+                  <a class="enlace" [routerLink]="['/establecimientos', actividad.idEstablecimiento]">
+                    {{ actividad.establecimiento }}
+                  </a>
+                </p>
+                <div class="actividad__pie">
+                  <span class="precio">
+                    @if (actividad.precio > 0) {
+                      <strong>{{ actividad.precio | currency: 'PEN' : 'symbol-narrow' : '1.2-2' }}</strong>
+                      <small>por persona</small>
+                    } @else {
+                      <strong>Gratis</strong>
+                    }
+                  </span>
+                  @if (!auth.isAuthenticated()) {
+                    <a
+                      [routerLink]="['/auth/login']"
+                      [queryParams]="{ redirect: '/actividades' }"
+                      cdButton
+                      variant="secondary"
+                      size="sm"
+                    >
+                      Ingresa para inscribirte
+                    </a>
+                  } @else if (esInscrito(actividad.id)) {
+                    <button
+                      cdButton
+                      variant="secondary"
+                      size="sm"
+                      type="button"
+                      [loading]="accionando() === actividad.id"
+                      (click)="cancelarInscripcion(actividad)"
+                    >
+                      Cancelar inscripción
+                    </button>
+                  } @else if (actividad.cuposDisponibles === 0) {
+                    <button cdButton variant="secondary" size="sm" type="button" disabled>Sin cupos</button>
+                  } @else {
+                    <button
+                      cdButton
+                      variant="primary"
+                      size="sm"
+                      type="button"
+                      [loading]="accionando() === actividad.id"
+                      (click)="inscribirse(actividad)"
+                    >
+                      Inscribirme
+                    </button>
+                  }
+                </div>
               </div>
             </article>
           }
@@ -171,7 +163,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
   styles: `
     .hero-actividades {
       padding: clamp(56px, 8vw, 96px) 0 clamp(48px, 6vw, 76px);
-      background: var(--cd-color-hero-green);
+      background: var(--cd-color-inverse-bg);
       color: var(--cd-color-inverse-text);
     }
     .eyebrow {
@@ -228,46 +220,57 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
       margin-left: 6px;
       padding: 0 6px;
       border-radius: 999px;
-      background: var(--cd-color-surface-alt);
-      color: var(--cd-color-teal);
+      background: var(--cd-color-accent);
+      color: var(--cd-color-primary);
       font-size: 11px;
       font-weight: 800;
     }
     .grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
     }
     .actividad {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 22px;
+      display: grid;
+      grid-template-columns: 82px minmax(0, 1fr);
+      overflow: hidden;
       border: 1px solid var(--cd-color-border);
       border-radius: var(--cd-radius-lg);
       background: var(--cd-color-surface);
       box-shadow: var(--cd-shadow-1);
     }
-    .actividad__top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 6px;
-    }
     .actividad__fecha {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      color: var(--cd-color-text-muted);
-      font-size: 12px;
-      white-space: nowrap;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      gap: 2px;
+      padding: 18px 10px;
+      background: var(--cd-color-accent);
+      color: var(--cd-color-primary);
+    }
+    .actividad__fecha strong {
+      font-family: var(--cd-font-display);
+      font-size: 32px;
+      line-height: 1;
+    }
+    .actividad__fecha span {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .actividad__cuerpo {
+      display: grid;
+      align-content: start;
+      gap: 8px;
+      padding: 18px;
+    }
+    .actividad__tags {
+      flex-wrap: wrap;
     }
     .actividad h3 {
       margin: 0;
-      font-size: 21px;
-      line-height: 1.25;
-      min-height: 52px;
+      font-size: 22px;
       letter-spacing: -0.02em;
     }
     .descripcion {
@@ -289,21 +292,8 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
       text-decoration: none;
     }
     .enlace:hover {
-      color: var(--cd-color-teal);
+      color: var(--cd-color-primary);
       text-decoration: underline;
-    }
-    .actividad__progreso {
-      height: 6px;
-      margin: 12px 0 4px;
-      border-radius: 9px;
-      overflow: hidden;
-      background: var(--cd-color-surface-alt);
-    }
-    .actividad__progreso span {
-      display: block;
-      height: 100%;
-      border-radius: 9px;
-      background: var(--cd-color-success);
     }
     .actividad__pie {
       display: flex;
@@ -311,11 +301,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
       justify-content: space-between;
       gap: 12px;
       flex-wrap: wrap;
-      margin-top: 4px;
-    }
-    .precio {
-      display: grid;
-      gap: 2px;
+      margin-top: 6px;
     }
     .precio strong {
       font-size: 20px;
@@ -323,9 +309,6 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
     .precio small {
       color: var(--cd-color-text-muted);
       font-size: 11px;
-    }
-    .disponibles {
-      display: block;
     }
     .aviso {
       display: flex;
@@ -343,17 +326,17 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
       color: var(--cd-color-text-muted);
       font-size: 13px;
     }
-    @media (max-width: 1100px) {
-      .grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-    @media (max-width: 700px) {
+    @media (max-width: 900px) {
       .grid {
         grid-template-columns: 1fr;
       }
-      .actividad h3 {
-        min-height: 0;
+    }
+    @media (max-width: 520px) {
+      .actividad {
+        grid-template-columns: 64px minmax(0, 1fr);
+      }
+      .actividad__fecha strong {
+        font-size: 26px;
       }
     }
   `,
@@ -385,14 +368,6 @@ export class ActividadesComponent implements OnInit {
 
   protected esInscrito(idActividad: number): boolean {
     return this.idsInscritos().has(idActividad);
-  }
-
-  /** Porcentaje ocupado, para la barra de cupos de la tarjeta. */
-  protected ocupacion(actividad: Actividad): number {
-    if (!actividad.cupos) {
-      return 0;
-    }
-    return Math.min(100, Math.round(((actividad.cupos - actividad.cuposDisponibles) / actividad.cupos) * 100));
   }
 
   protected async inscribirse(actividad: Actividad): Promise<void> {
