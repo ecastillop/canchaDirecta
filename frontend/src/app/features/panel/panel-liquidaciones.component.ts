@@ -89,6 +89,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
         <div class="detalle" aria-live="polite">
           <h3 class="subseccion">Detalle de liquidación #{{ d.id }}</h3>
           <table class="tabla">
+            <caption class="cd-visually-hidden">Reservas incluidas en la liquidación</caption>
             <thead>
               <tr>
                 <th scope="col">Reserva</th>

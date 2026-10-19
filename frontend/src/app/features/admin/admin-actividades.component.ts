@@ -87,6 +87,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
         <section class="panel">
           <div class="tabla-scroll">
             <table class="tabla">
+              <caption class="cd-visually-hidden">Actividades registradas</caption>
               <thead>
                 <tr>
                   <th scope="col">Actividad</th>

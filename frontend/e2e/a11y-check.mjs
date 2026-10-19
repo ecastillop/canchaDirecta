@@ -5,12 +5,17 @@ import { fileURLToPath } from 'node:url';
 
 /**
  * Revision de accesibilidad por teclado y estructura.
- * Requiere el frontend en marcha y una cuenta PLATFORM_ADMIN.
+ * Requiere el frontend en marcha y, para las areas privadas, una cuenta PLATFORM_ADMIN.
  *
  *   $env:BASE='http://localhost:8083'
  *   $env:ADMIN_CORREO='admin@canchadirecta.pe'
  *   $env:ADMIN_PASSWORD='...'
  *   npm run test:a11y
+ *
+ * Para auditar solo lo publico y las pantallas de acceso (que el guard de invitado
+ * esconde con sesion iniciada), se ejecuta sin credenciales:
+ *
+ *   $env:A11Y_SIN_SESION='1'; npm run test:a11y
  */
 const BASE = process.env.BASE ?? 'http://localhost:4300';
 const EVID = resolve(dirname(fileURLToPath(import.meta.url)), '../../docs/evidencias/ui');
@@ -19,8 +24,9 @@ const CHROME =
   (process.platform === 'win32'
     ? 'C:/Program Files/Google/Chrome/Application/chrome.exe'
     : '/usr/bin/google-chrome');
-if (!process.env.ADMIN_CORREO || !process.env.ADMIN_PASSWORD) {
-  console.error('Define ADMIN_CORREO y ADMIN_PASSWORD de una cuenta PLATFORM_ADMIN.');
+const SIN_SESION = process.env.A11Y_SIN_SESION === '1';
+if (!SIN_SESION && (!process.env.ADMIN_CORREO || !process.env.ADMIN_PASSWORD)) {
+  console.error('Define ADMIN_CORREO y ADMIN_PASSWORD de una cuenta PLATFORM_ADMIN, o A11Y_SIN_SESION=1.');
   process.exit(2);
 }
 fs.mkdirSync(EVID, { recursive: true });
@@ -40,48 +46,68 @@ page.on('console', (msg) => {
   if (msg.type() === 'error') erroresConsola.push(msg.text());
 });
 
-await page.goto(`${BASE}/auth/login`, { waitUntil: 'networkidle' });
-await page.locator('input[formcontrolname="correo"]').fill(process.env.ADMIN_CORREO);
-await page.locator('input[formcontrolname="password"]').fill(process.env.ADMIN_PASSWORD);
-await page.getByRole('button', { name: 'Ingresar' }).click();
-await page.waitForURL('**/', { timeout: 20000 });
+if (!SIN_SESION) {
+  await page.goto(`${BASE}/auth/login`, { waitUntil: 'networkidle' });
+  await page.locator('input[formcontrolname="correo"]').fill(process.env.ADMIN_CORREO);
+  await page.locator('input[formcontrolname="password"]').fill(process.env.ADMIN_PASSWORD);
+  await page.getByRole('button', { name: 'Ingresar' }).click();
+  await page.waitForURL('**/', { timeout: 20000 });
+}
 
-const rutas = [
+/** Pantallas publicas y de acceso: alcanzables sin iniciar sesion. */
+const rutasPublicas = [
   '/',
   '/canchas',
+  '/canchas/comparar',
   '/actividades',
   '/como-funciona',
   '/ayuda',
   '/canchas/1',
   '/establecimientos/1',
-  '/mi-resumen',
-  '/mis-reservas',
-  '/mis-inscripciones',
-  '/favoritos',
-  '/perfil',
-  '/notificaciones',
-  '/reclamos',
-  '/panel',
-  '/panel/metricas',
-  '/panel/reservas',
-  '/panel/agenda',
-  '/panel/actividades',
-  '/panel/promociones',
-  '/panel/liquidaciones',
-  '/admin',
-  '/admin/usuarios',
-  '/admin/transacciones',
-  '/admin/actividades',
-  '/admin/reportes',
-  '/admin/configuracion',
-  '/admin/operadores',
-  '/recepcion',
-  '/recepcion/agenda',
-  '/recepcion/reservas',
-  '/recepcion/nueva',
-  '/recepcion/cobros',
-  '/recepcion/incidencias',
+  '/auth/login',
+  '/auth/registro',
+  '/auth/recuperar',
+  '/auth/verificar',
 ];
+
+const rutas = SIN_SESION
+  ? rutasPublicas
+  : [
+      '/',
+      '/canchas',
+      '/actividades',
+      '/como-funciona',
+      '/ayuda',
+      '/canchas/1',
+      '/establecimientos/1',
+      '/mi-resumen',
+      '/mis-reservas',
+      '/mis-inscripciones',
+      '/favoritos',
+      '/perfil',
+      '/notificaciones',
+      '/reclamos',
+      '/panel',
+      '/panel/metricas',
+      '/panel/reservas',
+      '/panel/agenda',
+      '/panel/actividades',
+      '/panel/promociones',
+      '/panel/liquidaciones',
+      '/admin',
+      '/admin/usuarios',
+      '/admin/transacciones',
+      '/admin/actividades',
+      '/admin/reportes',
+      '/admin/configuracion',
+      '/admin/operadores',
+      '/recepcion',
+      '/recepcion/agenda',
+      '/recepcion/reservas',
+      '/recepcion/nueva',
+      '/recepcion/cobros',
+      '/recepcion/incidencias',
+    ];
 
 for (const ruta of rutas) {
   await page.goto(`${BASE}${ruta}`, { waitUntil: 'networkidle' });
@@ -135,7 +161,22 @@ for (const ruta of rutas) {
       imagenesSinAlt,
       duplicados,
       main: !!document.querySelector('main#contenido'),
+      mains: document.querySelectorAll('main').length,
       skip: !!document.querySelector('.cd-skip-link'),
+      tablasSinNombre: [...document.querySelectorAll('table')].filter(
+        (t) =>
+          !t.querySelector('caption') &&
+          !t.getAttribute('aria-label') &&
+          !t.getAttribute('aria-labelledby'),
+      ).length,
+      dialogosSinNombre: [...document.querySelectorAll('[role="dialog"]')].filter(
+        (d) => !d.getAttribute('aria-label') && !d.getAttribute('aria-labelledby'),
+      ).length,
+      ocultoConFoco: [...document.querySelectorAll('[aria-hidden="true"]')].some((e) =>
+        e.querySelector(
+          'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])',
+        ),
+      ),
     };
   });
 
@@ -146,7 +187,11 @@ for (const ruta of rutas) {
   if (res.imagenesSinAlt.length) mal(ruta, `${res.imagenesSinAlt.length} imagen(es) sin alt`);
   if (res.duplicados.length) mal(ruta, `ids duplicados: ${res.duplicados.join(', ')}`);
   if (!res.main) mal(ruta, 'falta <main id="contenido">');
+  if (res.mains > 1) mal(ruta, `${res.mains} elementos main (landmark duplicado)`);
   if (!res.skip) mal(ruta, 'falta enlace de salto');
+  if (res.tablasSinNombre) mal(ruta, `${res.tablasSinNombre} tabla(s) sin nombre accesible`);
+  if (res.dialogosSinNombre) mal(ruta, `${res.dialogosSinNombre} dialogo(s) sin nombre accesible`);
+  if (res.ocultoConFoco) mal(ruta, 'hay controles enfocables dentro de aria-hidden="true"');
   if (
     res.h1 === 1 &&
     !res.salto &&
@@ -155,7 +200,11 @@ for (const ruta of rutas) {
     !res.imagenesSinAlt.length &&
     !res.duplicados.length &&
     res.main &&
-    res.skip
+    res.mains === 1 &&
+    res.skip &&
+    !res.tablasSinNombre &&
+    !res.dialogosSinNombre &&
+    !res.ocultoConFoco
   ) {
     ok(`${ruta}: estructura accesible`);
   }
@@ -176,18 +225,49 @@ for (let i = 0; i < 25; i++) {
 if (!salio) ok('25 Tabs recorren controles sin perder el foco');
 else mal('/canchas', 'el foco se pierde durante el recorrido de teclado');
 
-await page.goto(`${BASE}/admin`, { waitUntil: 'networkidle' });
-const navAdmin = page.getByRole('navigation', { name: 'Menú de administración' });
-await navAdmin.getByRole('link', { name: 'Usuarios' }).click();
-await page.locator('table.tabla tbody tr').first().waitFor({ timeout: 20000 });
-await page.locator('table.tabla tbody tr').first().getByRole('button', { name: 'Roles' }).click();
-await page.getByRole('dialog').waitFor();
-await page.screenshot({ path: resolve(EVID, 'a11y-modal-roles.png'), fullPage: false });
-await page.keyboard.press('Escape');
+await page.goto(`${BASE}/canchas`, { waitUntil: 'networkidle' });
+await page.keyboard.press('Tab');
+const primerFoco = await page.evaluate(() => document.activeElement?.className ?? '');
+if (String(primerFoco).includes('cd-skip-link')) ok('el primer Tab llega al enlace de salto');
+else mal('/canchas', `el primer Tab no llega al enlace de salto (${primerFoco})`);
 
-await navAdmin.getByRole('link', { name: 'Auditoría' }).click();
-await page.getByRole('navigation', { name: 'Paginación de auditoría' }).waitFor({ timeout: 20000 });
-await page.screenshot({ path: resolve(EVID, 'a11y-paginacion-auditoria.png'), fullPage: false });
+await page.keyboard.press('Enter');
+await page.waitForTimeout(150);
+const focoTrasSalto = await page.evaluate(() => document.activeElement?.id);
+if (focoTrasSalto === 'contenido') ok('el enlace de salto lleva el foco a <main>');
+else mal('/canchas', `el enlace de salto deja el foco en #${focoTrasSalto}`);
+
+// Cambio de pantalla: el foco debe pasar al contenido nuevo para que el lector
+// de pantalla anuncie el contexto y el teclado no quede en un enlace obsoleto.
+await page.locator('nav[aria-label="Navegación principal"] a', { hasText: 'Ayuda' }).click();
+await page.waitForURL('**/ayuda', { timeout: 20000 });
+await page.waitForTimeout(300);
+const focoNavegacion = await page.evaluate(() => ({
+  id: document.activeElement?.id,
+  dentro: !!document.activeElement?.closest('main'),
+}));
+if (focoNavegacion.id === 'contenido' || focoNavegacion.dentro) {
+  ok('al cambiar de pantalla el foco pasa al contenido');
+} else {
+  mal('/ayuda', 'el foco se queda en la pantalla anterior tras navegar');
+}
+
+if (!SIN_SESION) {
+  await page.goto(`${BASE}/admin`, { waitUntil: 'networkidle' });
+  const navAdmin = page.getByRole('navigation', { name: 'Menú de administración' });
+  await navAdmin.getByRole('link', { name: 'Usuarios' }).click();
+  await page.locator('table.tabla tbody tr').first().waitFor({ timeout: 20000 });
+  await page.locator('table.tabla tbody tr').first().getByRole('button', { name: 'Roles' }).click();
+  await page.getByRole('dialog').waitFor();
+  await page.screenshot({ path: resolve(EVID, 'a11y-modal-roles.png'), fullPage: false });
+  await page.keyboard.press('Escape');
+
+  await navAdmin.getByRole('link', { name: 'Auditoría' }).click();
+  await page
+    .getByRole('navigation', { name: 'Paginación de auditoría' })
+    .waitFor({ timeout: 20000 });
+  await page.screenshot({ path: resolve(EVID, 'a11y-paginacion-auditoria.png'), fullPage: false });
+}
 
 if (erroresConsola.length) {
   info(`errores de consola detectados: ${erroresConsola.length} (se espera 404 de /propietarios/me sin solicitud)`);

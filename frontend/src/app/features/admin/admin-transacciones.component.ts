@@ -84,6 +84,7 @@ const COMISION = 0.1;
         <section class="panel">
           <div class="tabla-scroll">
             <table class="tabla">
+              <caption class="cd-visually-hidden">Transacciones con comisión y neto</caption>
               <thead>
                 <tr>
                   <th scope="col">Reserva</th>

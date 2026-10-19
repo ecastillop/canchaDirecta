@@ -1,4 +1,5 @@
 import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { A11yModule } from '@angular/cdk/a11y';
 import { ChangeDetectionStrategy, Component, HostListener, OnInit, computed, inject, input, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -62,6 +63,7 @@ interface DiaSemana {
     CdSkeletonComponent,
     CdEmptyStateComponent,
     CdErrorStateComponent,
+    A11yModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -174,7 +176,15 @@ interface DiaSemana {
         </div>
 
         @if (visorAbierto() && fotoActual(); as foto) {
-          <div class="visor" role="dialog" aria-modal="true" aria-label="Fotos de la cancha" (click)="cerrarVisor()">
+          <div
+            class="visor"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Fotos de la cancha"
+            cdkTrapFocus
+            [cdkTrapFocusAutoCapture]="true"
+            (click)="cerrarVisor()"
+          >
             <button class="visor__cerrar" type="button" aria-label="Cerrar fotos" (click)="cerrarVisor()">✕</button>
             @if (c.fotos.length > 1) {
               <button class="visor__nav visor__nav--prev" type="button" aria-label="Foto anterior" (click)="anteriorFoto($event)">

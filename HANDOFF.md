@@ -26,6 +26,12 @@
 - Pruebas: backend **163/163**, humo **153/153** (PowerShell) y **134/134** (Bash), unitarios
   **28/28**, E2E usuario **OK**, E2E propietario/admin **OK**, accesibilidad **34 rutas OK** y
   contraste **OK** en los 4 portales y ambos modos.
+- Accesibilidad ampliada (2026-10-19): la suite ahora verifica también `main`/`h1` únicos, tablas
+  y diálogos con nombre accesible, foco al contenido tras navegar y el visor de fotos atrapado
+  con retorno de foco; además cubre las 12 rutas públicas y de acceso con
+  `A11Y_SIN_SESION=1` (12/12 PASS). La pasada privada de 34 rutas debe re-ejecutarse con
+  `ADMIN_PASSWORD` para las comprobaciones nuevas: la última corrida completa (2026-10-18) fue
+  34 rutas OK.
 - Ficha de espacio implementada (2026-10-18): `GET /api/v1/establecimientos/{id}/ficha`,
   ruta `/establecimientos/:id` y enlace desde el detalle de cancha.
 - Actividades reales implementadas (2026-10-18): migración `V14`, API de actividades e
@@ -652,7 +658,10 @@ La hoja de ruta vigente esta en **`## 0. Mirada hacia adelante`** al inicio de e
 Prioridad inmediata:
 
 1. Revisión manual con lector de pantalla (L-23; el contraste ya está automatizado con
-   `frontend/e2e/contraste-modos.mjs`) y los diagramas de arquitectura para el acta.
+   `frontend/e2e/contraste-modos.mjs` y la estructura/teclado con `a11y-check.mjs`, incluida la
+   variante `A11Y_SIN_SESION=1` para `/auth/*`) y los diagramas de arquitectura para el acta.
+2. Re-ejecutar `npm run test:a11y` como `PLATFORM_ADMIN` para pasar las comprobaciones nuevas
+   (tablas con nombre, `main`/`h1` únicos) por las 34 rutas privadas.
 
 **Estado:** entrega base cerrada el 2026-10-17; rediseno de fusion, integraciones del standalone y
 bloques A/B/C/D del delta completados el 2026-10-18, más badge de notificaciones, modo claro/oscuro,

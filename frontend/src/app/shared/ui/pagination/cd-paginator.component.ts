@@ -12,7 +12,9 @@ import { CdButtonDirective } from '../button/cd-button.directive';
   template: `
     @if (totalPaginas() > 1) {
       <nav class="paginacion" [attr.aria-label]="etiqueta()">
-        <span class="cd-small cd-muted rango">Mostrando {{ desde() }}–{{ hasta() }} de {{ total() }}</span>
+        <span class="cd-small cd-muted rango" aria-live="polite" aria-atomic="true"
+          >Mostrando {{ desde() }}–{{ hasta() }} de {{ total() }}</span
+        >
         <div class="controles">
           <button
             cdButton

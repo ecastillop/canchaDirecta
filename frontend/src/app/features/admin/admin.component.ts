@@ -238,6 +238,7 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
           } @else {
             <div class="tabla-scroll">
               <table class="tabla">
+                <caption class="cd-visually-hidden">Usuarios registrados</caption>
                 <thead>
                   <tr>
                     <th scope="col">Usuario</th>
@@ -383,6 +384,7 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
           } @else {
             <div class="tabla-scroll">
               <table class="tabla">
+                <caption class="cd-visually-hidden">Cocheras registradas</caption>
                 <thead>
                   <tr>
                     <th scope="col">ID</th>
@@ -441,6 +443,7 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
           @if (supervision() === 'establecimientos') {
             <div class="tabla-scroll">
               <table class="tabla">
+                <caption class="cd-visually-hidden">Establecimientos en supervisión</caption>
                 <thead>
                   <tr>
                     <th scope="col">ID</th>
@@ -489,6 +492,7 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
           @if (supervision() === 'reservas') {
             <div class="tabla-scroll">
               <table class="tabla">
+                <caption class="cd-visually-hidden">Reservas en supervisión</caption>
                 <thead>
                   <tr>
                     <th scope="col">ID</th>
@@ -546,6 +550,7 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
           @if (supervision() === 'pagos') {
             <div class="tabla-scroll">
               <table class="tabla">
+                <caption class="cd-visually-hidden">Pagos en supervisión</caption>
                 <thead>
                   <tr>
                     <th scope="col">ID</th>
@@ -589,6 +594,7 @@ type SupervisionTab = 'establecimientos' | 'reservas' | 'pagos';
           } @else {
             <div class="tabla-scroll">
               <table class="tabla">
+                <caption class="cd-visually-hidden">Eventos de auditoría</caption>
                 <thead>
                   <tr>
                     <th scope="col">Fecha</th>

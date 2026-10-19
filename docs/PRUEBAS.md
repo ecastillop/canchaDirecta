@@ -49,7 +49,14 @@ npm test -- --watch=false
 $env:BASE='http://localhost:8083'; npm run test:e2e
 $env:BASE='http://localhost:8083'; $env:ADMIN_CORREO=...; $env:ADMIN_PASSWORD=...; npm run test:e2e:owner
 $env:BASE='http://localhost:8083'; $env:ADMIN_CORREO=...; $env:ADMIN_PASSWORD=...; npm run test:a11y
+# Accesibilidad de lo publico y las pantallas de acceso (sin credenciales)
+$env:BASE='http://localhost:8083'; $env:A11Y_SIN_SESION='1'; npm run test:a11y
 ```
+
+`test:a11y` revisa estructura (un solo `main` y un solo `h1`, jerarquia de encabezados,
+nombres accesibles en controles, campos, imagenes, tablas y dialogos), enlace de salto,
+recorrido de teclado, foco que pasa al contenido al cambiar de pantalla y capturas. La variante
+`A11Y_SIN_SESION=1` cubre ademas `/auth/*`, que el guard de invitado esconde con sesion iniciada.
 
 Testcontainers requiere Docker operativo (Docker ya operativo: migrar los tests de integracion,
 ver `L-09`).

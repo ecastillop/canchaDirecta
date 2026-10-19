@@ -6,6 +6,7 @@ import { RouterLink, RouterOutlet } from '@angular/router';
   imports: [RouterOutlet, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <a class="cd-skip-link" href="#contenido">Saltar al contenido</a>
     <div class="marco">
       <aside class="lado-marca">
         <a routerLink="/" class="marca" aria-label="CanchaDirecta, volver al inicio">
@@ -17,7 +18,7 @@ import { RouterLink, RouterOutlet } from '@angular/router';
         </a>
         <div class="lado-marca__texto">
           <p class="eyebrow">Tu próximo partido empieza aquí</p>
-          <h1>El espacio ideal.<br /><em>El momento</em><br />perfecto.</h1>
+          <p class="lado-marca__titulo">El espacio ideal.<br /><em>El momento</em><br />perfecto.</p>
           <p>Reserva canchas, organiza tu equipo y vuelve a jugar sin complicaciones.</p>
         </div>
         <div class="cancha-art" aria-hidden="true">
@@ -26,7 +27,7 @@ import { RouterLink, RouterOutlet } from '@angular/router';
           <span class="balon">⚽</span>
         </div>
       </aside>
-      <main class="contenido">
+      <main id="contenido" tabindex="-1" class="contenido">
         <section class="tarjeta" aria-labelledby="titulo-acceso">
           <router-outlet />
         </section>
@@ -104,13 +105,13 @@ import { RouterLink, RouterOutlet } from '@angular/router';
       letter-spacing: 0.18em;
       text-transform: uppercase;
     }
-    h1 {
+    .lado-marca__titulo {
       margin: 0;
       font-size: clamp(42px, 5vw, 72px);
       line-height: 0.98;
       letter-spacing: -0.055em;
     }
-    h1 em {
+    .lado-marca__titulo em {
       color: var(--cd-color-accent);
       font-style: normal;
     }

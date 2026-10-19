@@ -2,13 +2,14 @@ import { A11yModule } from '@angular/cdk/a11y';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   HostListener,
   computed,
   effect,
   inject,
   signal,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
 import { NotificacionesStore } from '../../core/api/notificaciones.store';
@@ -747,6 +748,7 @@ export class ShellComponent {
   protected readonly theme = inject(ThemeService);
   private readonly notificaciones = inject(NotificacionesStore);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly badge = this.notificaciones.noLeidas;
   /** Mantiene el badge de la campana al dia con la sesion (carga al entrar, limpia al salir). */
@@ -774,6 +776,25 @@ export class ShellComponent {
       this.url(),
     ),
   );
+  /** Ruta (sin query ni fragmento) de la pantalla anterior. */
+  private rutaAnterior = this.router.url.split(/[?#]/)[0];
+
+  constructor() {
+    this.router.events
+      .pipe(
+        filter((evento): evento is NavigationEnd => evento instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((evento) => {
+        const destino = evento.urlAfterRedirects.split(/[?#]/)[0];
+        const anterior = this.rutaAnterior;
+        this.rutaAnterior = destino;
+        if (destino === anterior) return;
+        // Al cambiar de pantalla el foco vuelve al contenido: el lector de pantalla
+        // anuncia el nuevo contexto y el teclado no se queda en un enlace obsoleto.
+        setTimeout(() => document.getElementById('contenido')?.focus({ preventScroll: true }), 0);
+      });
+  }
 
   @HostListener('document:keydown.escape')
   protected cerrarDrawer(): void {

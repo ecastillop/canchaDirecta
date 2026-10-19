@@ -150,6 +150,7 @@ interface DatosAdmin {
         } @else {
           <div class="tabla-scroll">
             <table class="tabla">
+              <caption class="cd-visually-hidden">Últimas reservas</caption>
               <thead>
                 <tr>
                   <th scope="col">Reserva</th>
