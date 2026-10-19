@@ -30,7 +30,7 @@ import { RouterLink } from '@angular/router';
           <h2>Tu próximo partido empieza aquí.</h2>
           <p>Busca espacios disponibles, elige tu horario y reserva.</p>
         </div>
-        <a routerLink="/canchas" class="cd-btn cd-btn--accent">Buscar espacios →</a>
+        <a routerLink="/canchas" class="cd-btn cd-btn--lime">Buscar espacios →</a>
       </div>
     </section>
   `,
@@ -42,7 +42,7 @@ import { RouterLink } from '@angular/router';
     }
     .eyebrow {
       margin: 0 0 14px;
-      color: var(--cd-color-accent);
+      color: var(--cd-color-brand-light);
       font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.2em;
@@ -54,7 +54,7 @@ import { RouterLink } from '@angular/router';
       letter-spacing: -0.05em;
     }
     h1 em {
-      color: var(--cd-color-accent);
+      color: var(--cd-color-brand-light);
       font-style: normal;
     }
     .hero-como p:last-child {

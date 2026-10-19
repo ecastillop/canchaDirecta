@@ -73,6 +73,9 @@ export class VenuesApi {
     if (filtros.q) {
       params = params.set('q', filtros.q);
     }
+    if (filtros.fecha) {
+      params = params.set('fecha', filtros.fecha);
+    }
     if (filtros.orden) {
       params = params.set('orden', filtros.orden);
     }

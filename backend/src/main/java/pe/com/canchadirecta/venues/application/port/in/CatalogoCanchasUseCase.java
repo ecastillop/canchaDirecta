@@ -19,7 +19,7 @@ public interface CatalogoCanchasUseCase {
     List<CatalogoCancha.Item> caracteristicas();
 
     CatalogoCancha.Pagina buscarCanchas(Long idDistrito, Long idEstablecimiento, Long idDeporte,
-                                        BigDecimal precioMax, String texto, String orden, int limite,
+                                        BigDecimal precioMax, String texto, String fecha, String orden, int limite,
                                         int desplazamiento);
 
     CatalogoCancha.Detalle detalle(Long idCancha);

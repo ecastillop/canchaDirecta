@@ -44,7 +44,7 @@ const EMOJIS: Record<string, string> = {
             Encuentra canchas, revisa horarios y reserva en minutos. Más deporte, menos coordinación.
           </p>
           <div class="hero__acciones">
-            <a routerLink="/canchas" class="cd-btn cd-btn--accent">Buscar espacios <span aria-hidden="true">→</span></a>
+            <a routerLink="/canchas" class="cd-btn cd-btn--lime">Buscar espacios <span aria-hidden="true">→</span></a>
             @if (auth.isAuthenticated()) {
               <a routerLink="/mis-reservas" class="cd-btn cd-btn--hero">Ver mis reservas</a>
             } @else {
@@ -54,8 +54,8 @@ const EMOJIS: Record<string, string> = {
           <div class="hero__social">
             <div class="avatares" aria-hidden="true"><span>AR</span><span>AG</span><span>DM</span><span>CR</span></div>
             <div>
-              <strong>Reservas reales, disponibilidad real</strong>
-              <small>Canchas verificadas en Lima</small>
+              <strong>+2,400 jugadores</strong>
+              <small>Encuentra tu próxima cancha</small>
             </div>
           </div>
         </div>
@@ -227,9 +227,9 @@ const EMOJIS: Record<string, string> = {
           <p>Gestiona sedes, canchas, agenda, tarifas, reservas y liquidaciones desde un solo lugar.</p>
         </div>
         @if (auth.isAuthenticated()) {
-          <a routerLink="/panel" class="cd-btn cd-btn--accent">Ir a mi panel <span aria-hidden="true">→</span></a>
+          <a routerLink="/panel" class="cd-btn cd-btn--lime">Ir a mi panel <span aria-hidden="true">→</span></a>
         } @else {
-          <a routerLink="/auth/registro" class="cd-btn cd-btn--accent">Ser propietario <span aria-hidden="true">→</span></a>
+          <a routerLink="/auth/registro" class="cd-btn cd-btn--lime">Ser propietario <span aria-hidden="true">→</span></a>
         }
       </div>
     </section>
@@ -955,11 +955,12 @@ export class HomeComponent implements OnInit {
   }
 
   protected buscar(): void {
-    const { idDeporte, idDistrito } = this.form.getRawValue();
+    const { idDeporte, idDistrito, fecha } = this.form.getRawValue();
     void this.router.navigate(['/canchas'], {
       queryParams: {
         idDeporte: idDeporte ?? undefined,
         idDistrito: idDistrito ?? undefined,
+        fecha: fecha || undefined,
       },
     });
   }

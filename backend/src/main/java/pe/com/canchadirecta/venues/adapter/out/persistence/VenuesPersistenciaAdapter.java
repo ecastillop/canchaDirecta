@@ -512,6 +512,10 @@ public class VenuesPersistenciaAdapter implements VenuesRepositorio {
         if (filtro.texto() != null) {
             sql.append(" AND (c.nombre LIKE :texto OR e.nombre LIKE :texto)");
         }
+        if (filtro.fecha() != null) {
+            sql.append(" AND EXISTS (SELECT 1 FROM horario_cancha hc WHERE hc.id_cancha = c.id_cancha "
+                    + "AND hc.dia_semana = WEEKDAY(:fecha) + 1)");
+        }
         switch (filtro.orden() == null ? "destacados" : filtro.orden()) {
             case "precio" -> sql.append(" ORDER BY c.precio_base ASC, c.id_cancha");
             case "valoracion" -> sql.append(" ORDER BY "
@@ -538,6 +542,9 @@ public class VenuesPersistenciaAdapter implements VenuesRepositorio {
         }
         if (filtro.texto() != null) {
             query.setParameter("texto", "%" + filtro.texto() + "%");
+        }
+        if (filtro.fecha() != null) {
+            query.setParameter("fecha", filtro.fecha());
         }
         query.setMaxResults(Math.max(1, Math.min(filtro.limite(), 100)));
         query.setFirstResult(filtro.desplazamiento());
@@ -570,6 +577,10 @@ public class VenuesPersistenciaAdapter implements VenuesRepositorio {
         if (filtro.texto() != null) {
             sql.append(" AND (c.nombre LIKE :texto OR e.nombre LIKE :texto)");
         }
+        if (filtro.fecha() != null) {
+            sql.append(" AND EXISTS (SELECT 1 FROM horario_cancha hc WHERE hc.id_cancha = c.id_cancha "
+                    + "AND hc.dia_semana = WEEKDAY(:fecha) + 1)");
+        }
 
         var query = em.createNativeQuery(sql.toString());
         if (filtro.idDistrito() != null) {
@@ -586,6 +597,9 @@ public class VenuesPersistenciaAdapter implements VenuesRepositorio {
         }
         if (filtro.texto() != null) {
             query.setParameter("texto", "%" + filtro.texto() + "%");
+        }
+        if (filtro.fecha() != null) {
+            query.setParameter("fecha", filtro.fecha());
         }
         return ((Number) query.getSingleResult()).longValue();
     }

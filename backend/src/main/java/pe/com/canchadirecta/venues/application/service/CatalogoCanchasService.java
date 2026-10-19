@@ -15,6 +15,8 @@ import pe.com.canchadirecta.venues.domain.model.FichaEspacio;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 /**
@@ -54,8 +56,8 @@ public class CatalogoCanchasService implements CatalogoCanchasUseCase {
 
     @Override
     public CatalogoCancha.Pagina buscarCanchas(Long idDistrito, Long idEstablecimiento, Long idDeporte,
-                                               BigDecimal precioMax, String texto, String orden, int limite,
-                                               int desplazamiento) {
+                                               BigDecimal precioMax, String texto, String fecha, String orden,
+                                               int limite, int desplazamiento) {
         if (precioMax != null && precioMax.signum() <= 0) {
             throw new DomainException(ErrorCodes.DATOS_INVALIDOS, "El precio maximo debe ser mayor que cero.");
         }
@@ -63,9 +65,20 @@ public class CatalogoCanchasService implements CatalogoCanchasUseCase {
             throw new DomainException(ErrorCodes.DATOS_INVALIDOS, "El desplazamiento no puede ser negativo.");
         }
         CatalogoCancha.Filtro filtro = new CatalogoCancha.Filtro(idDistrito, idEstablecimiento, idDeporte,
-                precioMax, texto == null || texto.isBlank() ? null : texto.trim(), orden(orden), limite(limite),
-                desplazamiento);
+                precioMax, texto == null || texto.isBlank() ? null : texto.trim(), fecha(fecha), orden(orden),
+                limite(limite), desplazamiento);
         return new CatalogoCancha.Pagina(venues.buscarCanchas(filtro), venues.contarCanchas(filtro));
+    }
+
+    private static LocalDate fecha(String fecha) {
+        if (fecha == null || fecha.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(fecha);
+        } catch (DateTimeParseException e) {
+            throw new DomainException(ErrorCodes.DATOS_INVALIDOS, "La fecha debe tener formato AAAA-MM-DD.");
+        }
     }
 
     private static String orden(String orden) {

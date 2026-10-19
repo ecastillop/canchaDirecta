@@ -51,6 +51,15 @@
   color: #ffffff;
 }
 
+.cd-btn--lime {
+  background: var(--cd-color-cta);
+  color: var(--cd-color-on-cta);
+}
+.cd-btn--lime:hover:not(:disabled) {
+  background: var(--cd-color-cta-strong);
+  color: var(--cd-color-on-cta);
+}
+
 .cd-btn--secondary {
   background: var(--cd-color-surface);
   color: var(--cd-color-primary);

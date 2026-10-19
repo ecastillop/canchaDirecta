@@ -254,7 +254,6 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
   styles: `
     :host {
       display: block;
-      min-height: 100dvh;
     }
     .progress {
       position: fixed;

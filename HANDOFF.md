@@ -42,6 +42,9 @@
   con el bloque en menta y texto oscuro. Home con avatares pastel y tarjetas de deporte neutras
   con hover menta; tarjeta del catálogo con el deporte arriba, estrella dorada, corazón rosa y
   círculo menta; menú Mi cuenta con botones legibles (Ingresar oscuro / Crear cuenta outline).
+  Añadidos: filtro por día en el catálogo (`fecha` en `GET /canchas`, por día de agenda), barra
+  flotante de comparación que abre `/canchas/comparar`, CTA lima en los héroes oscuros y en la
+  banda final, escudo en “Espacios verificados” y pie pegado al contenido (sin `min-height`).
 - Ficha de espacio implementada (2026-10-18): `GET /api/v1/establecimientos/{id}/ficha`,
   ruta `/establecimientos/:id` y enlace desde el detalle de cancha.
 - Actividades reales implementadas (2026-10-18): migración `V14`, API de actividades e

@@ -134,7 +134,7 @@ import { CdErrorStateComponent } from '../../shared/ui/states/cd-error-state.com
     }
     .eyebrow {
       margin: 0 0 12px;
-      color: var(--cd-color-accent);
+      color: var(--cd-color-brand-light);
       font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.2em;
@@ -146,7 +146,7 @@ import { CdErrorStateComponent } from '../../shared/ui/states/cd-error-state.com
       letter-spacing: -0.05em;
     }
     h1 em {
-      color: var(--cd-color-accent);
+      color: var(--cd-color-brand-light);
       font-style: normal;
     }
     .hero-ayuda p {
@@ -302,8 +302,8 @@ import { CdErrorStateComponent } from '../../shared/ui/states/cd-error-state.com
       width: 38px;
       height: 38px;
       border-radius: 50%;
-      background: var(--cd-color-accent);
-      color: var(--cd-color-primary);
+      background: var(--cd-color-accent-soft);
+      color: var(--cd-color-brand-ink);
       font-size: 18px;
     }
     .contacto__card--suave {

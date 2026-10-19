@@ -77,9 +77,14 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
             <span class="cd-field__label">Precio máximo por hora (S/)</span>
             <input cdInput type="number" min="0" step="5" formControlName="precioMax" placeholder="Sin límite" />
           </label>
+          <label class="cd-field">
+            <span class="cd-field__label">Día</span>
+            <input cdInput type="date" formControlName="fecha" />
+          </label>
           <button cdButton type="submit" class="cd-btn--block">Aplicar filtros</button>
         </form>
         <div class="panel-filtros__tip">
+          <cd-icon name="shield" [size]="26" />
           <strong>Espacios verificados</strong>
           <p>Consulta los detalles y reserva con un proceso guiado.</p>
         </div>
@@ -217,6 +222,27 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
           (paginaChange)="irPagina($event)"
         />
       </section>
+
+      @if (comparacion.cantidad() > 0) {
+        <div class="comparar-barra" role="region" aria-label="Comparación de canchas">
+          <p>
+            <strong>{{ comparacion.cantidad() }}</strong> de 4 canchas seleccionadas
+          </p>
+          <div class="comparar-barra__acciones">
+            <button type="button" class="cd-btn cd-btn--ghost cd-btn--sm" (click)="comparacion.limpiar()">
+              Limpiar
+            </button>
+            <button
+              type="button"
+              class="cd-btn cd-btn--primary cd-btn--sm"
+              [disabled]="!comparacion.puedeComparar()"
+              (click)="irAComparar()"
+            >
+              Comparar <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: `
@@ -300,10 +326,16 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       font-size: 22px;
     }
     .panel-filtros__tip {
+      display: grid;
+      gap: 6px;
       margin-top: 22px;
       padding: 16px;
       border-radius: var(--cd-radius-md);
-      background: var(--cd-color-surface-alt);
+      background: var(--cd-color-accent-soft);
+      color: var(--cd-color-brand-ink);
+    }
+    .panel-filtros__tip cd-icon {
+      color: var(--cd-color-brand);
     }
     .panel-filtros__tip strong {
       display: block;
@@ -311,12 +343,48 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
     }
     .panel-filtros__tip p {
       margin: 6px 0 0;
-      color: var(--cd-color-text-muted);
+      color: color-mix(in srgb, var(--cd-color-brand-ink) 72%, transparent);
       font-size: 12px;
       line-height: 1.5;
     }
     .resultados {
       min-width: 0;
+    }
+    .comparar-barra {
+      position: fixed;
+      left: 50%;
+      bottom: 20px;
+      transform: translateX(-50%);
+      z-index: 900;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 12px 16px 12px 22px;
+      border-radius: var(--cd-radius-pill);
+      background: var(--cd-color-primary);
+      color: var(--cd-color-on-primary);
+      box-shadow: var(--cd-shadow-3);
+    }
+    .comparar-barra p {
+      margin: 0;
+      font-size: 13px;
+    }
+    .comparar-barra__acciones {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .comparar-barra .cd-btn--ghost {
+      color: var(--cd-color-on-primary);
+      border-color: color-mix(in srgb, var(--cd-color-on-primary) 30%, transparent);
+    }
+    @media (max-width: 620px) {
+      .comparar-barra {
+        width: calc(100% - 24px);
+        flex-direction: column;
+        gap: 10px;
+        border-radius: var(--cd-radius-lg);
+      }
     }
     .resultados__top {
       display: flex;
@@ -671,6 +739,7 @@ export class CatalogoComponent implements OnInit {
     idDistrito: [null as number | null],
     idDeporte: [null as number | null],
     precioMax: [null as number | null],
+    fecha: [''],
   });
 
   ngOnInit(): void {
@@ -680,6 +749,7 @@ export class CatalogoComponent implements OnInit {
       idDistrito: this.numero(params.get('idDistrito')) ?? this.numero(params.get('distrito')),
       idDeporte: this.numero(params.get('idDeporte')) ?? this.numero(params.get('deporte')),
       precioMax: this.numero(params.get('precioMax')),
+      fecha: params.get('fecha') ?? '',
     });
     const orden = params.get('orden');
     if (orden === 'precio' || orden === 'valoracion' || orden === 'destacados') {
@@ -693,13 +763,14 @@ export class CatalogoComponent implements OnInit {
   protected cargar(): void {
     this.cargando.set(true);
     this.error.set(null);
-    const { q, idDistrito, idDeporte, precioMax } = this.filtros.getRawValue();
+    const { q, idDistrito, idDeporte, precioMax, fecha } = this.filtros.getRawValue();
     this.api
       .canchasPaginadas({
         q: q?.trim() || null,
         idDistrito,
         idDeporte,
         precioMax,
+        fecha: fecha || null,
         orden: this.orden(),
         limite: this.tamanoPagina,
         desplazamiento: (this.pagina() - 1) * this.tamanoPagina,
@@ -728,13 +799,14 @@ export class CatalogoComponent implements OnInit {
 
   protected aplicar(): void {
     this.pagina.set(1);
-    const { q, idDistrito, idDeporte, precioMax } = this.filtros.getRawValue();
+    const { q, idDistrito, idDeporte, precioMax, fecha } = this.filtros.getRawValue();
     void this.router.navigate(['/canchas'], {
       queryParams: {
         q: q?.trim() || null,
         distrito: idDistrito,
         deporte: idDeporte,
         precioMax,
+        fecha: fecha || null,
         orden: this.orden() === 'destacados' ? null : this.orden(),
       },
     });
@@ -747,13 +819,14 @@ export class CatalogoComponent implements OnInit {
     }
     this.orden.set(valor);
     this.pagina.set(1);
-    const { q, idDistrito, idDeporte, precioMax } = this.filtros.getRawValue();
+    const { q, idDistrito, idDeporte, precioMax, fecha } = this.filtros.getRawValue();
     void this.router.navigate(['/canchas'], {
       queryParams: {
         q: q?.trim() || null,
         distrito: idDistrito,
         deporte: idDeporte,
         precioMax,
+        fecha: fecha || null,
         orden: valor === 'destacados' ? null : valor,
       },
     });
@@ -763,7 +836,7 @@ export class CatalogoComponent implements OnInit {
   protected limpiar(): void {
     this.pagina.set(1);
     this.orden.set('destacados');
-    this.filtros.reset({ q: '', idDistrito: null, idDeporte: null, precioMax: null });
+    this.filtros.reset({ q: '', idDistrito: null, idDeporte: null, precioMax: null, fecha: '' });
     void this.router.navigate(['/canchas']);
     this.cargar();
   }

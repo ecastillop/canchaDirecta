@@ -1,6 +1,7 @@
 package pe.com.canchadirecta.venues.domain.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -48,7 +49,7 @@ public final class CatalogoCancha {
 
     /** Filtros del listado publico de canchas. */
     public record Filtro(Long idDistrito, Long idEstablecimiento, Long idDeporte, BigDecimal precioMax,
-                         String texto, String orden, int limite, int desplazamiento) {
+                         String texto, LocalDate fecha, String orden, int limite, int desplazamiento) {
     }
 
     /** Pagina de canchas con el total que cumple el filtro (para paginacion numerica). */
