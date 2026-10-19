@@ -36,7 +36,9 @@
 - UI (2026-10-19): catálogo a 3 columnas con ordenamiento por destacados, menor precio o mejor
   valoración (parámetro `orden` en `GET /canchas`); contenedor general a 1440 px; galería del
   espacio como carrusel con miniaturas, contador y navegación por teclado; marca en verde teal
-  como el standalone.
+  como el standalone. Los héroes de catálogo y actividades usan el verde `#153a33` del standalone
+  y las tarjetas de actividad dejaron los bloques lima: chip suave, fecha arriba a la derecha,
+  barra de cupos y CTA outline, en 3 columnas.
 - Ficha de espacio implementada (2026-10-18): `GET /api/v1/establecimientos/{id}/ficha`,
   ruta `/establecimientos/:id` y enlace desde el detalle de cancha.
 - Actividades reales implementadas (2026-10-18): migración `V14`, API de actividades e
