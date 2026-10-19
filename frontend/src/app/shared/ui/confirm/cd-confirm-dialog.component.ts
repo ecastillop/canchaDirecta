@@ -1,4 +1,3 @@
-import { A11yModule } from '@angular/cdk/a11y';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { Component, inject } from '@angular/core';
 import { CdButtonDirective } from '../../ui/button/cd-button.directive';
@@ -13,7 +12,7 @@ export interface ConfirmData {
 
 @Component({
   selector: 'cd-confirm-dialog',
-  imports: [CdButtonDirective, A11yModule],
+  imports: [CdButtonDirective],
   template: `
     <div class="contenido" role="document">
       <h2 id="cd-confirm-title">{{ data.title }}</h2>
@@ -27,7 +26,6 @@ export interface ConfirmData {
           [variant]="data.danger ? 'danger' : 'primary'"
           type="button"
           (click)="cerrar(true)"
-          cdkFocusInitial
         >
           {{ data.confirmText ?? 'Confirmar' }}
         </button>
