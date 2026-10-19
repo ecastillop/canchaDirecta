@@ -13,6 +13,12 @@ proceso desplegable por separado, con su propia base de datos o contrato de red 
 entre servicios (HTTP, colas, etc.). Ese modelo se descarto a proposito (ADR-0001); la separacion
 por modulos y capas permite extraer uno en el futuro sin reescribir el dominio.
 
+**Quarkus si se usa**: es el framework y runtime del backend (inyeccion de dependencias, JAX-RS,
+JPA/Hibernate, Flyway, OpenAPI, healthchecks). La regla "`domain` sin Quarkus" aplica solo a la
+capa de dominio: no importa `jakarta.*`, `io.quarkus.*` ni `org.hibernate.*`; esas anotaciones
+viven en `application` y `adapter`. La regla se comprueba con
+`ArquitecturaTest` (`backend/src/test/java/.../architecture`).
+
 ![Contexto del sistema](evidencias/diagramas/01-contexto.png)
 
 ## 2. Modulos (capacidades de negocio)

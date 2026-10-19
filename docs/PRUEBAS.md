@@ -63,3 +63,8 @@ perfil para pruebas manuales estan en `docs/CUENTAS_DESARROLLO.md` (clave `12345
 
 Testcontainers requiere Docker operativo (Docker ya operativo: migrar los tests de integracion,
 ver `L-09`).
+
+El backend requiere JDK 21 y las variables de `.env` (`DB_*`) mas `JWT_SIGN_KEY_LOCATION` apuntando
+a `.secrets/jwt-signing-key.jwk`. `ArquitecturaTest` valida las reglas de ADR-0001 sin arrancar
+Quarkus: `domain` sin JPA/REST/Quarkus, `domain` sin dependencias de otros modulos y ningun modulo
+importando la persistencia de otro.

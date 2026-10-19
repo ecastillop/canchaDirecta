@@ -29,12 +29,12 @@
 
 | Criterio | Evidencia | Resultado |
 |---|---|---|
-| Backend compila y pasa pruebas | `backend/mvnw.cmd -B -f backend/pom.xml test` | 146/146 PASS |
-| Humo end-to-end de API | `scripts/smoke.ps1 -BaseUrl http://localhost:8089` | 112/112 PASS |
+| Backend compila y pasa pruebas | `backend/mvnw.cmd -B -f backend/pom.xml test` | 167/167 PASS (incluye 3 de arquitectura) |
+| Humo end-to-end de API | `scripts/smoke.ps1 -BaseUrl http://localhost:8089` | 153/153 PASS (PS) y 134/134 (Bash) |
 | Frontend compila | `npm run build` | OK |
-| Pruebas unitarias frontend | `npm test -- --watch=false` | 15/15 PASS |
-| Flujo de usuario en navegador | `npm run test:e2e` (Docker 8083) | 15/15 PASS |
-| Flujo propietario/admin en navegador | `npm run test:e2e:owner` | 28/28 PASS |
+| Pruebas unitarias frontend | `npm test -- --watch=false` | 28/28 PASS |
+| Flujo de usuario en navegador | `npm run test:e2e` (Docker 8083) | OK (todos los flujos) |
+| Flujo propietario/admin en navegador | `npm run test:e2e:owner` | OK |
 | Accesibilidad de teclado y estructura | `npm run test:a11y` (E-42) + E-41 + variante `A11Y_SIN_SESION=1` | 46 rutas PASS (2026-10-19): 12 públicas y de acceso y 34 privadas con `main`/`h1` únicos, tablas y diálogos con nombre, foco al contenido al navegar y visor de fotos atrapado |
 | Stack Docker operativo | `/q/health/ready`, frontend 8083 | 200 / 200 |
 

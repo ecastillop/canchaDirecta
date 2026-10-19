@@ -6,12 +6,15 @@ indicacion.
 ## ADR-0001 - Monolito modular + arquitectura hexagonal
 **Contexto:** un solo producto, un backend, una BD; el prompt exige Clean/Hexagonal
 y prohibe microservicios por moda.
-**Decision:** monolito modular con modulos `identity, geography, catalog, venues,
-bookings, payments, settlements, engagement, platform`. Cada modulo:
+**Decision:** monolito modular con modulos `identity, venues` (incluye catalogo y ubigeo)`,
+`bookings, payments, settlements, engagement, activities, reception, dashboard, helpcenter,
+platform` y `shared`. Cada modulo:
 `domain` (solo Java) -> `application` (puertos in/out + servicios) -> `adapter.in.rest`
 / `adapter.out.*`. Dependencias de fuera hacia dentro.
-**Consecuencias:** `domain` sin JPA/REST/Quarkus; un modulo no importa entidades JPA
-de otro (usa IDs y puertos); verificable con test de arquitectura.
+**Consecuencias:** Quarkus es el framework del backend (runtime, inyeccion, REST, JPA, Flyway,
+OpenAPI) y se usa en `application` y `adapter`; `domain` no lo importa (ni JPA/REST). Un modulo no
+importa entidades JPA de otro: usa IDs y puertos. Verificado por
+`backend/src/test/java/pe/com/canchadirecta/architecture/ArquitecturaTest.java`.
 
 ## ADR-0002 - Versiones fijadas (verificadas)
 **Contexto:** el prompt exige versiones estables reales, no inventadas.

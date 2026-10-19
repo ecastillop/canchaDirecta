@@ -24,7 +24,8 @@
 - Stack operativo: frontend `http://localhost:8083`, backend `http://localhost:8089`,
   MySQL del host `127.0.0.1:3306` (el `compose.yml` usa `host.docker.internal`).
 - Superadmin local: `admin@canchadirecta.pe`; clave en `.env` (`ADMIN_PASSWORD`).
-- Pruebas: backend **163/163**, humo **153/153** (PowerShell) y **134/134** (Bash), unitarios
+- Pruebas: backend **167/167** (incluye 3 de arquitectura), humo **153/153** (PowerShell) y
+  **134/134** (Bash), unitarios
   **28/28**, E2E usuario **OK**, E2E propietario/admin **OK**, accesibilidad **34 rutas OK** y
   contraste **OK** en los 4 portales y ambos modos.
 - Accesibilidad ampliada (2026-10-19): la suite verifica `main`/`h1` únicos, tablas y diálogos
@@ -205,7 +206,8 @@ node e2e/contraste-modos.mjs          # contraste en los 4 portales, claro y osc
   revocacion de access tokens (L-20) y rate limiting de login (S-4). **Todos los CU del backend
   implementados**; F05 real (pasarela/desembolso) queda **fuera de alcance por decision del
   usuario** y documentado.
-- **Evidencia vigente (2026-10-18):** `mvnw test` -> **163/163 PASS** (`BUILD SUCCESS`); humo
+- **Evidencia vigente (2026-10-19):** `mvnw test` -> **167/167 PASS** (`BUILD SUCCESS`, incluye
+  `ArquitecturaTest`); humo
   -> **153/153 PASS** en `smoke.ps1` y **134/134** en `smoke.sh` contra el contenedor
   (8089/3306, imagen reconstruida); 28/28 unitarios y `e2e/contraste-modos.mjs` OK. CI en
   `.github/workflows/backend.yml` (MySQL 8.4 efimero).
