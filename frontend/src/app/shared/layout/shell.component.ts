@@ -643,6 +643,12 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
       margin-top: 4px;
       text-decoration: none;
     }
+    .cuenta-menu__panel > a.cd-btn--primary {
+      color: var(--cd-color-on-primary);
+    }
+    .cuenta-menu__panel > a.cd-btn--secondary {
+      color: var(--cd-color-primary);
+    }
     .cuenta-menu__salir {
       margin-top: 4px;
       padding: 9px 10px;

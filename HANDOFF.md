@@ -39,7 +39,9 @@
   como el standalone. Paleta alineada al standalone: marca bicolor (`cancha` `#12292c` +
   `directa` `#328a6c`), acento `#328a6c`, relleno menta `#dff6c7`, estrella `#d4a238` y favorito
   `#c74e55`; se conserva el diseño previo de las tarjetas de actividad (bloque de fecha + cuerpo)
-  con el bloque en menta y texto oscuro.
+  con el bloque en menta y texto oscuro. Home con avatares pastel y tarjetas de deporte neutras
+  con hover menta; tarjeta del catálogo con el deporte arriba, estrella dorada, corazón rosa y
+  círculo menta; menú Mi cuenta con botones legibles (Ingresar oscuro / Crear cuenta outline).
 - Ficha de espacio implementada (2026-10-18): `GET /api/v1/establecimientos/{id}/ficha`,
   ruta `/establecimientos/:id` y enlace desde el detalle de cancha.
 - Actividades reales implementadas (2026-10-18): migración `V14`, API de actividades e

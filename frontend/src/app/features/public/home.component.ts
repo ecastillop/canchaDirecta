@@ -252,7 +252,7 @@ const EMOJIS: Record<string, string> = {
       height: 110%;
       background:
         radial-gradient(circle at 60% 30%, color-mix(in srgb, var(--cd-color-teal, #167a70) 42%, transparent), transparent 55%),
-        radial-gradient(circle at 85% 70%, color-mix(in srgb, var(--cd-color-accent) 18%, transparent), transparent 45%);
+        radial-gradient(circle at 85% 70%, color-mix(in srgb, var(--cd-color-accent) 8%, transparent), transparent 45%);
       pointer-events: none;
     }
     .hero__grid {
@@ -334,10 +334,19 @@ const EMOJIS: Record<string, string> = {
       margin-left: -8px;
       border: 2px solid var(--cd-color-inverse-bg);
       border-radius: 50%;
-      background: var(--cd-color-accent);
-      color: var(--cd-color-primary);
+      background: var(--cd-color-success-soft);
+      color: var(--cd-color-brand-ink);
       font-size: 10px;
       font-weight: 800;
+    }
+    .avatares span:nth-child(2) {
+      background: var(--cd-color-danger-soft);
+    }
+    .avatares span:nth-child(3) {
+      background: var(--cd-color-info-soft);
+    }
+    .avatares span:nth-child(4) {
+      background: var(--cd-color-warning-soft);
     }
     .avatares span:first-child {
       margin-left: 0;
@@ -550,16 +559,18 @@ const EMOJIS: Record<string, string> = {
       padding: 16px;
       border: 1px solid var(--cd-color-border);
       border-radius: 14px;
-      background: var(--cd-color-surface);
+      background: var(--cd-color-surface-alt);
       color: var(--cd-color-text);
       text-align: left;
       transition:
         transform var(--cd-duration-base),
+        background var(--cd-duration-base),
         border-color var(--cd-duration-base);
     }
     .deporte:hover {
       transform: translateY(-4px);
-      border-color: var(--cd-color-primary);
+      border-color: var(--cd-color-accent-soft);
+      background: var(--cd-color-accent-soft);
     }
     .deporte__numero {
       color: var(--cd-color-text-muted);
@@ -588,17 +599,11 @@ const EMOJIS: Record<string, string> = {
       background: var(--cd-color-surface-alt);
       font-size: 13px;
     }
-    .deporte--verde {
-      background: linear-gradient(145deg, var(--cd-color-success-soft), var(--cd-color-surface));
-    }
-    .deporte--azul {
-      background: linear-gradient(145deg, var(--cd-color-info-soft), var(--cd-color-surface));
-    }
-    .deporte--naranja {
-      background: linear-gradient(145deg, var(--cd-color-warning-soft), var(--cd-color-surface));
-    }
+    .deporte--verde,
+    .deporte--azul,
+    .deporte--naranja,
     .deporte--rosa {
-      background: linear-gradient(145deg, var(--cd-color-danger-soft), var(--cd-color-surface));
+      background: var(--cd-color-surface-alt);
     }
     .seccion--tinte {
       margin-top: 70px;

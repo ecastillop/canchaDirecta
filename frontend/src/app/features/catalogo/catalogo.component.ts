@@ -144,6 +144,7 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
                   @if (cancha.fotoPrincipal) {
                     <img class="tarjeta-cancha__foto" [src]="cancha.fotoPrincipal" [alt]="'Foto de ' + cancha.nombre" loading="lazy" />
                   }
+                  <span class="tarjeta-cancha__deporte-top">{{ cancha.deportes[0] ?? 'Cancha' }}</span>
                   <span class="tarjeta-cancha__deporte">{{ cancha.deportes[0] ?? 'Cancha' }}</span>
                   <span class="tarjeta-cancha__iniciales" aria-hidden="true">{{ iniciales(cancha.nombre) }}</span>
                   <span class="tarjeta-cancha__linea" aria-hidden="true"></span>
@@ -415,6 +416,18 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       background:
         repeating-linear-gradient(120deg, rgba(255, 255, 255, 0.08) 0 2px, transparent 2px 16px),
         linear-gradient(145deg, #9b5064, #5c2938);
+    }
+    .tarjeta-cancha__deporte-top {
+      position: absolute;
+      left: 14px;
+      top: 14px;
+      z-index: 2;
+      color: var(--cd-color-on-primary);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
     }
     .tarjeta-cancha__deporte {
       position: absolute;
