@@ -1,0 +1,25 @@
+erDiagram
+  USUARIO ||--o{ USUARIO_ROL : tiene
+  ROL ||--o{ USUARIO_ROL : asigna
+  USUARIO ||--o| PROPIETARIO : solicita
+  PROPIETARIO ||--o{ ESTABLECIMIENTO : posee
+  ESTABLECIMIENTO ||--o{ CANCHA : contiene
+  ESTABLECIMIENTO ||--o{ COCHERA : ofrece
+  ESTABLECIMIENTO ||--o{ PROMOCION : publica
+  CANCHA ||--o{ HORARIO_CANCHA : agenda
+  CANCHA ||--o{ BLOQUEO_CANCHA : bloquea
+  CANCHA ||--o{ FOTO_CANCHA : muestra
+  USUARIO ||--o{ RESERVA : realiza
+  CANCHA ||--o{ RESERVA : recibe
+  RESERVA ||--o{ HISTORIAL_RESERVA : audita
+  RESERVA ||--o| PAGO : cobra
+  PAGO ||--o| REEMBOLSO : devuelve
+  RESERVA ||--o| CALIFICACION : evalua
+  PROPIETARIO ||--o{ LIQUIDACION : cobra
+  LIQUIDACION ||--o{ DETALLE_LIQUIDACION : detalla
+  RESERVA ||--o| DETALLE_LIQUIDACION : liquida
+  USUARIO ||--o{ RECLAMO : reclama
+  USUARIO ||--o{ NOTIFICACION : recibe
+  ESTABLECIMIENTO ||--o{ ACTIVIDAD : programa
+  ACTIVIDAD ||--o{ ACTIVIDAD_INSCRIPCION : inscribe
+  USUARIO ||--o{ ACTIVIDAD_INSCRIPCION : participa

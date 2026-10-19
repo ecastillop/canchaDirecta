@@ -43,7 +43,22 @@
 - Resultados detallados: `docs/RESULTADOS_PRUEBAS.md` (E-01 a E-43).
 - Trazabilidad de requisitos: `docs/TRAZABILIDAD.md`.
 - Diagramas de arquitectura: `docs/DIAGRAMAS.md` (contexto, despliegue, modulos, reserva
-  concurrente, estados, portales y modelo de datos).
+  concurrente, estados, portales y modelo de datos). Fuentes Mermaid en `docs/diagramas/`.
+
+![Contexto](evidencias/diagramas/01-contexto.png)
+
+![Despliegue](evidencias/diagramas/02-despliegue.png)
+
+![Modulos](evidencias/diagramas/03-modulos.png)
+
+![Reserva concurrente](evidencias/diagramas/04-reserva-concurrente.png)
+
+![Estados de la reserva](evidencias/diagramas/05-estados-reserva.png)
+
+![Portales del frontend](evidencias/diagramas/06-portales-frontend.png)
+
+![Modelo de datos](evidencias/diagramas/07-modelo-datos.png)
+
 - Capturas de UI: `docs/evidencias/ui/` (flujos usuario, propietario/admin).
 - Capturas de accesibilidad:
   - `a11y-foco-skip-link.png`

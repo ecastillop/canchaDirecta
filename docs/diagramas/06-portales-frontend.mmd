@@ -1,0 +1,13 @@
+flowchart TB
+  shell["ShellComponent<br/>cabecera publica + skip link + foco al contenido"]
+  auth["AuthLayout<br/>/auth/*"]
+  cuenta["Cuenta<br/>/mi-resumen · /mis-reservas · /mis-inscripciones<br/>/favoritos · /notificaciones · /reclamos · /perfil"]
+  panel["Panel del propietario<br/>/panel · métricas · reservas · agenda<br/>promociones · liquidaciones · actividades"]
+  recepcion["Recepción<br/>/recepcion · agenda · reservas · nueva<br/>cobros · incidencias"]
+  admin["Administración<br/>/admin · usuarios · transacciones · actividades<br/>reportes · configuración · operadores"]
+
+  shell --> cuenta
+  shell --> panel
+  shell --> recepcion
+  shell --> admin
+  shell -.->|"rutas sin sesion"| auth

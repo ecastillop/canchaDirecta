@@ -1,0 +1,23 @@
+flowchart LR
+  cliente["Cliente<br/>busca y reserva"]
+  propietario["Propietario<br/>gestiona sus canchas"]
+  operador["Operador de recepcion<br/>atiende el mostrador"]
+  admin["Administrador<br/>PLATFORM_ADMIN"]
+
+  subgraph cd["CanchaDirecta"]
+    spa["Frontend Angular 22<br/>SPA + design tokens"]
+    api["Backend Quarkus<br/>REST /api/v1"]
+    db[("MySQL 8<br/>Flyway")]
+  end
+
+  correo["Correo saliente<br/>(simulado en demo)"]
+  pasarela["Pasarela de pago<br/>simulada y determinista"]
+
+  cliente --> spa
+  propietario --> spa
+  operador --> spa
+  admin --> spa
+  spa -->|"HTTPS/JSON"| api
+  api --> db
+  api --> correo
+  api --> pasarela

@@ -1,0 +1,23 @@
+sequenceDiagram
+  autonumber
+  participant U as Cliente
+  participant SPA as Frontend
+  participant API as ReservaResource
+  participant UC as CrearReservaService
+  participant DB as MySQL
+  participant PG as Pasarela simulada
+
+  U->>SPA: elige cancha, fecha y franja
+  SPA->>API: POST /api/v1/reservas (Idempotency-Key)
+  API->>UC: crear(solicitud)
+  UC->>DB: BEGIN
+  UC->>DB: SELECT cancha ... FOR UPDATE
+  Note over UC,DB: serializa por recurso y valida horario, bloqueos y solapes
+  UC->>DB: INSERT reserva (PENDIENTE) + historial + idempotencia
+  UC->>DB: COMMIT
+  UC->>PG: cobro simulado (fuera del lock)
+  PG-->>UC: APROBADO / RECHAZADO
+  UC->>DB: estado CONFIRMADA / CANCELADA + notificacion
+  UC-->>API: reserva
+  API-->>SPA: 201 Created
+  SPA-->>U: confirmacion y proxima reserva

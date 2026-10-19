@@ -1,0 +1,30 @@
+flowchart LR
+  subgraph entrada["adapter/in"]
+    rest["REST /api/v1<br/>Problem Details RFC 9457"]
+  end
+
+  subgraph modulos["Modulos de negocio"]
+    identity["identity"]
+    venues["venues<br/>incluye catalogo y ubigeo"]
+    bookings["bookings"]
+    payments["payments"]
+    settlements["settlements"]
+    engagement["engagement"]
+    activities["activities"]
+    reception["reception"]
+    dashboard["dashboard"]
+    helpcenter["helpcenter"]
+    platform["platform<br/>admin global"]
+  end
+
+  subgraph salida["adapter/out"]
+    persistencia["persistencia JPA"]
+    externos["pago simulado · correo · storage"]
+  end
+
+  db[("MySQL 8")]
+
+  rest --> identity & venues & bookings & payments & settlements
+  rest --> engagement & activities & reception & dashboard & helpcenter & platform
+  modulos --> salida
+  persistencia --> db

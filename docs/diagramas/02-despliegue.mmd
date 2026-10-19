@@ -1,0 +1,16 @@
+flowchart TB
+  navegador["Navegador<br/>:8083"]
+
+  subgraph compose["docker compose (red cd-net)"]
+    frontend["frontend<br/>Nginx + SPA<br/>:80"]
+    backend["backend<br/>Quarkus :8080<br/>healthcheck /q/health/ready"]
+  end
+
+  jwk[".secrets/jwt-signing-key.jwk<br/>montado :ro"]
+  mysql[("MySQL 8<br/>host :3306 o compose.mysql :3309")]
+
+  navegador -->|"GET /"| frontend
+  frontend -->|"proxy /api"| backend
+  backend -->|"DB_HOST / DB_PORT"| mysql
+  backend -.->|"firma JWT"| jwk
+  backend -->|":8089 publicado<br/>diagnostico"| navegador

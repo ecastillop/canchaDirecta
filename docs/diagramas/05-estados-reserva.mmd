@@ -1,0 +1,17 @@
+stateDiagram-v2
+  [*] --> PENDIENTE: se crea la reserva
+  PENDIENTE --> CONFIRMADA: pago aprobado o confirmacion del propietario
+  PENDIENTE --> EXPIRADA: vence el hold de pago
+  PENDIENTE --> CANCELADA: cancela el titular
+  CONFIRMADA --> FINALIZADA: job de cierre (fin < ahora)
+  CONFIRMADA --> CANCELADA: cancelacion del titular
+  CONFIRMADA --> RECHAZADA: rechazo o revocacion del propietario
+  CANCELADA --> [*]
+  RECHAZADA --> [*]
+  EXPIRADA --> [*]
+  FINALIZADA --> [*]
+
+  note right of CANCELADA
+    Con pago APROBADO y politica aplicable
+    se registra reembolso PROCESADO
+  end note

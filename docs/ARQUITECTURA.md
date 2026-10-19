@@ -6,6 +6,13 @@ Monolito modular + arquitectura hexagonal (Clean Architecture). Un backend, una 
 MySQL, un frontend Angular. Sin microservicios, mensajeria, Redis ni Kubernetes por
 defecto (ADR-0001).
 
+**Sin microservicios** significa que hay **un solo backend Quarkus, un solo proceso y un solo
+despliegue**: los modulos de la seccion 2 son paquetes internos del mismo artefacto, comparten la
+misma base de datos y se llaman en memoria a traves de sus puertos. Un microservicio seria un
+proceso desplegable por separado, con su propia base de datos o contrato de red y comunicacion
+entre servicios (HTTP, colas, etc.). Ese modelo se descarto a proposito (ADR-0001); la separacion
+por modulos y capas permite extraer uno en el futuro sin reescribir el dominio.
+
 ![Contexto del sistema](evidencias/diagramas/01-contexto.png)
 
 ## 2. Modulos (capacidades de negocio)
