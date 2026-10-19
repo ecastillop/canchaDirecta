@@ -1,0 +1,27 @@
+flowchart TB
+  subgraph expiracion["Expiracion del hold (job cada 60 s)"]
+    e1["ExpirarReservasUseCase.expirarVencidas(lote)"]
+    e2["PENDIENTE sin pago APROBADO<br/>y fecha_creacion &lt; NOW() - hold"]
+    e3["SELECT ... FOR UPDATE de la reserva<br/>(no bloquea la cancha)"]
+    e4["UPDATE a EXPIRADA + historial_reserva<br/>libera la franja"]
+    e1 --> e2 --> e3 --> e4
+  end
+
+  subgraph revocacion["Revocacion del propietario"]
+    r1["POST /reservas/{id}/revocar"]
+    r2["CONFIRMADA y no comenzada<br/>(si no, 409)"]
+    r3["UPDATE a RECHAZADA + historial_reserva"]
+    r4["PoliticaReembolso (porPropietario = true)<br/>reembolso total si habia pago APROBADO"]
+    r1 --> r2 --> r3 --> r4
+  end
+
+  subgraph cierre["Cierre automatico (job cada 60 s)"]
+    f1["FinalizarReservasUseCase.finalizarConcluidas(lote)"]
+    f2["CONFIRMADA con fin &lt; UTC_TIMESTAMP(6)"]
+    f3["SELECT ... FOR UPDATE de la reserva"]
+    f4["UPDATE a FINALIZADA + historial_reserva<br/>sin reembolso"]
+    f1 --> f2 --> f3 --> f4
+  end
+
+  e4 ~~~ r1
+  r4 ~~~ f1

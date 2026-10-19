@@ -1,0 +1,27 @@
+sequenceDiagram
+  autonumber
+  participant T as Titular
+  participant API as PagoResource
+  participant P as PagoSimuladoService
+  participant PG as PaymentGatewayPort
+  participant DB as MySQL
+
+  T->>API: POST /reservas/{id}/pago
+  API->>P: registrar pago
+  P->>DB: reserva PENDIENTE o CONFIRMADA sin pago APROBADO
+  Note over P,DB: si ya hay pago APROBADO responde 409 (RN-05)
+  P->>P: monto = cancha - descuento + cochera
+  P->>DB: INSERT pago_evento(SOLICITADO)
+  P->>PG: cobro simulado y determinista
+  PG-->>P: APROBADO o RECHAZADO
+  P->>DB: INSERT pago + pago_evento(resultado) y COMMIT
+  API-->>T: pago registrado
+
+  T->>API: GET /reservas/{id}/pago
+  API-->>T: ultimo pago + reembolsos
+
+  Note over T,DB: cancelacion del titular o rechazo del propietario
+  T->>P: cancelar o rechazar
+  P->>DB: cambio de estado + PoliticaReembolso (misma transaccion)
+  P->>DB: si habia pago APROBADO: INSERT reembolso(PROCESADO)
+  P->>DB: pago.estado = REEMBOLSADO + pago_evento(REEMBOLSADO)

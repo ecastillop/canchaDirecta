@@ -47,6 +47,8 @@ src/
       admin/              administracion de plataforma (propietarios, reclamos, usuarios, supervision, auditoria)
 ```
 
+![Estructura del frontend](../docs/evidencias/diagramas/13-estructura-frontend.png)
+
 ## Decisiones de UI
 
 - Paletas intercambiables (`cancha`, `grafito`, `arena`) aplicadas con

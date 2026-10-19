@@ -80,3 +80,27 @@ Fuente: [`diagramas/07-modelo-datos.mmd`](diagramas/07-modelo-datos.mmd)
 
 El detalle de columnas, migraciones y restricciones esta en `MODELO_DATOS.md`; el esquema real lo
 posee Flyway (V1..V18) e Hibernate solo valida.
+
+## 8. Capas de un modulo
+
+![Capas de un modulo y direccion de las dependencias](evidencias/diagramas/08-capas-modulo.png)
+
+Fuente: [`diagramas/08-capas-modulo.mmd`](diagramas/08-capas-modulo.mmd)
+
+## 9. Pago simulado y reembolso (ADR-0020)
+
+![Secuencia del pago simulado y el reembolso](evidencias/diagramas/09-pago-reembolso.png)
+
+Fuente: [`diagramas/09-pago-reembolso.mmd`](diagramas/09-pago-reembolso.mmd)
+
+## 10. Liquidacion del propietario (ADR-0021)
+
+![Secuencia de la liquidacion del propietario](evidencias/diagramas/10-liquidacion.png)
+
+Fuente: [`diagramas/10-liquidacion.mmd`](diagramas/10-liquidacion.mmd)
+
+## 11. Expiracion, revocacion y cierre automatico (ADR-0022)
+
+![Expiracion del hold, revocacion y cierre automatico](evidencias/diagramas/11-expiracion-revocacion.png)
+
+Fuente: [`diagramas/11-expiracion-revocacion.mmd`](diagramas/11-expiracion-revocacion.mmd)

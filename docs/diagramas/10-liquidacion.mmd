@@ -1,0 +1,23 @@
+sequenceDiagram
+  autonumber
+  participant O as Propietario
+  participant API as LiquidacionResource
+  participant L as LiquidacionService
+  participant DB as MySQL
+
+  O->>API: POST /api/v1/liquidaciones
+  API->>L: generar liquidacion del periodo
+  L->>DB: BEGIN
+  L->>DB: SELECT propietario ... FOR UPDATE
+  Note over L,DB: serializa por propietario y evita doble liquidacion (RN-07)
+  L->>DB: reservas liquidables (pago APROBADO, CONFIRMADA o FINALIZADA,<br/>fecha en el periodo, aun sin liquidar)
+  L->>L: por reserva: comision = round(monto x porcentaje / 100, 2)<br/>neto = monto - comision
+  L->>DB: INSERT liquidacion(PENDIENTE) + detalle_liquidacion (UNIQUE id_reserva)
+  L->>DB: COMMIT
+  API-->>O: liquidacion generada
+
+  O->>API: GET /api/v1/liquidaciones
+  API-->>O: cabeceras del propietario
+
+  O->>API: GET /api/v1/liquidaciones/{id}
+  API-->>O: cabecera + lineas de detalle

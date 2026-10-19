@@ -49,6 +49,8 @@ por modulos y capas permite extraer uno en el futuro sin reescribir el dominio.
   adapter/out/<otros>/       # security, payment, email, storage
 ```
 
+![Capas de un modulo y direccion de las dependencias](evidencias/diagramas/08-capas-modulo.png)
+
 **Reglas inviolables:** `domain` sin `@Entity/@Path/@ApplicationScoped/@Transactional`
 ni dependencias a Quarkus/HTTP/MySQL; puertos hacia dentro, adaptadores los
 implementan; controllers sin SQL/reglas/precio/estados; entidades JPA ? DTO REST ?
@@ -90,6 +92,8 @@ cancelar (titular) / rechazar (propietario)
      + pago.estado = REEMBOLSADO + pago_evento(REEMBOLSADO)
 ```
 
+![Secuencia del pago simulado y el reembolso](evidencias/diagramas/09-pago-reembolso.png)
+
 ### 4.2 Flujo de la liquidacion del propietario (ADR-0021)
 
 ```text
@@ -104,6 +108,8 @@ POST /api/v1/liquidaciones                       [propietario]
 GET  /api/v1/liquidaciones                        -> cabeceras del propietario
 GET  /api/v1/liquidaciones/{id}                   -> cabecera + lineas de detalle
 ```
+
+![Secuencia de la liquidacion del propietario](evidencias/diagramas/10-liquidacion.png)
 
 ### 4.3 Flujo de la expiracion del hold y la revocacion (ADR-0022)
 
@@ -124,6 +130,8 @@ Job @Scheduled(60s)  -> FinalizarReservasUseCase.finalizarConcluidas(lote)   [tr
   -> SELECT ... FOR UPDATE (solo la reserva; no bloquea la cancha)
   -> UPDATE reserva SET estado = FINALIZADA + historial_reserva   -- cierra el ciclo, sin reembolso
 ```
+
+![Expiracion del hold, revocacion y cierre automatico](evidencias/diagramas/11-expiracion-revocacion.png)
 
 **Nota de relojes (L-04):** la expiracion mide `fecha_creacion` contra `NOW(6)` (hora local del
 servidor, la misma que la llena por defecto) y la finalizacion mide `fin` contra `UTC_TIMESTAMP(6)`

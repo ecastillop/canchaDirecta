@@ -1,0 +1,27 @@
+flowchart TB
+  subgraph entrada["adapter/in"]
+    rest["REST: controllers<br/>request/response<br/>validacion de borde"]
+  end
+
+  subgraph aplicacion["application"]
+    portin["port/in<br/>casos de uso (interfaces)"]
+    service["service<br/>orquestacion"]
+    dto["dto<br/>DTO de aplicacion (no REST)"]
+    portout["port/out<br/>repositorios, reloj, tokens,<br/>email, storage, pago"]
+  end
+
+  domain["domain<br/>agregados, value objects y reglas<br/>SOLO Java, sin Quarkus/HTTP/JPA"]
+
+  subgraph salida["adapter/out"]
+    persistence["persistence<br/>entidades JPA, repositorios, mappers"]
+    otros["security, payment, email, storage"]
+  end
+
+  rest --> portin
+  portin --> service
+  service --> domain
+  service --> portout
+  dto --- service
+  portout -.->|"implementado por"| persistence
+  portout -.->|"implementado por"| otros
+  persistence --> db[("MySQL")]

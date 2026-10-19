@@ -59,6 +59,14 @@
 
 ![Modelo de datos](evidencias/diagramas/07-modelo-datos.png)
 
+![Capas de un modulo](evidencias/diagramas/08-capas-modulo.png)
+
+![Pago y reembolso](evidencias/diagramas/09-pago-reembolso.png)
+
+![Liquidacion](evidencias/diagramas/10-liquidacion.png)
+
+![Expiracion y cierre](evidencias/diagramas/11-expiracion-revocacion.png)
+
 - Capturas de UI: `docs/evidencias/ui/` (flujos usuario, propietario/admin).
 - Capturas de accesibilidad:
   - `a11y-foco-skip-link.png`

@@ -285,7 +285,7 @@ canchadirecta/
       engagement/ (calificaciones, reclamos, avisos in-app y su moderacion; CU03.8/CU02.5/CU06.6, RN-04)
       platform/   (usuarios/roles/estado, validacion de propietarios, supervision, auditoria, cocheras y promociones; CU06.1..CU06.7)
     src/main/resources/application.properties
-    src/main/resources/db/migration/V1..V6
+    src/main/resources/db/migration/V1..V18
     src/test/java/pe/com/canchadirecta/     (esquema, identity, venues, bookings, payments, settlements, engagement, platform)
   docs/                                   (requisitos, arquitectura, pruebas, seguridad)
   scripts/                                (bootstrap de BD, clave JWT, humo PS/Bash)
@@ -295,6 +295,8 @@ canchadirecta/
     src/app/features/   auth, public, catalogo, reservas, cuenta, panel, admin
     src/styles/         tokens/paletas, base, utilidades, componentes
 ```
+
+![Estructura del proyecto](docs/evidencias/diagramas/12-estructura-proyecto.png)
 
 ## 4. Modo de ejecucion local (Modo A)
 
