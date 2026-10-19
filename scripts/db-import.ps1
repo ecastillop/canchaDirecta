@@ -76,12 +76,14 @@ $argumentos = @('-h', $dbHost, '-P', "$dbPort", '-u', $dbAdmin, '--protocol=TCP'
 $previo = $env:MYSQL_PWD
 $env:MYSQL_PWD = $dbAdminPwd
 try {
-  "CREATE DATABASE IF NOT EXISTS $Base CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;" |
-    & $mysql.Path @argumentos
+  & $mysql.Path @argumentos -e "CREATE DATABASE IF NOT EXISTS $Base CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
   if ($LASTEXITCODE -ne 0) { throw "No se pudo crear la base $Base" }
 
-  Get-Content $Archivo -Raw | & $mysql.Path @argumentos $Base
-  if ($LASTEXITCODE -ne 0) { throw "La importacion termino con codigo $LASTEXITCODE" }
+  $proceso = Start-Process -FilePath $mysql.Path `
+    -ArgumentList @('-h', $dbHost, '-P', "$dbPort", '-u', $dbAdmin, '--protocol=TCP',
+      '--default-character-set=utf8mb4', $Base) `
+    -RedirectStandardInput $Archivo -NoNewWindow -Wait -PassThru
+  if ($proceso.ExitCode -ne 0) { throw "La importacion termino con codigo $($proceso.ExitCode)" }
 
   $tablas = (& $mysql.Path @argumentos -N -B -e `
       "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$Base';").Trim()

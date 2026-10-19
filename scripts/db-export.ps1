@@ -74,21 +74,32 @@ $argumentos += $dbName
 
 $previo = $env:MYSQL_PWD
 $env:MYSQL_PWD = $dbAdminPwd
+$temporal = "$Salida.tmp"
 try {
   Write-Host "Exportando $dbName (${dbHost}:${dbPort}) ..." -ForegroundColor Cyan
-  $contenido = & $mysqldump.Path @argumentos
+  # --result-file escribe los bytes tal cual (sin pasar por la consola de PowerShell,
+  # que en Windows puede reinterpretar los acentos UTF-8).
+  $argumentos += "--result-file=$temporal"
+  & $mysqldump.Path @argumentos | Out-Null
   if ($LASTEXITCODE -ne 0) { throw "mysqldump termino con codigo $LASTEXITCODE" }
+
   $cabecera = @(
     "-- CanchaDirecta - volcado de base de datos",
     "-- Generado: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')",
     "-- Origen: $dbName en ${dbHost}:${dbPort}",
     "-- Restaurar con: .\scripts\db-import.ps1 -Archivo `"$([System.IO.Path]::GetFileName($Salida))`"",
     ''
-  )
+  ) -join "`r`n"
   $utf8SinBom = New-Object System.Text.UTF8Encoding($false)
-  [System.IO.File]::WriteAllLines($Salida, ($cabecera + $contenido), $utf8SinBom)
+  [System.IO.File]::WriteAllText($Salida, $cabecera + "`r`n", $utf8SinBom)
+  $bytes = [System.IO.File]::ReadAllBytes($temporal)
+  $flujo = [System.IO.File]::Open($Salida, [System.IO.FileMode]::Append)
+  try { $flujo.Write($bytes, 0, $bytes.Length) } finally { $flujo.Close() }
 }
-finally { $env:MYSQL_PWD = $previo }
+finally {
+  $env:MYSQL_PWD = $previo
+  if (Test-Path $temporal) { Remove-Item $temporal -Force }
+}
 
 $tamano = [math]::Round((Get-Item $Salida).Length / 1KB, 1)
 Write-Host "Listo: $Salida ($tamano KB)" -ForegroundColor Green
