@@ -501,7 +501,7 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
       height: 42px;
       border-radius: 13px;
       background: var(--cd-color-accent);
-      color: var(--cd-color-primary);
+      color: var(--cd-color-teal);
       font-family: var(--cd-font-display);
       font-size: 22px;
       font-weight: 900;
@@ -516,6 +516,7 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
       font-size: 20px;
       font-weight: 800;
       letter-spacing: -0.04em;
+      color: var(--cd-color-teal);
     }
     .marca__texto small {
       margin-top: 4px;

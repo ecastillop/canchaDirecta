@@ -11,7 +11,8 @@ export type IconName =
   | 'users'
   | 'compare'
   | 'search'
-  | 'filter';
+  | 'filter'
+  | 'sort';
 
 /** Iconos SVG inline, sin dependencias externas. */
 @Component({
@@ -70,6 +71,10 @@ export type IconName =
         }
         @case ('filter') {
           <path d="M4 5h16M7 12h10M10 19h4" />
+        }
+        @case ('sort') {
+          <path d="M7 4v16M3.5 7.5 7 4l3.5 3.5" />
+          <path d="M17 20V4M13.5 16.5 17 20l3.5-3.5" />
         }
       }
     </svg>

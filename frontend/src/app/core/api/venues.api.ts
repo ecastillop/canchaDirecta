@@ -73,6 +73,9 @@ export class VenuesApi {
     if (filtros.q) {
       params = params.set('q', filtros.q);
     }
+    if (filtros.orden) {
+      params = params.set('orden', filtros.orden);
+    }
     params = params.set('limite', filtros.limite ?? 50);
     if (filtros.desplazamiento) {
       params = params.set('desplazamiento', filtros.desplazamiento);

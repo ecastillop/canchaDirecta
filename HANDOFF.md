@@ -33,6 +33,10 @@
   de foco. Resultado: **46 rutas PASS** (12 públicas y de acceso con `A11Y_SIN_SESION=1` y las 34
   privadas con `elvis@canchadirecta.pe`), más teclado, skip link y foco al navegar. La auditoría
   quedó sin paginador por volumen de datos (se informa, no falla).
+- UI (2026-10-19): catálogo a 3 columnas con ordenamiento por destacados, menor precio o mejor
+  valoración (parámetro `orden` en `GET /canchas`); contenedor general a 1440 px; galería del
+  espacio como carrusel con miniaturas, contador y navegación por teclado; marca en verde teal
+  como el standalone.
 - Ficha de espacio implementada (2026-10-18): `GET /api/v1/establecimientos/{id}/ficha`,
   ruta `/establecimientos/:id` y enlace desde el detalle de cancha.
 - Actividades reales implementadas (2026-10-18): migración `V14`, API de actividades e

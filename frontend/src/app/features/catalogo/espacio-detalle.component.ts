@@ -49,7 +49,7 @@ const FOTO_FALLBACK =
         <header class="cabecera">
           <div class="cabecera__texto">
             <div class="cd-row cabecera__meta">
-              <span class="cd-badge cd-badge--accent">Espacio deportivo</span>
+              <span class="cd-badge cd-badge--suave">Espacio deportivo</span>
               <span class="cd-badge" [class.cd-badge--success]="e.estado === 'ACTIVO'">
                 {{ e.estado === 'ACTIVO' ? 'Abierto' : 'No disponible' }}
               </span>
@@ -71,22 +71,57 @@ const FOTO_FALLBACK =
         </header>
 
         @if (e.fotos.length) {
-          <section class="galeria" aria-label="Fotos del espacio">
-            <img
-              class="galeria__principal"
-              [src]="e.fotos[0].url"
-              [alt]="'Foto de ' + e.nombre"
-              (error)="usarFallback($event)"
-            />
+          <section
+            class="galeria"
+            aria-label="Fotos del espacio"
+            aria-roledescription="carrusel"
+            (keydown.arrowleft)="anteriorFoto()"
+            (keydown.arrowright)="siguienteFoto()"
+          >
+            <div class="galeria__visor">
+              @if (fotoActual(); as foto) {
+                <img
+                  class="galeria__principal"
+                  [src]="foto.url"
+                  [alt]="'Foto de ' + e.nombre"
+                  (error)="usarFallback($event)"
+                />
+              }
+              @if (e.fotos.length > 1) {
+                <button
+                  type="button"
+                  class="galeria__nav galeria__nav--prev"
+                  aria-label="Foto anterior"
+                  (click)="anteriorFoto()"
+                >
+                  <cd-icon name="arrow" [size]="20" />
+                </button>
+                <button
+                  type="button"
+                  class="galeria__nav galeria__nav--next"
+                  aria-label="Foto siguiente"
+                  (click)="siguienteFoto()"
+                >
+                  <cd-icon name="arrow" [size]="20" />
+                </button>
+                <span class="galeria__contador" aria-live="polite">
+                  {{ indiceFoto() + 1 }} / {{ e.fotos.length }}
+                </span>
+              }
+            </div>
             @if (e.fotos.length > 1) {
-              <div class="galeria__tira">
-                @for (foto of e.fotos.slice(1, 5); track foto.id) {
-                  <img
-                    [src]="foto.url"
-                    [alt]="'Foto de ' + e.nombre"
-                    loading="lazy"
-                    (error)="usarFallback($event)"
-                  />
+              <div class="galeria__tira" role="group" aria-label="Miniaturas de fotos">
+                @for (foto of e.fotos; track foto.id; let i = $index) {
+                  <button
+                    type="button"
+                    class="galeria__mini"
+                    [class.activa]="i === indiceFoto()"
+                    [attr.aria-current]="i === indiceFoto() ? 'true' : null"
+                    [attr.aria-label]="'Ver foto ' + (i + 1) + ' de ' + e.fotos.length"
+                    (click)="irAFoto(i)"
+                  >
+                    <img [src]="foto.url" alt="" loading="lazy" (error)="usarFallback($event)" />
+                  </button>
                 }
               </div>
             }
@@ -285,28 +320,103 @@ const FOTO_FALLBACK =
     }
     .galeria {
       display: grid;
-      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-      gap: 8px;
+      gap: 10px;
       margin-bottom: 30px;
     }
-    .galeria__principal {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
+    .galeria__visor {
+      position: relative;
+      overflow: hidden;
       border-radius: var(--cd-radius-lg);
       background: var(--cd-color-surface-alt);
     }
-    .galeria__tira {
-      display: grid;
-      grid-template-rows: repeat(4, minmax(0, 1fr));
-      gap: 8px;
-    }
-    .galeria__tira img {
+    .galeria__principal {
       width: 100%;
-      height: 100%;
+      height: clamp(280px, 38vw, 520px);
       object-fit: cover;
+      display: block;
+    }
+    .galeria__nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--cd-color-primary) 72%, transparent);
+      color: var(--cd-color-on-primary);
+      font-size: 26px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background var(--cd-duration-fast);
+    }
+    .galeria__nav:hover {
+      background: var(--cd-color-primary);
+    }
+    .galeria__nav:focus-visible {
+      outline: 2px solid var(--cd-color-teal);
+      outline-offset: 2px;
+    }
+    .galeria__nav--prev {
+      left: 14px;
+    }
+    .galeria__nav--prev cd-icon {
+      transform: rotate(180deg);
+    }
+    .galeria__nav--next {
+      right: 14px;
+    }
+    .galeria__contador {
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      padding: 4px 11px;
+      border-radius: var(--cd-radius-pill);
+      background: color-mix(in srgb, var(--cd-color-primary) 72%, transparent);
+      color: var(--cd-color-on-primary);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .galeria__tira {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: thin;
+    }
+    .galeria__mini {
+      flex: 0 0 104px;
+      padding: 0;
+      border: 2px solid transparent;
       border-radius: var(--cd-radius-sm);
+      overflow: hidden;
       background: var(--cd-color-surface-alt);
+      cursor: pointer;
+      opacity: 0.72;
+      transition: opacity var(--cd-duration-fast);
+    }
+    .galeria__mini:hover,
+    .galeria__mini.activa {
+      opacity: 1;
+    }
+    .galeria__mini.activa {
+      border-color: var(--cd-color-teal);
+    }
+    .galeria__mini:focus-visible {
+      outline: 2px solid var(--cd-color-teal);
+      outline-offset: 2px;
+    }
+    .galeria__mini img {
+      width: 100%;
+      height: 66px;
+      object-fit: cover;
+      display: block;
+    }
+    .cd-badge--suave {
+      background: var(--cd-color-surface-alt);
+      color: var(--cd-color-teal);
     }
     .columnas {
       display: grid;
@@ -502,16 +612,6 @@ const FOTO_FALLBACK =
       .lateral {
         position: static;
       }
-      .galeria {
-        grid-template-columns: 1fr;
-      }
-      .galeria__tira {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        grid-template-rows: none;
-      }
-      .galeria__tira img {
-        aspect-ratio: 4 / 3;
-      }
     }
     @media (max-width: 640px) {
       .cabecera {
@@ -525,8 +625,16 @@ const FOTO_FALLBACK =
       .hechos {
         grid-template-columns: 1fr;
       }
-      .galeria__tira {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+      .galeria__nav {
+        width: 38px;
+        height: 38px;
+        font-size: 22px;
+      }
+      .galeria__mini {
+        flex-basis: 84px;
+      }
+      .galeria__mini img {
+        height: 54px;
       }
     }
   `,
@@ -542,6 +650,9 @@ export class EspacioDetalleComponent implements OnInit {
   protected readonly primeraCanchaActiva = computed(
     () => this.espacio()?.canchas.find((cancha) => cancha.estado === 'ACTIVA') ?? null,
   );
+  protected readonly fotos = computed(() => this.espacio()?.fotos ?? []);
+  protected readonly indiceFoto = signal(0);
+  protected readonly fotoActual = computed(() => this.fotos()[this.indiceFoto()] ?? null);
 
   ngOnInit(): void {
     this.cargar();
@@ -559,12 +670,29 @@ export class EspacioDetalleComponent implements OnInit {
     void firstValueFrom(this.api.fichaEspacio(id))
       .then((espacio) => {
         this.espacio.set(espacio);
+        this.indiceFoto.set(0);
         this.cargando.set(false);
       })
       .catch((error) => {
         this.error.set(toApiError(error).message);
         this.cargando.set(false);
       });
+  }
+
+  protected irAFoto(indice: number): void {
+    const total = this.fotos().length;
+    if (!total) {
+      return;
+    }
+    this.indiceFoto.set((indice + total) % total);
+  }
+
+  protected anteriorFoto(): void {
+    this.irAFoto(this.indiceFoto() - 1);
+  }
+
+  protected siguienteFoto(): void {
+    this.irAFoto(this.indiceFoto() + 1);
   }
 
   /** Evita imágenes rotas cuando una URL externa deja de estar disponible. */

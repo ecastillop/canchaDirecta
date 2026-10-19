@@ -173,10 +173,11 @@ public class VenuesResource {
                                       @QueryParam("idDeporte") Long idDeporte,
                                       @QueryParam("precioMax") BigDecimal precioMax,
                                       @QueryParam("q") String texto,
+                                      @QueryParam("orden") @DefaultValue("destacados") String orden,
                                       @QueryParam("limite") @DefaultValue("50") int limite,
                                       @QueryParam("desplazamiento") @DefaultValue("0") int desplazamiento) {
         CatalogoCancha.Pagina pagina = catalogo.buscarCanchas(idDistrito, idEstablecimiento, idDeporte, precioMax,
-                texto, limite, desplazamiento);
+                texto, orden, limite, desplazamiento);
         return Response.ok(pagina.contenido())
                 .header("X-Total-Count", pagina.total())
                 .header("Access-Control-Expose-Headers", "X-Total-Count")

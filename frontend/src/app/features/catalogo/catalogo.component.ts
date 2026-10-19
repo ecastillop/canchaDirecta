@@ -91,13 +91,28 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
             <small>Resultados disponibles</small>
             <h2>{{ total() }} espacios encontrados</h2>
           </div>
-          <p class="cd-small cd-muted" role="status">
-            @if (total() > 0) {
-              Mostrando {{ desde() }}–{{ hasta() }} de {{ total() }}
-            } @else {
-              Sin resultados
-            }
-          </p>
+          <div class="resultados__acciones">
+            <p class="cd-small cd-muted" role="status">
+              @if (total() > 0) {
+                Mostrando {{ desde() }}–{{ hasta() }} de {{ total() }}
+              } @else {
+                Sin resultados
+              }
+            </p>
+            <label class="orden">
+              <cd-icon name="sort" [size]="15" />
+              <span class="cd-visually-hidden">Ordenar resultados</span>
+              <select
+                class="orden__select"
+                [value]="orden()"
+                (change)="cambiarOrden($any($event.target).value)"
+              >
+                <option value="destacados">Destacados</option>
+                <option value="precio">Menor precio</option>
+                <option value="valoracion">Mejor valoración</option>
+              </select>
+            </label>
+          </div>
         </div>
 
         @if (cargando()) {
@@ -321,9 +336,42 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       margin: 4px 0 0;
       font-size: clamp(26px, 2.8vw, 36px);
     }
+    .resultados__acciones {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .resultados__acciones p {
+      margin: 0;
+    }
+    .orden {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--cd-color-text-muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .orden__select {
+      padding: 9px 12px;
+      border: 1px solid var(--cd-color-border);
+      border-radius: var(--cd-radius-pill);
+      background: var(--cd-color-surface);
+      color: var(--cd-color-text);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .orden__select:focus-visible {
+      outline: 2px solid var(--cd-color-teal);
+      outline-offset: 2px;
+    }
     .grid-canchas {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 22px;
     }
     .tarjeta-cancha {
@@ -521,6 +569,11 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       gap: 16px;
       flex-wrap: wrap;
     }
+    @media (max-width: 1200px) {
+      .grid-canchas {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
     @media (max-width: 1100px) {
       .catalogo {
         grid-template-columns: 250px minmax(0, 1fr);
@@ -567,6 +620,7 @@ export class CatalogoComponent implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly total = signal(0);
   protected readonly pagina = signal(1);
+  protected readonly orden = signal<'destacados' | 'precio' | 'valoracion'>('destacados');
   protected readonly tamanoPagina = 12;
 
   protected readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.total() / this.tamanoPagina)));
@@ -590,6 +644,10 @@ export class CatalogoComponent implements OnInit {
       idDeporte: this.numero(params.get('idDeporte')) ?? this.numero(params.get('deporte')),
       precioMax: this.numero(params.get('precioMax')),
     });
+    const orden = params.get('orden');
+    if (orden === 'precio' || orden === 'valoracion' || orden === 'destacados') {
+      this.orden.set(orden);
+    }
 
     void this.cargarCatalogos();
     this.cargar();
@@ -605,6 +663,7 @@ export class CatalogoComponent implements OnInit {
         idDistrito,
         idDeporte,
         precioMax,
+        orden: this.orden(),
         limite: this.tamanoPagina,
         desplazamiento: (this.pagina() - 1) * this.tamanoPagina,
       })
@@ -639,6 +698,26 @@ export class CatalogoComponent implements OnInit {
         distrito: idDistrito,
         deporte: idDeporte,
         precioMax,
+        orden: this.orden() === 'destacados' ? null : this.orden(),
+      },
+    });
+    this.cargar();
+  }
+
+  protected cambiarOrden(valor: string): void {
+    if (valor !== 'precio' && valor !== 'valoracion' && valor !== 'destacados') {
+      return;
+    }
+    this.orden.set(valor);
+    this.pagina.set(1);
+    const { q, idDistrito, idDeporte, precioMax } = this.filtros.getRawValue();
+    void this.router.navigate(['/canchas'], {
+      queryParams: {
+        q: q?.trim() || null,
+        distrito: idDistrito,
+        deporte: idDeporte,
+        precioMax,
+        orden: valor === 'destacados' ? null : valor,
       },
     });
     this.cargar();
@@ -646,6 +725,7 @@ export class CatalogoComponent implements OnInit {
 
   protected limpiar(): void {
     this.pagina.set(1);
+    this.orden.set('destacados');
     this.filtros.reset({ q: '', idDistrito: null, idDeporte: null, precioMax: null });
     void this.router.navigate(['/canchas']);
     this.cargar();

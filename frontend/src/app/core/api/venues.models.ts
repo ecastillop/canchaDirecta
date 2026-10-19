@@ -140,6 +140,7 @@ export interface FiltrosCancha {
   idDeporte?: number | null;
   precioMax?: number | null;
   q?: string | null;
+  orden?: 'destacados' | 'precio' | 'valoracion' | null;
   limite?: number;
   desplazamiento?: number;
 }

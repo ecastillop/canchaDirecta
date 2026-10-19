@@ -512,7 +512,16 @@ public class VenuesPersistenciaAdapter implements VenuesRepositorio {
         if (filtro.texto() != null) {
             sql.append(" AND (c.nombre LIKE :texto OR e.nombre LIKE :texto)");
         }
-        sql.append(" ORDER BY c.id_cancha");
+        switch (filtro.orden() == null ? "destacados" : filtro.orden()) {
+            case "precio" -> sql.append(" ORDER BY c.precio_base ASC, c.id_cancha");
+            case "valoracion" -> sql.append(" ORDER BY "
+                    + "(SELECT AVG(cal.puntaje) FROM calificacion cal "
+                    + "JOIN reserva r ON r.id_reserva = cal.id_reserva WHERE r.id_cancha = c.id_cancha) DESC, "
+                    + "(SELECT COUNT(*) FROM calificacion cal "
+                    + "JOIN reserva r ON r.id_reserva = cal.id_reserva WHERE r.id_cancha = c.id_cancha) DESC, "
+                    + "c.id_cancha");
+            default -> sql.append(" ORDER BY c.id_cancha");
+        }
 
         var query = em.createNativeQuery(sql.toString());
         if (filtro.idDistrito() != null) {

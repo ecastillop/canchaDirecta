@@ -54,7 +54,8 @@ public class CatalogoCanchasService implements CatalogoCanchasUseCase {
 
     @Override
     public CatalogoCancha.Pagina buscarCanchas(Long idDistrito, Long idEstablecimiento, Long idDeporte,
-                                               BigDecimal precioMax, String texto, int limite, int desplazamiento) {
+                                               BigDecimal precioMax, String texto, String orden, int limite,
+                                               int desplazamiento) {
         if (precioMax != null && precioMax.signum() <= 0) {
             throw new DomainException(ErrorCodes.DATOS_INVALIDOS, "El precio maximo debe ser mayor que cero.");
         }
@@ -62,8 +63,20 @@ public class CatalogoCanchasService implements CatalogoCanchasUseCase {
             throw new DomainException(ErrorCodes.DATOS_INVALIDOS, "El desplazamiento no puede ser negativo.");
         }
         CatalogoCancha.Filtro filtro = new CatalogoCancha.Filtro(idDistrito, idEstablecimiento, idDeporte,
-                precioMax, texto == null || texto.isBlank() ? null : texto.trim(), limite(limite), desplazamiento);
+                precioMax, texto == null || texto.isBlank() ? null : texto.trim(), orden(orden), limite(limite),
+                desplazamiento);
         return new CatalogoCancha.Pagina(venues.buscarCanchas(filtro), venues.contarCanchas(filtro));
+    }
+
+    private static String orden(String orden) {
+        if (orden == null || orden.isBlank()) {
+            return "destacados";
+        }
+        return switch (orden) {
+            case "precio", "valoracion", "destacados" -> orden;
+            default -> throw new DomainException(ErrorCodes.DATOS_INVALIDOS,
+                    "El orden debe ser destacados, precio o valoracion.");
+        };
     }
 
     @Override

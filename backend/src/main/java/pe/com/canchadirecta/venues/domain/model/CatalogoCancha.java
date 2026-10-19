@@ -48,7 +48,7 @@ public final class CatalogoCancha {
 
     /** Filtros del listado publico de canchas. */
     public record Filtro(Long idDistrito, Long idEstablecimiento, Long idDeporte, BigDecimal precioMax,
-                         String texto, int limite, int desplazamiento) {
+                         String texto, String orden, int limite, int desplazamiento) {
     }
 
     /** Pagina de canchas con el total que cumple el filtro (para paginacion numerica). */
