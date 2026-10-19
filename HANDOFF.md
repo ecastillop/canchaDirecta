@@ -49,6 +49,9 @@
   menú móvil (el modo se cambia con el botón de la cabecera); corregidos el tip, las fechas de
   actividad, los badges, los avatares, la barra de comparación y el botón “Ingresar” del menú al
   pasar el cursor.
+- Base de datos reproducible (2026-10-19): volcado completo en `db/canchadirecta.sql` (45 tablas y
+  datos), con `scripts/db-export.ps1` / `scripts/db-import.ps1`; guia de instalacion desde cero en
+  `docs/INSTALACION.md`.
 - Ficha de espacio implementada (2026-10-18): `GET /api/v1/establecimientos/{id}/ficha`,
   ruta `/establecimientos/:id` y enlace desde el detalle de cancha.
 - Actividades reales implementadas (2026-10-18): migración `V14`, API de actividades e

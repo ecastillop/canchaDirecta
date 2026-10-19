@@ -24,6 +24,8 @@ hexagonal.
 
 ## Puesta en marcha (Modo A - MySQL del host + backend nativo)
 
+> Guia completa, con volcado de base de datos y Docker: [`docs/INSTALACION.md`](docs/INSTALACION.md).
+
 ```powershell
 # 1) Variables de entorno
 Copy-Item .env.example .env
@@ -124,19 +126,28 @@ Resultados reales en [`docs/RESULTADOS_PRUEBAS.md`](docs/RESULTADOS_PRUEBAS.md).
 
 - `compose.yml` -> frontend (Nginx) + backend; backend apunta al MySQL del host
   via `host.docker.internal`.
-- `compose.mysql.yml` -> MySQL aislado en el puerto **3307** (no choca con 3306).
+- `compose.mysql.yml` -> MySQL aislado en el puerto **3309** (no choca con 3306).
 
 ```bash
 docker compose up --build -d                              # contra MySQL del host
 docker compose -f compose.yml -f compose.mysql.yml up --build -d   # MySQL aislado
 ```
 
-Detalle en [`docs/DEPLOY_DOCKER.md`](docs/DEPLOY_DOCKER.md).
+Guia completa desde cero (requisitos, volcado, verificacion):
+[`docs/INSTALACION.md`](docs/INSTALACION.md).
+
+## Base de datos
+
+- Volcado completo (esquema + datos) en [`db/canchadirecta.sql`](db/canchadirecta.sql).
+- Restaurar: `.\scripts\db-import.ps1 -Force`.
+- Exportar de nuevo: `.\scripts\db-export.ps1`.
+- El esquema tambien se reconstruye desde cero con las migraciones Flyway al arrancar el backend.
 
 ## Documentacion
 
 `docs/` - requisitos y reconciliacion, trazabilidad, arquitectura, [diagramas](docs/DIAGRAMAS.md),
-modelo de datos, API, seguridad, UX, [diseño de fusión](docs/DISENO_FUSION.md), pruebas,
+[instalacion desde cero](docs/INSTALACION.md), modelo de datos, API, seguridad, UX,
+[diseño de fusión](docs/DISENO_FUSION.md), pruebas,
 [accesibilidad manual](docs/ACCESIBILIDAD_MANUAL.md), [cuentas de desarrollo](docs/CUENTAS_DESARROLLO.md),
 despliegue, decisiones (ADRs), limitaciones y [acta de cierre](docs/ACTA_CIERRE.md).
 
