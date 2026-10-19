@@ -264,7 +264,7 @@ const EMOJIS: Record<string, string> = {
     }
     .eyebrow {
       margin: 0 0 18px;
-      color: var(--cd-color-accent);
+      color: var(--cd-color-brand-light);
       font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.18em;
@@ -292,7 +292,7 @@ const EMOJIS: Record<string, string> = {
     .seccion h2 em,
     .por-que h2 em,
     .cta-final h2 em {
-      color: var(--cd-color-accent);
+      color: var(--cd-color-brand-light);
       font-style: normal;
     }
     .hero__lead {
@@ -314,8 +314,8 @@ const EMOJIS: Record<string, string> = {
       color: var(--cd-color-inverse-text);
     }
     .hero .cd-btn--hero:hover {
-      border-color: var(--cd-color-accent);
-      color: var(--cd-color-accent);
+      border-color: var(--cd-color-brand-light);
+      color: var(--cd-color-brand-light);
     }
     .hero__social {
       display: flex;

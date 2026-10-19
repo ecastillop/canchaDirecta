@@ -63,9 +63,16 @@
   --cd-color-primary: #0f191e;
   --cd-color-primary-strong: #172324;
   --cd-color-teal: #167a70;
-  --cd-color-accent: #83be76;
-  --cd-color-accent-strong: #6fae63;
-  --cd-color-on-accent: #0f191e;
+  --cd-color-accent: #328a6c;
+  --cd-color-accent-strong: #23634b;
+  --cd-color-accent-soft: #dff6c7;
+  --cd-color-on-accent: #ffffff;
+  --cd-color-brand: #328a6c;
+  --cd-color-brand-ink: #12292c;
+  --cd-color-brand-light: #9ed77c;
+  --cd-color-star: #d4a238;
+  --cd-color-heart: #c74e55;
+  --cd-color-heart-soft: #ffe7e8;
   --cd-color-bg: #f7f8f4;
   --cd-color-surface: #ffffff;
   --cd-color-surface-alt: #eef3ea;
@@ -82,7 +89,7 @@
   --cd-color-info: #1f5f8b;
   --cd-color-info-soft: #e8f1f8;
   --cd-color-border: #e3e8e1;
-  --cd-color-focus: #66ae86;
+  --cd-color-focus: #328a6c;
   --cd-color-inverse-bg: #0f191e;
   --cd-color-inverse-text: #f7f8f4;
   --cd-color-inverse-muted: #a9b8af;
@@ -93,11 +100,13 @@
 
 :root[data-palette='grafito'] {
   color-scheme: dark;
-  --cd-color-primary: #83be76;
+  --cd-color-primary: #9ed77c;
   --cd-color-primary-strong: #d5ff88;
   --cd-color-teal: #69d3c3;
-  --cd-color-accent: #83be76;
-  --cd-color-accent-strong: #6fae63;
+  --cd-color-accent: #9ed77c;
+  --cd-color-accent-strong: #6fcf9f;
+  --cd-color-accent-soft: #1f3a2b;
+  --cd-color-on-accent: #0b1417;
   --cd-color-bg: #0b1417;
   --cd-color-surface: #101c20;
   --cd-color-surface-alt: #16262a;
@@ -114,7 +123,7 @@
   --cd-color-info: #9cc7ef;
   --cd-color-info-soft: #162b3a;
   --cd-color-border: #263a36;
-  --cd-color-focus: #83be76;
+  --cd-color-focus: #9ed77c;
   --cd-color-inverse-bg: #101c20;
   --cd-color-inverse-text: #edf3ee;
   --cd-color-inverse-muted: #a9b8af;
@@ -128,8 +137,10 @@
   --cd-color-primary: #1f3d2b;
   --cd-color-primary-strong: #2c5239;
   --cd-color-teal: #167a70;
-  --cd-color-accent: #83be76;
-  --cd-color-accent-strong: #6fae63;
+  --cd-color-accent: #328a6c;
+  --cd-color-accent-strong: #23634b;
+  --cd-color-accent-soft: #e6f3d8;
+  --cd-color-on-accent: #ffffff;
   --cd-color-bg: #fbf7f0;
   --cd-color-surface: #fffdf8;
   --cd-color-surface-alt: #f1e9dd;
@@ -146,11 +157,13 @@
 // de igual especificidad y aplicar el juego oscuro sobre cualquier paleta elegida.
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --cd-color-primary: #83be76;
+  --cd-color-primary: #9ed77c;
   --cd-color-primary-strong: #d5ff88;
   --cd-color-teal: #69d3c3;
-  --cd-color-accent: #83be76;
-  --cd-color-accent-strong: #6fae63;
+  --cd-color-accent: #9ed77c;
+  --cd-color-accent-strong: #6fcf9f;
+  --cd-color-accent-soft: #1f3a2b;
+  --cd-color-on-accent: #0b1417;
   --cd-color-bg: #0b1417;
   --cd-color-surface: #101c20;
   --cd-color-surface-alt: #16262a;
@@ -167,7 +180,7 @@
   --cd-color-info: #9cc7ef;
   --cd-color-info-soft: #162b3a;
   --cd-color-border: #263a36;
-  --cd-color-focus: #83be76;
+  --cd-color-focus: #9ed77c;
   --cd-color-inverse-bg: #101c20;
   --cd-color-inverse-text: #edf3ee;
   --cd-color-inverse-muted: #a9b8af;

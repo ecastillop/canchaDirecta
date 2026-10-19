@@ -194,10 +194,10 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
                       </button>
                       <a
                         [routerLink]="['/canchas', cancha.id]"
-                        class="cd-btn cd-btn--secondary cd-btn--sm"
+                        class="tarjeta-cancha__ir"
                         [attr.aria-label]="'Ver detalle y horarios de ' + cancha.nombre"
                       >
-                        Ver horarios <span aria-hidden="true">→</span>
+                        <cd-icon name="arrow" [size]="18" />
                       </a>
                     </div>
                   </div>
@@ -249,7 +249,7 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
     }
     .eyebrow {
       margin: 0 0 16px;
-      color: var(--cd-color-accent);
+      color: var(--cd-color-brand-light);
       font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.2em;
@@ -262,7 +262,7 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       letter-spacing: -0.05em;
     }
     .hero-catalogo h1 em {
-      color: var(--cd-color-accent);
+      color: var(--cd-color-brand-light);
       font-style: normal;
     }
     .hero-catalogo__bajada {
@@ -466,13 +466,37 @@ import { CdSkeletonComponent } from '../../shared/ui/skeleton/cd-skeleton.compon
       border: 0;
       border-radius: 9px;
       background: color-mix(in srgb, var(--cd-color-surface) 92%, transparent);
-      color: var(--cd-color-danger);
+      color: var(--cd-color-text-muted);
       font-size: 18px;
       cursor: pointer;
     }
     .tarjeta-cancha__corazon.activo {
-      background: var(--cd-color-danger);
-      color: #fff;
+      background: var(--cd-color-heart-soft);
+      color: var(--cd-color-heart);
+    }
+    .rating cd-icon {
+      color: var(--cd-color-star);
+    }
+    .tarjeta-cancha__ir {
+      display: inline-grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--cd-color-accent-soft);
+      color: var(--cd-color-brand-ink);
+      text-decoration: none;
+      transition:
+        background var(--cd-duration-fast),
+        color var(--cd-duration-fast);
+    }
+    .tarjeta-cancha__ir:hover {
+      background: var(--cd-color-brand);
+      color: var(--cd-color-on-accent);
+    }
+    .tarjeta-cancha__ir:focus-visible {
+      outline: 2px solid var(--cd-color-brand);
+      outline-offset: 2px;
     }
     .tarjeta-cancha__acciones {
       display: flex;

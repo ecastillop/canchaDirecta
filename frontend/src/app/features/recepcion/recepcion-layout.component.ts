@@ -121,7 +121,7 @@ const TITULOS: Record<string, string> = {
       width: 42px;
       height: 42px;
       border-radius: 12px;
-      background: #83be76;
+      background: var(--cd-color-accent-soft);
       transform: rotate(-7deg);
     }
     .logo-symbol span {
@@ -222,7 +222,7 @@ const TITULOS: Record<string, string> = {
       height: 32px;
       margin-bottom: 13px;
       border-radius: 9px;
-      background: #83be76;
+      background: var(--cd-color-accent-soft);
       color: #214d37;
     }
     .admin-side__help strong {

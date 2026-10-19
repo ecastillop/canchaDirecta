@@ -36,10 +36,10 @@
 - UI (2026-10-19): catálogo a 3 columnas con ordenamiento por destacados, menor precio o mejor
   valoración (parámetro `orden` en `GET /canchas`); contenedor general a 1440 px; galería del
   espacio como carrusel con miniaturas, contador y navegación por teclado; marca en verde teal
-  como el standalone. El acento lima `#c5f56b` se sustituyó en toda la app por el verde `#83be76`
-  (hover `#6fae63`) del standalone: logo, badges, bloques de fecha, focos y estados. Se conserva
-  el diseño previo de las tarjetas de actividad (bloque de fecha + cuerpo), solo con el verde
-  nuevo.
+  como el standalone. Paleta alineada al standalone: marca bicolor (`cancha` `#12292c` +
+  `directa` `#328a6c`), acento `#328a6c`, relleno menta `#dff6c7`, estrella `#d4a238` y favorito
+  `#c74e55`; se conserva el diseño previo de las tarjetas de actividad (bloque de fecha + cuerpo)
+  con el bloque en menta y texto oscuro.
 - Ficha de espacio implementada (2026-10-18): `GET /api/v1/establecimientos/{id}/ficha`,
   ruta `/establecimientos/:id` y enlace desde el detalle de cancha.
 - Actividades reales implementadas (2026-10-18): migración `V14`, API de actividades e

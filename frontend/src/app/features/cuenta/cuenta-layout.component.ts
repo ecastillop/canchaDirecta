@@ -110,7 +110,7 @@ import { CdThemeToggleComponent } from '../../shared/ui/theme-toggle/cd-theme-to
       width: 42px;
       height: 42px;
       border-radius: 12px;
-      background: #83be76;
+      background: var(--cd-color-accent-soft);
       transform: rotate(-7deg);
     }
     .logo-symbol span {
@@ -208,7 +208,7 @@ import { CdThemeToggleComponent } from '../../shared/ui/theme-toggle/cd-theme-to
       height: 32px;
       margin-bottom: 13px;
       border-radius: 9px;
-      background: #83be76;
+      background: var(--cd-color-accent-soft);
       color: #214d37;
     }
     .cuenta-side__help strong {

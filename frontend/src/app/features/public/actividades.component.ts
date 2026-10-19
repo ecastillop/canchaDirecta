@@ -168,7 +168,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
     }
     .eyebrow {
       margin: 0 0 14px;
-      color: var(--cd-color-accent);
+      color: var(--cd-color-brand-light);
       font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.2em;
@@ -180,7 +180,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
       letter-spacing: -0.05em;
     }
     h1 em {
-      color: var(--cd-color-accent);
+      color: var(--cd-color-brand-light);
       font-style: normal;
     }
     .hero-actividades p:last-child {
@@ -220,8 +220,8 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
       margin-left: 6px;
       padding: 0 6px;
       border-radius: 999px;
-      background: var(--cd-color-accent);
-      color: var(--cd-color-primary);
+      background: var(--cd-color-accent-soft);
+      color: var(--cd-color-brand-ink);
       font-size: 11px;
       font-weight: 800;
     }
@@ -245,8 +245,8 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
       justify-items: center;
       gap: 2px;
       padding: 18px 10px;
-      background: var(--cd-color-accent);
-      color: var(--cd-color-primary);
+      background: var(--cd-color-accent-soft);
+      color: var(--cd-color-brand-ink);
     }
     .actividad__fecha strong {
       font-family: var(--cd-font-display);

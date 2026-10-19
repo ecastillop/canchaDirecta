@@ -45,7 +45,7 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
         <a routerLink="/" class="marca" aria-label="CanchaDirecta, ir al inicio">
           <span class="marca__icono" aria-hidden="true">A</span>
           <span class="marca__texto">
-            <strong>canchadirecta</strong>
+            <strong>cancha<span>directa</span></strong>
             <small>reserva · juega · repite</small>
           </span>
         </a>
@@ -190,7 +190,7 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
           <a routerLink="/" class="marca marca--pie" aria-label="CanchaDirecta, ir al inicio">
             <span class="marca__icono" aria-hidden="true">A</span>
             <span class="marca__texto">
-              <strong>canchadirecta</strong>
+              <strong>cancha<span>directa</span></strong>
               <small>reserva · juega · repite</small>
             </span>
           </a>
@@ -500,8 +500,8 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
       width: 42px;
       height: 42px;
       border-radius: 13px;
-      background: var(--cd-color-accent);
-      color: var(--cd-color-teal);
+      background: var(--cd-color-accent-soft);
+      color: var(--cd-color-text);
       font-family: var(--cd-font-display);
       font-size: 22px;
       font-weight: 900;
@@ -516,7 +516,10 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
       font-size: 20px;
       font-weight: 800;
       letter-spacing: -0.04em;
-      color: var(--cd-color-teal);
+      color: var(--cd-color-text);
+    }
+    .marca__texto strong span {
+      color: var(--cd-color-accent);
     }
     .marca__texto small {
       margin-top: 4px;
@@ -674,6 +677,9 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
     .marca--pie .marca__texto strong {
       color: var(--cd-color-inverse-text);
     }
+    .marca--pie .marca__texto strong span {
+      color: var(--cd-color-brand-light);
+    }
     .marca--pie .marca__texto small {
       color: var(--cd-color-inverse-muted);
     }
@@ -695,7 +701,7 @@ import { CdToastHostComponent } from '../ui/toast/cd-toast-host.component';
       text-decoration: none;
     }
     .pie__col a:hover {
-      color: var(--cd-color-accent);
+      color: var(--cd-color-brand-light);
     }
     .pie__bottom {
       display: flex;

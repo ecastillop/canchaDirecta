@@ -12,7 +12,7 @@ import { RouterLink, RouterOutlet } from '@angular/router';
         <a routerLink="/" class="marca" aria-label="CanchaDirecta, volver al inicio">
           <span class="marca__icono" aria-hidden="true">A</span>
           <span class="marca__texto">
-            <strong>canchadirecta</strong>
+            <strong>cancha<span>directa</span></strong>
             <small>reserva · juega · repite</small>
           </span>
         </a>
@@ -68,8 +68,8 @@ import { RouterLink, RouterOutlet } from '@angular/router';
       width: 42px;
       height: 42px;
       border-radius: 13px;
-      background: var(--cd-color-accent);
-      color: var(--cd-color-primary);
+      background: var(--cd-color-accent-soft);
+      color: var(--cd-color-text);
       font-family: var(--cd-font-display);
       font-size: 22px;
       font-weight: 900;
@@ -83,6 +83,9 @@ import { RouterLink, RouterOutlet } from '@angular/router';
       font-family: var(--cd-font-display);
       font-size: 20px;
       letter-spacing: -0.04em;
+    }
+    .marca__texto strong span {
+      color: var(--cd-color-brand-light);
     }
     .marca__texto small {
       margin-top: 4px;
@@ -99,7 +102,7 @@ import { RouterLink, RouterOutlet } from '@angular/router';
     }
     .eyebrow {
       margin: 0 0 16px;
-      color: var(--cd-color-accent);
+      color: var(--cd-color-brand-light);
       font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.18em;
@@ -112,7 +115,7 @@ import { RouterLink, RouterOutlet } from '@angular/router';
       letter-spacing: -0.055em;
     }
     .lado-marca__titulo em {
-      color: var(--cd-color-accent);
+      color: var(--cd-color-brand-light);
       font-style: normal;
     }
     .lado-marca__texto > p:last-child {
