@@ -130,10 +130,34 @@ catch {
 $roles = switch ($Rol) {
   'PLATFORM_ADMIN' { @('USER', 'OWNER', 'PLATFORM_ADMIN') }
   'OWNER' { @('USER', 'OWNER') }
+  'OPERADOR' { @('USER', 'OPERADOR') }
   default { @('USER') }
 }
 foreach ($r in $roles) {
   Invoke-Sql "INSERT IGNORE INTO usuario_rol (id_usuario, id_rol) SELECT $id, id_rol FROM rol WHERE nombre = '$r';" | Out-Null
+}
+
+# 4. Perfil funcional: propietario validado u operador vinculado a una sede.
+if ($Rol -eq 'OWNER' -or $Rol -eq 'PLATFORM_ADMIN') {
+  Invoke-Sql @"
+INSERT INTO propietario (id_usuario, documento_identidad, estado_validacion)
+SELECT $id, CONCAT('DEV', $id), 'VALIDADO'
+WHERE NOT EXISTS (SELECT 1 FROM propietario WHERE id_usuario = $id);
+UPDATE propietario SET estado_validacion = 'VALIDADO' WHERE id_usuario = $id;
+"@ | Out-Null
+  Write-Host 'Perfil de propietario validado.' -ForegroundColor Green
+}
+if ($Rol -eq 'OPERADOR') {
+  $vinculo = Invoke-Sql @"
+INSERT IGNORE INTO operador_establecimiento (id_usuario, id_establecimiento, cargo)
+SELECT $id, MIN(id_establecimiento), 'Operador dev' FROM establecimiento;
+SELECT COUNT(*) FROM operador_establecimiento WHERE id_usuario = $id;
+"@
+  if ("$vinculo".Trim() -eq '0') {
+    Write-Host 'Aviso: no hay establecimientos para vincular al operador.' -ForegroundColor Yellow
+  } else {
+    Write-Host 'Operador vinculado a la primera sede.' -ForegroundColor Green
+  }
 }
 
 $asignados = (Invoke-Sql "SELECT GROUP_CONCAT(r.nombre ORDER BY r.nombre) FROM usuario_rol ur JOIN rol r ON r.id_rol = ur.id_rol WHERE ur.id_usuario = $id;").Trim()

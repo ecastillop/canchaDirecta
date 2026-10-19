@@ -35,7 +35,7 @@
 | Pruebas unitarias frontend | `npm test -- --watch=false` | 15/15 PASS |
 | Flujo de usuario en navegador | `npm run test:e2e` (Docker 8083) | 15/15 PASS |
 | Flujo propietario/admin en navegador | `npm run test:e2e:owner` | 28/28 PASS |
-| Accesibilidad de teclado y estructura | `npm run test:a11y` (E-42) + E-41 + variante `A11Y_SIN_SESION=1` | 12 rutas públicas y de acceso PASS (2026-10-19) con `main`/`h1` únicos, tablas y diálogos con nombre, foco al contenido al navegar y visor de fotos atrapado; la pasada de 34 rutas privadas debe re-ejecutarse con `ADMIN_PASSWORD` |
+| Accesibilidad de teclado y estructura | `npm run test:a11y` (E-42) + E-41 + variante `A11Y_SIN_SESION=1` | 46 rutas PASS (2026-10-19): 12 públicas y de acceso y 34 privadas con `main`/`h1` únicos, tablas y diálogos con nombre, foco al contenido al navegar y visor de fotos atrapado |
 | Stack Docker operativo | `/q/health/ready`, frontend 8083 | 200 / 200 |
 
 ## 3. Evidencias

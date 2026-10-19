@@ -263,10 +263,15 @@ if (!SIN_SESION) {
   await page.keyboard.press('Escape');
 
   await navAdmin.getByRole('link', { name: 'Auditoría' }).click();
-  await page
-    .getByRole('navigation', { name: 'Paginación de auditoría' })
-    .waitFor({ timeout: 20000 });
-  await page.screenshot({ path: resolve(EVID, 'a11y-paginacion-auditoria.png'), fullPage: false });
+  await page.locator('table.tabla, cd-empty-state').first().waitFor({ timeout: 20000 });
+  const paginacionAuditoria = page.getByRole('navigation', { name: 'Paginación de auditoría' });
+  if (await paginacionAuditoria.isVisible().catch(() => false)) {
+    ok('auditoría con paginación accesible');
+    await page.screenshot({ path: resolve(EVID, 'a11y-paginacion-auditoria.png'), fullPage: false });
+  } else {
+    info('auditoría con menos de una página de eventos: sin paginador que revisar');
+  }
+  await page.screenshot({ path: resolve(EVID, 'a11y-auditoria.png'), fullPage: false });
 }
 
 if (erroresConsola.length) {

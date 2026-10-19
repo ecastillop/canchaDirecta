@@ -6,6 +6,8 @@ Monolito modular + arquitectura hexagonal (Clean Architecture). Un backend, una 
 MySQL, un frontend Angular. Sin microservicios, mensajeria, Redis ni Kubernetes por
 defecto (ADR-0001).
 
+![Contexto del sistema](evidencias/diagramas/01-contexto.png)
+
 ## 2. Modulos (capacidades de negocio)
 
 | Modulo | Responsabilidad |
@@ -22,6 +24,8 @@ defecto (ADR-0001).
 | `helpcenter` | centro de ayuda: categorias, articulos y busqueda |
 | `platform` | operaciones globales: usuarios/roles, propietarios, supervision, auditoria, configuracion, reportes, promociones y cocheras |
 | `shared` | RFC 9457, seguridad JWT/JWKS, reloj, storage y utilidades transversales |
+
+![Modulos del backend](evidencias/diagramas/03-modulos.png)
 
 ## 3. Capas por modulo
 
@@ -60,6 +64,8 @@ POST /api/v1/bookings  [Idempotency-Key]
   -> (fuera del lock) resultado de pago simulado en nueva transaccion idempotente
   -> transicion CONFIRMADA / CANCELADA + notificacion
 ```
+
+![Secuencia de la reserva concurrente](evidencias/diagramas/04-reserva-concurrente.png)
 
 ### 4.1 Flujo del pago simulado y reembolso (ADR-0020)
 
@@ -117,6 +123,10 @@ servidor, la misma que la llena por defecto) y la finalizacion mide `fin` contra
 (la columna es un literal UTC). Cada job compara contra el mismo marco horario que su columna; ninguno
 depende de la zona del servidor.
 
+### 4.4 Estados de la reserva
+
+![Estados de la reserva](evidencias/diagramas/05-estados-reserva.png)
+
 ## 5. Contrato REST
 
 Bajo `/api/v1`. Errores RFC 9457 (Problem Details) con `code` de negocio
@@ -126,8 +136,10 @@ Bajo `/api/v1`. Errores RFC 9457 (Problem Details) con `code` de negocio
 ## 6. Persistencia
 
 MySQL 8 (host), InnoDB, utf8mb4. **Flyway es dueno del esquema**; Hibernate solo
-valida. Migraciones `V1..V6` (ver `MODELO_DATOS.md`). Usuario de migracion y de
+valida. Migraciones `V1..V18` (ver `MODELO_DATOS.md`). Usuario de migracion y de
 runtime separados (ADR-0009).
+
+![Modelo de datos principal](evidencias/diagramas/07-modelo-datos.png)
 
 ## 7. Frontend
 
@@ -137,9 +149,13 @@ apoyo de UX (nunca unica seguridad), CSS con design tokens y tema claro/oscuro, 
 WCAG 2.2 AA, estados loading/empty/error/success en todas las areas. Los portales se resumen en
 `DIAGRAMAS.md`.
 
+![Portales del frontend](evidencias/diagramas/06-portales-frontend.png)
+
 ## 8. Infraestructura
 
 Dockerfiles multi-stage no-root, Nginx con fallback SPA y proxy `/api`, Compose con variante
 host (`host.docker.internal`) y variante MySQL aislado (`compose.mysql.yml`, :3309), healthchecks,
 JWKS montado de solo lectura, `.env.example` y `.dockerignore`. Puertos por defecto: frontend
 :8083, backend :8089 (contenedor :8080), MySQL del host :3306.
+
+![Despliegue con Compose](evidencias/diagramas/02-despliegue.png)

@@ -27,12 +27,11 @@
 - Pruebas: backend **163/163**, humo **153/153** (PowerShell) y **134/134** (Bash), unitarios
   **28/28**, E2E usuario **OK**, E2E propietario/admin **OK**, accesibilidad **34 rutas OK** y
   contraste **OK** en los 4 portales y ambos modos.
-- Accesibilidad ampliada (2026-10-19): la suite ahora verifica también `main`/`h1` únicos, tablas
-  y diálogos con nombre accesible, foco al contenido tras navegar y el visor de fotos atrapado
-  con retorno de foco; además cubre las 12 rutas públicas y de acceso con
-  `A11Y_SIN_SESION=1` (12/12 PASS). La pasada privada de 34 rutas debe re-ejecutarse con
-  `ADMIN_PASSWORD` para las comprobaciones nuevas: la última corrida completa (2026-10-18) fue
-  34 rutas OK.
+- Accesibilidad ampliada (2026-10-19): la suite verifica `main`/`h1` únicos, tablas y diálogos
+  con nombre accesible, foco al contenido tras navegar y el visor de fotos atrapado con retorno
+  de foco. Resultado: **46 rutas PASS** (12 públicas y de acceso con `A11Y_SIN_SESION=1` y las 34
+  privadas con `elvis@canchadirecta.pe`), más teclado, skip link y foco al navegar. La auditoría
+  quedó sin paginador por volumen de datos (se informa, no falla).
 - Ficha de espacio implementada (2026-10-18): `GET /api/v1/establecimientos/{id}/ficha`,
   ruta `/establecimientos/:id` y enlace desde el detalle de cancha.
 - Actividades reales implementadas (2026-10-18): migración `V14`, API de actividades e
@@ -662,8 +661,6 @@ Prioridad inmediata:
    `frontend/e2e/contraste-modos.mjs`, la estructura/teclado con `a11y-check.mjs` —incluida la
    variante `A11Y_SIN_SESION=1` para `/auth/*`— y el guion paso a paso en
    `docs/ACCESIBILIDAD_MANUAL.md`).
-2. Re-ejecutar `npm run test:a11y` como `PLATFORM_ADMIN` para pasar las comprobaciones nuevas
-   (tablas con nombre, `main`/`h1` únicos) por las 34 rutas privadas.
 
 **Estado:** entrega base cerrada el 2026-10-17; rediseno de fusion, integraciones del standalone y
 bloques A/B/C/D del delta completados el 2026-10-18, más badge de notificaciones, modo claro/oscuro,
@@ -674,8 +671,8 @@ regenerable con `.\scripts\demo-reset.ps1 -Force`.
 Acta: `docs/ACTA_CIERRE.md`.
 
 Cuenta superadministrador local (roles `USER`, `OWNER`, `PLATFORM_ADMIN`):
-`admin@canchadirecta.pe`; la clave esta en `.env` (`ADMIN_PASSWORD`) y se usa tambien en los
-E2E del propietario/admin.
+`elvis@canchadirecta.pe` (clave `12345678`, entorno dev). Las cuentas por perfil y la del `.env`
+estan en `docs/CUENTAS_DESARROLLO.md`.
 
 Notas de la última sesión:
 - Node 22.13 del host no cumple Angular 22 (`>=22.22.3`); se usó un Node 24.22 portable en
