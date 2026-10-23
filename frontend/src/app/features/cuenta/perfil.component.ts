@@ -181,6 +181,7 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
     }
     .datos > div {
       display: flex;
+      min-width: 0;
       justify-content: space-between;
       gap: var(--cd-space-3);
       font-size: var(--cd-text-sm);
@@ -190,10 +191,14 @@ import { ToastService } from '../../shared/ui/toast/toast.service';
     }
     .datos dd {
       margin: 0;
+      min-width: 0;
       font-weight: 700;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .aviso {
       margin-top: var(--cd-space-3);
+      overflow-wrap: anywhere;
     }
     .alerta {
       margin-bottom: var(--cd-space-3);

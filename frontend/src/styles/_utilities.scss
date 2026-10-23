@@ -41,6 +41,8 @@
 }
 
 .cd-card {
+  min-width: 0;
+  max-width: 100%;
   background: var(--cd-color-surface);
   border: 1px solid var(--cd-color-border);
   border-radius: var(--cd-radius-lg);
@@ -149,4 +151,21 @@
 .cd-badge--accent {
   background: var(--cd-color-accent-soft);
   color: var(--cd-color-text);
+}
+
+.portal-content > * {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.tabla-scroll {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.portal-menu-btn,
+.drawer-close,
+.portal-backdrop {
+  display: none;
 }

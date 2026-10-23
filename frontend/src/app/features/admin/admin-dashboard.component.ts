@@ -259,7 +259,15 @@ interface DatosAdmin {
       gap: 16px;
       margin-bottom: 16px;
     }
+    .dashboard-two {
+      min-width: 0;
+    }
+    .dashboard-two > * {
+      min-width: 0;
+    }
     .panel {
+      min-width: 0;
+      max-width: 100%;
       padding: 24px;
       border: 1px solid var(--cd-color-border);
       border-radius: 16px;
@@ -268,6 +276,7 @@ interface DatosAdmin {
     }
     .panel-heading {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
@@ -295,6 +304,7 @@ interface DatosAdmin {
     }
     .pendientes li {
       display: flex;
+      min-width: 0;
       align-items: center;
       gap: 12px;
       padding: 10px 0;
@@ -319,6 +329,9 @@ interface DatosAdmin {
       gap: 2px;
       flex: 1;
       min-width: 0;
+    }
+    .pendientes small {
+      overflow-wrap: anywhere;
     }
     .quick-actions {
       display: grid;

@@ -6,6 +6,7 @@ import { AuthStore } from '../../core/auth/auth.store';
 import { RecepcionStore } from '../../core/api/recepcion.store';
 import { PortalIconComponent } from '../../shared/ui/portal-icon/portal-icon.component';
 import { CdThemeToggleComponent } from '../../shared/ui/theme-toggle/cd-theme-toggle.component';
+import { PortalDrawerDirective } from '../../shared/layout/portal-drawer.directive';
 
 const TITULOS: Record<string, string> = {
   '/recepcion': 'Turno actual',
@@ -19,11 +20,13 @@ const TITULOS: Record<string, string> = {
 /** Portal de recepcion: turno, agenda, reserva presencial, cobros e incidencias (ADR-0038). */
 @Component({
   selector: 'app-recepcion-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, PortalIconComponent, CdThemeToggleComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, PortalIconComponent, CdThemeToggleComponent, PortalDrawerDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="admin-shell">
-      <aside class="admin-side">
+    <div class="admin-shell" cdPortalDrawer #drawer="cdPortalDrawer">
+      <div class="portal-backdrop" [class.visible]="drawer.open()" (click)="drawer.cerrar()" aria-hidden="true"></div>
+      <aside class="admin-side" id="recepcion-menu" [class.abierto]="drawer.open()">
+        <button type="button" class="drawer-close" (click)="drawer.cerrar()" aria-label="Cerrar menú">×</button>
         <a routerLink="/" class="marca-lateral" aria-label="CanchaDirecta, ir al inicio">
           <span class="logo-symbol" aria-hidden="true"><span></span><span></span></span>
           <span class="logo-name">
@@ -67,6 +70,16 @@ const TITULOS: Record<string, string> = {
 
       <div class="admin-main">
         <header class="portal-top">
+          <button
+            type="button"
+            class="portal-menu-btn"
+            (click)="drawer.alternar()"
+            [attr.aria-expanded]="drawer.open()"
+            aria-controls="recepcion-menu"
+            aria-label="Abrir menú de recepción"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
           <div class="portal-top-left">
             <span class="breadcrumb">CanchaDirecta <span>/</span> Recepción</span>
             <h1 class="portal-title">{{ titulo() }}</h1>
@@ -100,9 +113,13 @@ const TITULOS: Record<string, string> = {
       display: flex;
       flex-direction: column;
       height: 100dvh;
+      min-width: 0;
       padding: 27px 14px 18px;
       background: #121f21;
       color: #ddece5;
+    }
+    .admin-main {
+      min-width: 0;
     }
     .marca-lateral {
       display: inline-flex;
@@ -329,34 +346,110 @@ const TITULOS: Record<string, string> = {
       .admin-shell {
         grid-template-columns: 1fr;
       }
-      .admin-side {
-        position: static;
-        height: auto;
-        min-height: 0;
-        padding: 10px 14px;
-        border-bottom: 1px solid #2b433a;
+      .portal-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 70;
+        background: rgba(10, 20, 18, 0.58);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.22s ease, visibility 0.22s ease;
       }
-      .marca-lateral,
-      .workspace-label,
-      .admin-side__end {
-        display: none;
+      .portal-backdrop.visible {
+        opacity: 1;
+        visibility: visible;
+      }
+      .admin-side {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 80;
+        width: min(84vw, 304px);
+        max-width: 304px;
+        height: 100dvh;
+        min-height: 0;
+        padding: 22px 14px 18px;
+        overflow-y: auto;
+        border: 0;
+        border-right: 1px solid #2b433a;
+        display: block;
+        transform: translateX(-100%);
+        visibility: hidden;
+        transition: transform 0.24s ease, visibility 0.24s ease;
+      }
+      .admin-side.abierto {
+        transform: none;
+        visibility: visible;
+      }
+      .drawer-close {
+        display: grid;
+        place-items: center;
+        position: absolute;
+        top: 16px;
+        right: 14px;
+        z-index: 2;
+        width: 32px;
+        height: 32px;
+        border: 1px solid #365049;
+        border-radius: 8px;
+        background: #1b2f2b;
+        color: #dfeee6;
+        font-size: 17px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .marca-lateral {
+        padding-right: 44px;
       }
       .admin-side__nav {
-        display: flex;
-        gap: 5px;
-        overflow-x: auto;
-        overflow-y: hidden;
+        display: grid;
+        gap: 3px;
+        width: auto;
+        max-width: none;
+        overflow: visible;
       }
       .admin-side__nav a {
-        flex: 0 0 auto;
-        padding: 9px 12px;
+        padding: 12px 14px;
+      }
+      .admin-side__end {
+        margin-top: 24px;
+      }
+      .portal-menu-btn {
+        display: inline-grid;
+        place-items: center;
+        flex: none;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+        color: var(--cd-color-text);
+        cursor: pointer;
+      }
+      .portal-menu-btn:hover {
+        background: var(--cd-color-surface-alt);
+      }
+      .portal-menu-btn svg {
+        display: block;
+        width: 24px;
+        height: 24px;
       }
       .portal-top {
+        position: sticky;
+        top: 0;
+        z-index: 50;
         height: 64px;
-        padding: 0 18px;
+        padding: 0 14px;
+        gap: 10px;
+      }
+      .portal-top-left {
+        flex: 1;
+        min-width: 0;
       }
       .portal-content {
-        padding: 22px 18px 60px;
+        padding: 20px 18px 70px;
       }
     }
   `,

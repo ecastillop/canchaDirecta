@@ -4,14 +4,17 @@ import { AuthStore } from '../../core/auth/auth.store';
 import { NotificacionesStore } from '../../core/api/notificaciones.store';
 import { PortalIconComponent } from '../../shared/ui/portal-icon/portal-icon.component';
 import { CdThemeToggleComponent } from '../../shared/ui/theme-toggle/cd-theme-toggle.component';
+import { PortalDrawerDirective } from '../../shared/layout/portal-drawer.directive';
 
 @Component({
   selector: 'app-cuenta-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, PortalIconComponent, CdThemeToggleComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, PortalIconComponent, CdThemeToggleComponent, PortalDrawerDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="cuenta-shell">
-      <aside class="cuenta-side">
+    <div class="cuenta-shell" cdPortalDrawer #drawer="cdPortalDrawer">
+      <div class="portal-backdrop" [class.visible]="drawer.open()" (click)="drawer.cerrar()" aria-hidden="true"></div>
+      <aside class="cuenta-side" id="cuenta-menu" [class.abierto]="drawer.open()">
+        <button type="button" class="drawer-close" (click)="drawer.cerrar()" aria-label="Cerrar menú">×</button>
         <a routerLink="/" class="marca-lateral" aria-label="CanchaDirecta, ir al inicio">
           <span class="logo-symbol" aria-hidden="true"><span></span><span></span></span>
           <span class="logo-name">
@@ -45,6 +48,16 @@ import { CdThemeToggleComponent } from '../../shared/ui/theme-toggle/cd-theme-to
 
       <div class="cuenta-main">
         <header class="portal-top">
+          <button
+            type="button"
+            class="portal-menu-btn"
+            (click)="drawer.alternar()"
+            [attr.aria-expanded]="drawer.open()"
+            aria-controls="cuenta-menu"
+            aria-label="Abrir menú de mi cuenta"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
           <div class="portal-top-left">
             <span class="breadcrumb">CanchaDirecta <span>/</span> Cliente</span>
             <strong>Mi cuenta</strong>
@@ -89,9 +102,13 @@ import { CdThemeToggleComponent } from '../../shared/ui/theme-toggle/cd-theme-to
       gap: 0;
       height: 100dvh;
       min-height: 100dvh;
+      min-width: 0;
       padding: 27px 14px 18px;
       background: #121f21;
       color: #ddece5;
+    }
+    .cuenta-main {
+      min-width: 0;
     }
     .marca-lateral {
       display: inline-flex;
@@ -331,32 +348,110 @@ import { CdThemeToggleComponent } from '../../shared/ui/theme-toggle/cd-theme-to
       .cuenta-shell {
         grid-template-columns: 1fr;
       }
-      .cuenta-side {
-        position: static;
-        min-height: 0;
-        padding: 10px 14px;
-        border-bottom: 1px solid #2b433a;
+      .portal-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 70;
+        background: rgba(10, 20, 18, 0.58);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.22s ease, visibility 0.22s ease;
       }
-      .marca-lateral,
-      .workspace-label,
-      .cuenta-side__end {
-        display: none;
+      .portal-backdrop.visible {
+        opacity: 1;
+        visibility: visible;
+      }
+      .cuenta-side {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 80;
+        width: min(84vw, 304px);
+        max-width: 304px;
+        height: 100dvh;
+        min-height: 0;
+        padding: 22px 14px 18px;
+        overflow-y: auto;
+        border: 0;
+        border-right: 1px solid #2b433a;
+        display: block;
+        transform: translateX(-100%);
+        visibility: hidden;
+        transition: transform 0.24s ease, visibility 0.24s ease;
+      }
+      .cuenta-side.abierto {
+        transform: none;
+        visibility: visible;
+      }
+      .drawer-close {
+        display: grid;
+        place-items: center;
+        position: absolute;
+        top: 16px;
+        right: 14px;
+        z-index: 2;
+        width: 32px;
+        height: 32px;
+        border: 1px solid #365049;
+        border-radius: 8px;
+        background: #1b2f2b;
+        color: #dfeee6;
+        font-size: 17px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .marca-lateral {
+        padding-right: 44px;
       }
       .cuenta-side__nav {
-        display: flex;
-        gap: 5px;
-        overflow-x: auto;
+        display: grid;
+        gap: 3px;
+        width: auto;
+        max-width: none;
+        overflow: visible;
       }
       .cuenta-side__nav a {
-        flex: 0 0 auto;
-        padding: 9px 12px;
+        padding: 12px 14px;
+      }
+      .cuenta-side__end {
+        margin-top: 24px;
+      }
+      .portal-menu-btn {
+        display: inline-grid;
+        place-items: center;
+        flex: none;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+        color: var(--cd-color-text);
+        cursor: pointer;
+      }
+      .portal-menu-btn:hover {
+        background: var(--cd-color-surface-alt);
+      }
+      .portal-menu-btn svg {
+        display: block;
+        width: 24px;
+        height: 24px;
       }
       .portal-top {
+        position: sticky;
+        top: 0;
+        z-index: 50;
         height: 64px;
-        padding: 0 18px;
+        padding: 0 14px;
+        gap: 10px;
+      }
+      .portal-top-left {
+        flex: 1;
+        min-width: 0;
       }
       .portal-content {
-        padding-top: 20px;
+        padding: 20px 18px 70px;
       }
     }
   `,
