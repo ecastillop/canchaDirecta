@@ -520,9 +520,13 @@ const EMOJIS: Record<string, string> = {
     .tarjeta-busqueda .cd-field {
       margin: 0;
     }
+    .tarjeta-busqueda .cd-field__label {
+      color: #b9e99a;
+    }
     .buscar-btn {
       min-height: 44px;
       white-space: nowrap;
+      font-weight: 800;
     }
     .seccion {
       padding-block: clamp(56px, 7vw, 90px) 0;
@@ -573,8 +577,8 @@ const EMOJIS: Record<string, string> = {
       background: var(--cd-color-accent-soft);
     }
     .deporte__numero {
-      color: var(--cd-color-text-muted);
-      font-size: 10px;
+      color: #142b4a;
+      font-size: 14px;
       font-weight: 700;
       letter-spacing: 0.12em;
     }
