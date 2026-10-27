@@ -138,10 +138,15 @@ Guia completa desde cero (requisitos, volcado, verificacion):
 
 ## Base de datos
 
+- Base: `canchadirecta` (utf8mb4).
+- Usuarios: `canchadirecta_mig` (DDL, para Flyway) y `canchadirecta_app`
+  (DML minimo, para runtime). Contrasenas solo en `.env` (no versionado).
 - Volcado completo (esquema + datos) en [`db/canchadirecta.sql`](db/canchadirecta.sql).
 - Restaurar: `.\scripts\db-import.ps1 -Force`.
 - Exportar de nuevo: `.\scripts\db-export.ps1`.
-- El esquema tambien se reconstruye desde cero con las migraciones Flyway al arrancar el backend.
+- El esquema lo versiona Flyway (`backend/src/main/resources/db/migration`) y tambien
+  se reconstruye desde cero al arrancar el backend.
+  **Nunca** se usa `drop-and-create` ni `flyway clean` sobre la base real.
 
 ## Documentacion
 
@@ -151,10 +156,25 @@ Guia completa desde cero (requisitos, volcado, verificacion):
 [accesibilidad manual](docs/ACCESIBILIDAD_MANUAL.md), [cuentas de desarrollo](docs/CUENTAS_DESARROLLO.md),
 despliegue, decisiones (ADRs), limitaciones y [acta de cierre](docs/ACTA_CIERRE.md).
 
-## Base de datos
+## Estructura del repositorio
 
-- Base: `canchadirecta` (utf8mb4).
-- Usuarios: `canchadirecta_mig` (DDL, para Flyway) y `canchadirecta_app`
-  (DML minimo, para runtime). Contrasenas solo en `.env` (no versionado).
-- El esquema lo versiona Flyway (`backend/src/main/resources/db/migration`).
-  **Nunca** se usa `drop-and-create` ni `flyway clean` sobre la base real.
+| Carpeta / archivo | Descripcion |
+|---|---|
+| `backend/` | API en Java 21 + Quarkus (Maven) |
+| `frontend/` | Aplicacion web en Angular 22 |
+| `db/` | Volcado de la base de datos MySQL (`canchadirecta.sql`) |
+| `docs/` | Documentacion: instalacion, arquitectura, diagramas, pruebas, ADRs |
+| `scripts/` | Scripts de apoyo (base de datos, clave JWT, smoke test) |
+| `compose.yml` / `compose.mysql.yml` | Configuracion de Docker |
+| `.env.example` | Plantilla de variables de entorno |
+| `HANDOFF.md` | Estado real del proyecto |
+| `CanchaDirecta_STANDALONE.html` | Version standalone de la interfaz |
+
+## Integrantes
+
+Proyecto universitario (UTP, curso Integrador I: Sistemas Software):
+
+- [@ecastillop](https://github.com/ecastillop)
+- [@StevenZevallos](https://github.com/StevenZevallos)
+- [@Maximo2k23](https://github.com/Maximo2k23)
+- Eliaquim
