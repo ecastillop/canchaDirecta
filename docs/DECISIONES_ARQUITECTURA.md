@@ -1308,3 +1308,13 @@ propietario/admin (el operador registra un walk-in cobrado, el portal muestra `C
 unitarios, E2E usuario OK, a11y 34 rutas OK, contraste OK y humo 153/153 PS y 134/134 Bash
 (2026-10-18).
 
+
+## ADR-005: Elección del Stack Tecnológico (Backend y Frontend)
+
+### Contexto
+Para el desarrollo del proyecto *canchaDirecta*, se requería un backend altamente escalable y robusto para procesar la concurrencia de reservas, junto con un frontend reactivo.
+
+### Decisión
+- **Backend:** Se seleccionó Java con la arquitectura limpia debido a su sólido soporte para inversión de dependencias y persistencia relacional.
+- **Frontend:** Se seleccionó Angular (TypeScript) para estructurar una SPA (Single Page Application) modular y escalable.
+
